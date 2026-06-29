@@ -16,6 +16,8 @@ import star_icon from './star_icon.png';
 import support_img from './support_img.png';
 import logo from './logo.png';
 import banner from './hero_banner.png';
+import about_img from './modern_kitchen.jpg'
+import contact_img from './contact_img.jpg'
 
 // Products
 import sink_180 from './datees-stainless-sink-180.jpg';
@@ -144,7 +146,9 @@ export const assets = {
   star_icon,
   support_img,
   logo,
-  banner
+  banner,
+  about_img,
+  contact_img
 };
 
 export const products = [
