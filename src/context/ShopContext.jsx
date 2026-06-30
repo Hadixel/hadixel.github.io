@@ -11,6 +11,7 @@ const ShopContextProvider = (props) => {
     const [search,setSearch] = useState('');
     const [showSearch,setShowSearch] = useState(false);
     const [cartItems,setCartItems] = useState({});
+    const [orders, setOrders] = useState([]);
 
     const addToCart = async (itemId,color) => {
 
@@ -33,6 +34,43 @@ const ShopContextProvider = (props) => {
         }
 
         setCartItems(cartData);
+    }
+
+    const clearCart = () => {
+        setCartItems({});
+    }
+
+    const placeOrder = (customerInfo = {}, method = 'mellat') => {
+        if (getCartCount() === 0) {
+            toast.error('Your cart is empty');
+            return null;
+        }
+
+        const orderItems = [];
+        for (const productId in cartItems) {
+            for (const color in cartItems[productId]) {
+                const qty = cartItems[productId][color];
+                if (qty > 0) {
+                    orderItems.push({ _id: productId, color, quantity: qty });
+                }
+            }
+        }
+
+        const order = {
+            id: Date.now().toString(),
+            items: orderItems,
+            total: getCartAmount(),
+            customer: customerInfo,
+            method,
+            date: Date.now()
+        };
+
+        setOrders(prev => [order, ...prev]);
+
+        clearCart();
+
+        toast.success('Order placed successfully');
+        return order;
     }
 
     const getCartCount = () => {
@@ -87,7 +125,10 @@ const ShopContextProvider = (props) => {
         addToCart,
         getCartCount,
         updateQuantity,
-        getCartAmount
+        getCartAmount,
+        orders,
+        placeOrder,
+        clearCart
     };
 
     return (

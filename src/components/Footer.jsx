@@ -16,10 +16,10 @@ const Footer = () => {
             <div>
                 <p className='text-xl font-medium mb-5'>OUR STORE</p>
                 <ul className='flex flex-col gap-1 text-gray-600'>
-                    <li><Link to={'/'}>Home</Link></li>
-                    <li><Link to={'/about'}>About Us</Link></li>
-                    <li><Link to={'/'}>Privacy</Link></li>
-                    <li><Link to={'/'}>Delivery</Link></li>
+                    <li><Link to='/'>Home</Link></li>
+                    <li><Link to='/about'>About Us</Link></li>
+                    <li><Link to='/about'>Privacy</Link></li>
+                    <li><Link to='/orders'>Delivery</Link></li>
                 </ul>
             </div>
             <div>

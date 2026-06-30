@@ -18,6 +18,9 @@ import logo from './logo.png';
 import banner from './hero_banner.png';
 import about_img from './modern_kitchen.jpg'
 import contact_img from './contact_img.jpg'
+import mellat_logo from './mellat.jpg'
+import up_logo from './up.png'
+import zarrinpal_logo from './zarinpal.jpg'
 
 // Products
 import sink_180 from './datees-stainless-sink-180.jpg';
@@ -148,7 +151,10 @@ export const assets = {
   logo,
   banner,
   about_img,
-  contact_img
+  contact_img,
+  mellat_logo,
+  zarrinpal_logo,
+  up_logo
 };
 
 export const products = [
