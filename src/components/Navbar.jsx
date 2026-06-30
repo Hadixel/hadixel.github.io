@@ -15,19 +15,19 @@ const Navbar = () => {
         </Link>
 
         <ul className='hidden sm:flex gap-5 text-sm text-gray-700'>
-          <NavLink to='/' className='flex flex-col items-center gap-1'>
+          <NavLink to='/' className='flex flex-col items-center gap-1 hover:scale-110 transition-all ease-in-out'>
             <p>HOME</p>
             <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden' />
           </NavLink>
-          <NavLink to='/all-products' className='flex flex-col items-center gap-1'>
+          <NavLink to='/all-products' className='flex flex-col items-center gap-1 hover:scale-110 transition-all ease-in-out'>
             <p>All PRODUCTS</p>
             <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden' />
           </NavLink>
-          <NavLink to='/about' className='flex flex-col items-center gap-1'>
+          <NavLink to='/about' className='flex flex-col items-center gap-1 hover:scale-110 transition-all ease-in-out'>
             <p>ABOUT</p>
             <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden' />
           </NavLink>
-          <NavLink to='/contact' className='flex flex-col items-center gap-1'>
+          <NavLink to='/contact' className='flex flex-col items-center gap-1 hover:scale-110 transition-all ease-in-out'>
             <p>CONTACT</p>
             <hr className='w-2/4 border-none h-[1.5px] bg-gray-700 hidden' />
           </NavLink>
@@ -52,7 +52,7 @@ const Navbar = () => {
           <img onClick={() => setVisibility(true)} src={assets.menu_icon} alt="menu" className='w-5 cursor-pointer sm:hidden' />
         </div>
         {/* sidebar */}
-        <div className={`absolute right-0 top-0 bottom-0 overflow-hidden bg-white transition-all ${visible ? 'w-full' : 'w-0'}`}>
+        <div className={`z-9999 absolute right-0 top-0 bottom-0 overflow-hidden bg-white transition-all ${visible ? 'w-full' : 'w-0'}`}>
           <div className='flex flex-col text-gray-600'>
             <div onClick={() => setVisibility(false)} className='flex items-center gap-4 p-3 cursor-pointer'>
               <img src={assets.dropdown_icon} alt="Back" className='h-4 rotate-180' />

@@ -37,7 +37,7 @@ const Product = () => {
           <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-auto items-start sm:justify-normal sm:absolute sm:left-0 sm:bottom-0 sm:top-0 sm:w-[18.7%] w-full [&::-webkit-scrollbar]:hidden'>
             {
               productData.image.map((item,index)=>(
-                <img onClick={()=>setImage(item)} className='w-[24%] sm:w-full sm:mb-3 shrink-0 hover:scale-110 cursor-pointer' src={item} key={index} alt="product_image" />
+                <img onClick={()=>setImage(item)} className='w-[24%] sm:w-full sm:mb-3 shrink-0 hover:scale-110 transition-all ease-in-out cursor-pointer' src={item} key={index} alt="product_image" />
               ))
             }
           </div>
@@ -72,7 +72,7 @@ const Product = () => {
                 <button onClick={()=>setColor(item)} className={`border border-gray-200 py-2 px-4 bg-gray-100 hover:scale-110 transition ease-in-out ${item === color ? 'border-orange-500' : ''}`} key={index}>{item}</button>))}
               </div>
             </div>
-            <button onClick={()=>addToCart(productData._id,color)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700 w-full md:w-auto self-start'>ADD TO CART</button>
+            <button onClick={()=>addToCart(productData._id,color)} className='bg-black text-white px-8 py-3 text-sm active:bg-gray-700 w-full md:w-auto self-start hover:scale-110 transition-all ease-in-out'>ADD TO CART</button>
             <hr className='mt-8 sm:w-4/5'/>
           </div>
         </div>
