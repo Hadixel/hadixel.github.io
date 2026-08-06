@@ -1,0 +1,639 @@
+// ============================================================
+// kmodern — production schema (assembled from tracker tickets
+// 001..019; see tracker/MAP.md for the decision trail).
+// Tickets: 004 product, 005 page-builder, 006 nav, 007 blog,
+// 008 component catalog, 009 orders/accounts/inventory,
+// 010 admin auth, 011 checkout/payment, 014 SEO, 016 notif,
+// 018 discounts. 013 migration + 012 deployment are process.
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum FulfillmentStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentStatus {
+  AWAITING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum PaymentMethod {
+  ONLINE
+  CARD_TO_CARD
+  COD
+}
+
+enum ShippingMethod {
+  LOCAL
+  POST
+  BARBERI
+}
+
+enum DeliveryFeeMode {
+  FREE
+  FLAT
+  API_QUOTE
+  FALLBACK_FLAT
+  FREIGHT_COLLECT
+}
+
+enum OrderEventDimension {
+  FULFILLMENT
+  PAYMENT
+}
+
+enum AdminRole {
+  OWNER
+  EDITOR
+  ORDER_MANAGER
+}
+
+enum MenuLocation {
+  HEADER
+  FOOTER
+  MOBILE
+}
+
+enum MenuDisplay {
+  DROPDOWN
+  MEGA
+}
+
+enum ChildSource {
+  STATIC
+  CATEGORY
+}
+
+enum PageKind {
+  SYSTEM
+  CUSTOM
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+  FREE_DELIVERY
+}
+
+enum DiscountScope {
+  ALL
+  PRODUCTS
+  CATEGORIES
+  COLLECTIONS
+}
+
+enum DiscountMode {
+  COUPON
+  AUTOMATIC
+}
+
+enum DiscountStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum ReservationStatus {
+  ACTIVE
+  COMMITTED
+  RELEASED
+  EXPIRED
+}
+
+// ------------------------------------------------------------
+// Catalog (004)
+// ------------------------------------------------------------
+
+model Category {
+  id         String              @id @default(cuid())
+  parentId   String?
+  name       String
+  slug       String              @unique
+  sortOrder  Int                 @default(0)
+  weightKg   Float // required per 011 amendment; > 0 enforced in app
+  seo        Json? // 014 optional override
+  children   Category[]          @relation("CategoryTree")
+  parent     Category?           @relation("CategoryTree", fields: [parentId], references: [id])
+  specFields CategorySpecField[]
+  products   Product[]
+
+  @@index([parentId])
+  @@index([name])
+  @@index([slug])
+}
+
+model CategorySpecField {
+  id         String             @id @default(cuid())
+  categoryId String
+  name       String
+  type       String // string | number | boolean | enum
+  unit       String?
+  filterable Boolean            @default(true)
+  sortOrder  Int                @default(0)
+  category   Category           @relation(fields: [categoryId], references: [id])
+  values     ProductSpecValue[]
+
+  @@unique([categoryId, name])
+}
+
+model Product {
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  name            String
+  brand           String
+  model           String // plain searchable field, e.g. "203"
+  categoryId      String
+  description     String?
+  features        String[]
+  extraSpecs      Json? // free-form label/value extras
+  status          ProductStatus      @default(DRAFT)
+  allowBackorder  Boolean            @default(false)
+  seo             Json? // 014
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  category        Category           @relation(fields: [categoryId], references: [id])
+  variants        Variant[]
+  specValues      ProductSpecValue[]
+  collectionItems CollectionItem[]
+  orderItems      OrderItem[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([model])
+}
+
+model Variant {
+  id             String             @id @default(cuid())
+  productId      String
+  colorName      String
+  colorCode      String?
+  sku            String             @unique
+  price          Float // TOMAN
+  stock          Int                @default(0)
+  reserved       Int                @default(0) // 009 reserve-on-order
+  allowBackorder Boolean            @default(false)
+  images         String[] // ordered image urls
+  seo            Json? // 014 per-variant override
+  product        Product            @relation(fields: [productId], references: [id])
+  orderItems     OrderItem[]
+  reservations   StockReservation[]
+
+  @@index([productId])
+  @@index([sku])
+}
+
+model ProductSpecValue {
+  productId   String
+  specFieldId String
+  value       String
+  product     Product           @relation(fields: [productId], references: [id])
+  specField   CategorySpecField @relation(fields: [specFieldId], references: [id])
+
+  @@id([productId, specFieldId])
+}
+
+model Collection {
+  id        String           @id @default(cuid())
+  name      String
+  slug      String           @unique
+  sortOrder Int              @default(0)
+  items     CollectionItem[]
+}
+
+model CollectionItem {
+  collectionId String
+  productId    String
+  sortOrder    Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  product      Product    @relation(fields: [productId], references: [id])
+
+  @@id([collectionId, productId])
+}
+
+// ------------------------------------------------------------
+// Customers, addresses (009)
+// ------------------------------------------------------------
+
+model Customer {
+  id                  String            @id @default(cuid())
+  phone               String            @unique // normalized Iranian mobile
+  name                String?
+  email               String? // storage-only this build (016)
+  passwordHash        String? // optional, OTP-primary
+  smsMarketingConsent Boolean           @default(false) // 016, never pre-ticked
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  addresses           Address[]
+  orders              Order[]
+  notifications       NotificationLog[]
+  sessions            CustomerSession[]
+}
+
+model Address {
+  id             String   @id @default(cuid())
+  customerId     String
+  recipientName  String
+  recipientPhone String
+  province       String
+  city           String
+  addressLine    String
+  postalCode     String // 10 digits
+  isDefault      Boolean  @default(false)
+  label          String?
+  customer       Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
+
+model CustomerSession {
+  id         String    @id @default(cuid())
+  customerId String
+  tokenHash  String    @unique
+  ip         String?
+  userAgent  String?
+  issuedAt   DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  customer   Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([expiresAt])
+}
+
+model OtpCode {
+  id        String    @id @default(cuid())
+  phone     String
+  codeHash  String
+  purpose   String    @default("LOGIN") // LOGIN | PLACE_ORDER
+  expiresAt DateTime
+  attempts  Int       @default(0)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([phone, purpose])
+}
+
+// ------------------------------------------------------------
+// Orders (009 + 011 + 018)
+// ------------------------------------------------------------
+
+model Order {
+  id                String             @id @default(cuid())
+  orderNumber       String             @unique // "1404-000123"
+  customerId        String
+  shippingAddress   Json // snapshot of Address at place
+  fulfillmentStatus FulfillmentStatus  @default(PENDING)
+  paymentStatus     PaymentStatus      @default(AWAITING)
+  paymentMethod     PaymentMethod
+  shippingMethod    ShippingMethod
+  deliveryFeeMode   DeliveryFeeMode
+  subtotal          Float // merchandise before discount
+  discountAmount    Float              @default(0) // 018
+  appliedDiscounts  Json? // snapshot of discount definitions applied (018)
+  deliveryFee       Float              @default(0)
+  total             Float // subtotal - discount + delivery; frozen at place
+  currency          String             @default("TOMAN")
+  paymentExpiresAt  DateTime? // hold window per method (011)
+  gatewayAuthority  String? // Zarinpal
+  gatewayRefId      String?
+  shippingTracking  String? // POST tracking / BARBERI billet / LOCAL driver
+  shippingMeta      Json? // billet no, driver name, etc.
+  receiptImageIds   String[] // C2C uploads
+  adminNote         String?
+  placedAt          DateTime           @default(now())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  customer          Customer           @relation(fields: [customerId], references: [id])
+  items             OrderItem[]
+  events            OrderStatusEvent[]
+  reservations      StockReservation[]
+
+  @@index([customerId])
+  @@index([fulfillmentStatus])
+  @@index([paymentStatus])
+  @@index([placedAt])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String?
+  variantId   String?
+  productName String
+  colorName   String?
+  sku         String
+  unitPrice   Float
+  quantity    Int
+  lineTotal   Float
+  image       String?
+  order       Order    @relation(fields: [orderId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
+  variant     Variant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+}
+
+model OrderStatusEvent {
+  id        String              @id @default(cuid())
+  orderId   String
+  dimension OrderEventDimension
+  from      String
+  to        String
+  actor     String // admin user email / "SYSTEM" / "CUSTOMER"
+  note      String?
+  at        DateTime            @default(now())
+  order     Order               @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([at])
+}
+
+model StockReservation {
+  id        String            @id @default(cuid())
+  orderId   String
+  variantId String
+  qty       Int
+  status    ReservationStatus @default(ACTIVE)
+  expiresAt DateTime
+  order     Order             @relation(fields: [orderId], references: [id])
+  variant   Variant           @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([variantId])
+  @@index([expiresAt])
+}
+
+model OrderNumberCounter {
+  id         Int @id @default(autoincrement())
+  jalaliYear Int @unique
+  lastNumber Int @default(0)
+}
+
+// ------------------------------------------------------------
+// Admin realm (010)
+// ------------------------------------------------------------
+
+model AdminUser {
+  id                 String          @id @default(cuid())
+  email              String          @unique
+  passwordHash       String
+  name               String
+  role               AdminRole       @default(OWNER)
+  isActive           Boolean         @default(true)
+  totpSecret         String? // TOTP-ready, unused this build
+  totpEnabledAt      DateTime?
+  recoveryCodes      String[]
+  lastLoginAt        DateTime?
+  failedAttempts     Int             @default(0)
+  lockedUntil        DateTime?
+  mustChangePassword Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  sessions           AdminSession[]
+  auditLogs          AdminAuditLog[]
+}
+
+model AdminSession {
+  id          String    @id @default(cuid())
+  adminUserId String
+  tokenHash   String    @unique
+  ip          String?
+  userAgent   String?
+  issuedAt    DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id])
+
+  @@index([adminUserId])
+  @@index([expiresAt])
+}
+
+model AdminAuditLog {
+  id          String     @id @default(cuid())
+  adminUserId String?
+  action      String
+  entityType  String?
+  entityId    String?
+  ip          String?
+  userAgent   String?
+  meta        Json?
+  at          DateTime   @default(now())
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id])
+
+  @@index([adminUserId])
+  @@index([entityType, entityId])
+  @@index([at])
+}
+
+// ------------------------------------------------------------
+// Content: pages (005), navigation (006), blog (007)
+// ------------------------------------------------------------
+
+model Page {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  title           String
+  kind            PageKind   @default(CUSTOM)
+  status          PageStatus @default(DRAFT)
+  draftBlocks     Json // ordered block list [{id,type,props,visible,mobileVisible,...}]
+  publishedBlocks Json
+  seo             Json? // 014
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model Menu {
+  id       String       @id @default(cuid())
+  location MenuLocation @unique
+  name     String
+  items    MenuItem[]
+}
+
+model MenuItem {
+  id            String      @id @default(cuid())
+  menuId        String
+  parentId      String?
+  sortOrder     Int         @default(0)
+  label         String
+  // LinkRef: {type, targetId?, url?, newTab?}
+  target        Json
+  childSource   ChildSource @default(STATIC)
+  categoryId    String? // for childSource=CATEGORY (auto-list node children)
+  display       MenuDisplay @default(DROPDOWN)
+  visible       Boolean     @default(true)
+  mobileVisible Boolean     @default(true)
+  menu          Menu        @relation(fields: [menuId], references: [id])
+  parent        MenuItem?   @relation("MenuTree", fields: [parentId], references: [id])
+  children      MenuItem[]  @relation("MenuTree")
+  promos        MenuPromo[]
+
+  @@index([menuId])
+  @@index([parentId])
+}
+
+model MenuPromo {
+  id            String   @id @default(cuid())
+  menuItemId    String
+  sortOrder     Int      @default(0)
+  imageUrl      String
+  alt           String
+  link          Json // LinkRef
+  heading       String?
+  subtext       String?
+  mobileVisible Boolean  @default(false) // promo media hidden on mobile (006)
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([menuItemId])
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  title           String
+  excerpt         String?
+  coverImage      String?
+  body            Json // TipTap-style rich text document with embed nodes (007)
+  byline          String?
+  status          PostStatus @default(DRAFT)
+  publishAt       DateTime?
+  featured        Boolean    @default(false)
+  commentsEnabled Boolean    @default(true) // hook only, no comment system
+  seo             Json? // 014
+  searchText      String? // maintained plaintext for ILIKE search
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  tags            PostTag[]
+}
+
+model BlogTag {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  posts     PostTag[]
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post    @relation(fields: [postId], references: [id])
+  tag    BlogTag @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+}
+
+// ------------------------------------------------------------
+// Marketing (018)
+// ------------------------------------------------------------
+
+model Discount {
+  id                 String         @id @default(cuid())
+  type               DiscountType
+  scope              DiscountScope
+  mode               DiscountMode
+  code               String? // COUPON only, unique nullable
+  value              Float // percent or TOMAN amount
+  maxAmount          Float? // PERCENT optional cap
+  productIds         String[]
+  categoryIds        String[] // incl. descendants at apply time
+  collectionIds      String[]
+  startsAt           DateTime
+  endsAt             DateTime?
+  minOrderSubtotal   Float?
+  maxUsesTotal       Int?
+  maxUsesPerCustomer Int?
+  status             DiscountStatus @default(ACTIVE)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@index([startsAt])
+}
+
+// ------------------------------------------------------------
+// Notifications (016)
+// ------------------------------------------------------------
+
+model NotificationLog {
+  id                String             @id @default(cuid())
+  customerId        String?
+  phone             String
+  template          String // otp | orderplaced | orderpaid | ...
+  orderId           String?
+  status            NotificationStatus @default(QUEUED)
+  providerMessageId String?
+  error             String?
+  at                DateTime           @default(now())
+  customer          Customer?          @relation(fields: [customerId], references: [id])
+
+  @@index([phone])
+  @@index([status])
+  @@index([orderId])
+}
+
+// ------------------------------------------------------------
+// Settings (011, 017, 016) + slug redirects (014)
+// ------------------------------------------------------------
+
+model Setting {
+  key         String   @id // e.g. shipping.localFeeMode, store.name
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Redirect {
+  id         String   @id @default(cuid())
+  from       String   @unique
+  to         String
+  statusCode Int      @default(301)
+  createdAt  DateTime @default(now())
+
+  @@index([from])
+}

@@ -1,0 +1,114 @@
+import { db, type $Enums } from "@kmodern/db";
+import type { LinkRef } from "@kmodern/schema";
+
+// 006 nav: menu trees stored in DB (MenuItem + MenuPromo), rendered by
+// location. LinkRef targets resolved to storefront hrefs.
+
+async function dbCat(id: string) {
+  return db().category.findUnique({ where: { id }, select: { slug: true } });
+}
+async function dbPage(id: string) {
+  return db().page.findUnique({ where: { id }, select: { slug: true } });
+}
+async function dbPost(id: string) {
+  return db().post.findUnique({ where: { id }, select: { slug: true } });
+}
+async function dbCollection(id: string) {
+  return db().collection.findUnique({ where: { id }, select: { slug: true } });
+}
+
+export async function hrefFor(ref: LinkRef | undefined | null): Promise<{ href: string; newTab: boolean }> {
+  if (!ref) return { href: "#", newTab: false };
+  switch (ref.type) {
+    case "EXTERNAL":
+      return { href: ref.url, newTab: ref.newTab };
+    case "BLOG_INDEX":
+      return { href: "/blog", newTab: false };
+    case "CATEGORY": {
+      const c = await dbCat(ref.targetId);
+      return { href: c?.slug ? `/category/${c.slug}` : "/", newTab: false };
+    }
+    case "PAGE": {
+      const p = await dbPage(ref.targetId);
+      return { href: p?.slug ? `/${p.slug}` : "/", newTab: false };
+    }
+    case "BLOG_POST": {
+      const p = await dbPost(ref.targetId);
+      return { href: p?.slug ? `/blog/${p.slug}` : "/blog", newTab: false };
+    }
+    case "COLLECTION": {
+      const c = await dbCollection(ref.targetId);
+      return { href: c?.slug ? `/collection/${c.slug}` : "/", newTab: false };
+    }
+    case "NONE":
+      return { href: "#", newTab: false };
+  }
+}
+
+export interface NavNode {
+  id: string;
+  label: string;
+  href: string;
+  newTab: boolean;
+  display: $Enums.MenuDisplay;
+  children: NavNode[];
+  promos: Array<{ imageUrl: string; alt: string; heading?: string; subtext?: string }>;
+}
+
+export interface NavMenu {
+  location: $Enums.MenuLocation;
+  name: string;
+  tree: NavNode[];
+}
+
+export async function getNavMenu(location: $Enums.MenuLocation): Promise<NavMenu | null> {
+  const menu = await db().menu.findUnique({
+    where: { location },
+    include: {
+      items: {
+        where: { visible: true },
+        include: { children: { where: { visible: true }, orderBy: { sortOrder: "asc" } }, promos: true },
+        orderBy: { sortOrder: "asc" },
+      },
+    },
+  });
+  if (!menu) return null;
+
+  type Top = (typeof menu.items)[number];
+
+  async function leaf(i: Top["children"][number]): Promise<NavNode> {
+    const { href, newTab } = await hrefFor(i.target as LinkRef | undefined);
+    return {
+      id: i.id,
+      label: i.label,
+      href,
+      newTab,
+      display: i.display,
+      children: [],
+      promos: [],
+    };
+  }
+
+  async function branch(i: Top): Promise<NavNode> {
+    const { href, newTab } = await hrefFor(i.target as LinkRef | undefined);
+    return {
+      id: i.id,
+      label: i.label,
+      href,
+      newTab,
+      display: i.display,
+      children: await Promise.all(i.children.map(leaf)),
+      promos: i.promos.map((p) => ({
+        imageUrl: p.imageUrl,
+        alt: p.alt,
+        heading: p.heading ?? undefined,
+        subtext: p.subtext ?? undefined,
+      })),
+    };
+  }
+  return {
+    location: menu.location,
+    name: menu.name,
+    tree: await Promise.all(menu.items.filter((i) => !i.parentId).map(branch)),
+  };
+}

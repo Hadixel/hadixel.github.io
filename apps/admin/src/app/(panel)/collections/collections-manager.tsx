@@ -1,0 +1,160 @@
+"use client";
+
+// Collections CRUD (004): name/slug/sortOrder + ordered product membership.
+
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { saveCollection, deleteCollectionAction } from "@/lib/actions/catalog";
+import type { ActionState } from "@/lib/actions/auth";
+import { faDigits } from "@/lib/date";
+import { Button, Card, CardBody, CardHeader, Field, Input } from "@/components/ui";
+
+interface ItemSeed {
+  productId: string;
+  productName?: string;
+  sortOrder: number;
+}
+interface CollectionSeed {
+  id: string;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  items: ItemSeed[];
+}
+interface ProductLite {
+  id: string;
+  name: string;
+}
+
+export function CollectionsManager({ collections, products }: { collections: CollectionSeed[]; products: ProductLite[] }) {
+  return (
+    <div className="space-y-5">
+      <CollectionForm
+        seed={{ id: "", name: "", slug: "", sortOrder: 0, items: [] }}
+        products={products}
+        title="افزودن مجموعه"
+      />
+      {collections.length === 0 ? (
+        <Card><CardBody className="text-sm text-slate-400">مجموعه‌ای تعریف نشده است</CardBody></Card>
+      ) : (
+        collections.map((c) => <CollectionCard key={c.id} collection={c} products={products} />)
+      )}
+    </div>
+  );
+}
+
+function CollectionCard({ collection, products }: { collection: CollectionSeed; products: ProductLite[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Card>
+      <CardHeader
+        title={
+          <button type="button" onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
+            <span className="text-slate-400">{expanded ? "▾" : "▴"}</span>
+            <span>{collection.name}</span>
+            <span className="text-xs font-normal text-slate-400">{faDigits(collection.items.length)} محصول</span>
+          </button>
+        }
+        subtitle={<span dir="ltr">{collection.slug}</span>}
+      />
+      {expanded && (
+        <CardBody>
+          <CollectionForm seed={collection} products={products} />
+        </CardBody>
+      )}
+    </Card>
+  );
+}
+
+function CollectionForm({ seed, products, title }: { seed: CollectionSeed; products: ProductLite[]; title?: string }) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveCollection, {});
+  const router = useRouter();
+  useEffect(() => {
+    if (state.ok) router.refresh();
+  }, [state, router]);
+
+  const isEdit = Boolean(seed.id);
+  const [name, setName] = useState(seed.name);
+  const [slug, setSlug] = useState(seed.slug);
+  const [sortOrder, setSortOrder] = useState(seed.sortOrder);
+  const [items, setItems] = useState<ItemSeed[]>(seed.items);
+  const [picker, setPicker] = useState(products[0]?.id ?? "");
+
+  const hasProduct = (id: string) => items.some((i) => i.productId === id);
+  const addItem = () => {
+    if (!picker || hasProduct(picker)) return;
+    setItems((is) => [...is, { productId: picker, productName: products.find((p) => p.id === picker)?.name, sortOrder: is.length }]);
+  };
+  const moveItem = (i: number, dir: -1 | 1) =>
+    setItems((is) => {
+      const j = i + dir;
+      if (j < 0 || j >= is.length) return is;
+      const copy = [...is];
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+      return copy.map((it, k) => ({ ...it, sortOrder: k }));
+    });
+
+  return (
+    <form action={formAction} className="space-y-4">
+      <input type="hidden" name="id" value={seed.id} />
+      {title && <h3 className="text-base font-semibold text-slate-900">{title}</h3>}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Field label="نام" required><Input name="name" value={name} onChange={(e) => setName(e.target.value)} required /></Field>
+        <Field label="اسلاگ" required><Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required /></Field>
+        <Field label="ترتیب"><Input name="sortOrder" type="number" value={sortOrder} dir="ltr" onChange={(e) => setSortOrder(Number(e.target.value) || 0)} /></Field>
+      </div>
+
+      <div>
+        <p className="mb-2 text-sm font-semibold text-slate-700">محصولات مجموعه</p>
+        <div className="mb-2 flex items-center gap-2">
+          <select value={picker} onChange={(e) => setPicker(e.target.value)} className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            {products.filter((p) => !hasProduct(p.id)).map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <Button type="button" variant="secondary" size="sm" onClick={addItem}>افزودن</Button>
+        </div>
+        {items.length > 0 && (
+          <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+            {items.map((it, i) => (
+              <li key={it.productId} className="flex items-center justify-between px-3 py-2 text-sm">
+                <span>{it.productName ?? it.productId}</span>
+                <span className="flex items-center gap-1">
+                  <button type="button" onClick={() => moveItem(i, -1)} className="rounded px-1.5 text-slate-500 hover:bg-slate-100" disabled={i === 0}>↑</button>
+                  <button type="button" onClick={() => moveItem(i, 1)} className="rounded px-1.5 text-slate-500 hover:bg-slate-100" disabled={i === items.length - 1}>↓</button>
+                  <button type="button" onClick={() => setItems((is) => is.filter((_, k) => k !== i))} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <input type="hidden" name="items" value={JSON.stringify(items.map((it, i) => ({ productId: it.productId, sortOrder: i })))} />
+      </div>
+
+      <div className="flex items-center justify-end gap-3">
+        {isEdit && (
+          <DeleteCollectionButton id={seed.id} />
+        )}
+        <span className="flex-1" />
+        {state.error && <span className="text-sm text-red-600">{state.error}</span>}
+        {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
+        <Button type="submit" disabled={pending}>{pending ? "…" : isEdit ? "ذخیره" : "افزودن"}</Button>
+      </div>
+    </form>
+  );
+}
+
+function DeleteCollectionButton({ id }: { id: string }) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(deleteCollectionAction, {});
+  const router = useRouter();
+  useEffect(() => {
+    if (state.ok) router.refresh();
+  }, [state, router]);
+  return (
+    <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این مجموعه؟")) e.preventDefault(); }}>
+      <input type="hidden" name="id" value={id} />
+      <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
+      {state.error && <span className="mr-2 text-xs text-red-600">{state.error}</span>}
+    </form>
+  );
+}
