@@ -3,19 +3,14 @@ import { Badge } from "../components/badge";
 import { toFaDigits } from "@kmodern/schema";
 
 /*
- * Credit mark — the 40x40 white دیتیس manufacturer chip anchoring product
- * card metadata (Zellerfeld "brand logo thumbnail" anatomy, RTL-mirrored).
+ * Credit mark — the 40x40 white دیتیس chip anchoring product-card metadata.
+ * Carries the real Datees logo; multiply blend keeps it matte on plaster.
  */
-/* Status badges — Persian retail states in the token system (fill-only differentiation). */
 export function CreditMark({ className }: { className?: string }) {
   return (
-    <span
-      className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-[4px] border border-plaster bg-canvas",
-        className,
-      )}
-    >
-      <span className="text-code text-[10px] font-bold text-ink">DItees</span>
+    <span className={cn("relative block size-10 shrink-0 overflow-hidden rounded-[6px] border border-plaster bg-canvas", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- tiny third-party mark, blend needs raw img */}
+      <img src="/icons/logo.png" alt="دیتیس" className="absolute inset-0 size-full object-contain p-1 mix-blend-multiply" />
     </span>
   );
 }
@@ -81,12 +76,14 @@ export function RankNumeral({ rank, className }: { rank: number; className?: str
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none absolute -top-6 left-2 select-none text-[140px] leading-none font-black text-white/60",
+        // ink at low opacity — legible on plaster, exactly the reference's
+        // watermark treatment (theirs is white on their darker card art)
+        "pointer-events-none absolute top-2 left-3 z-10 select-none text-[150px] leading-none font-black text-ink/10",
         className,
       )}
     >
       {fa}
+
     </span>
   );
 }
-

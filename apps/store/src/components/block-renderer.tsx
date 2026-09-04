@@ -3,118 +3,135 @@ import Image from "next/image";
 import { db } from "@kmodern/db";
 import type { Block, ComponentProps } from "@kmodern/schema";
 import { hrefFor } from "@/lib/nav";
-import { getPublishedPosts, getPublishedProducts, getCollections } from "@/lib/queries";
-import { formatToman } from "@kmodern/schema";
-import { FadeWords } from "@kmodern/ui";
-import { CountdownTimer } from "./countdown-timer";
+import { getPublishedPosts, getPublishedProducts } from "@/lib/queries";
+import { FadeWords, RankNumeral, SectionHeader } from "@kmodern/ui";
+import { ShowcaseCard } from "./showcase-card";
+import { FloatingProductCard } from "./floating-product-card";
 import { NewsletterForm } from "./newsletter-form";
-import { ProductCard } from "./product-grid";
+import { CountdownTimer } from "./countdown-timer";
 
-// 005 page-builder renderer. Block list from DB Page.publishedBlocks; each
-// type renders server-side. visibility/mobileVisible honored when set.
+// Page-builder renderer. Block list from DB Page.publishedBlocks; each type
+// renders server-side. Sections follow the reference anatomy exactly.
 
-// Aparat: https://www.aparat.com/v/{hash} -> iframe embed
-function aparatEmbed(url: string): string | null {
-  const hash = url.match(/aparat\.com\/v\/([A-Za-z0-9-]+)/)?.[1];
-  return hash ? `https://www.aparat.com/video/video/embed/videohash/${hash}/vt/frame` : null;
-}
-
-function youtubeEmbed(url: string): string | null {
-  const id = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/)?.[1];
-  return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
-}
-
-export default async function BlockRenderer({ blocks }: { blocks: Block[] }) {
-  const visible = blocks.filter((b) => b.props.visible !== false);
+function Section({
+  children,
+  padding = "md",
+  className,
+  id,
+}: {
+  children: React.ReactNode;
+  padding?: "sm" | "md" | "lg" | string;
+  className?: string;
+  id?: string;
+}) {
+  const pad = padding === "sm" ? "py-10" : padding === "lg" ? "py-24" : "py-16";
   return (
-    <>
-      {visible.map((b) => (
-        <BlockNode key={b.id} block={b} />
-      ))}
-    </>
+    <section id={id} className={cnSection(pad, className)}>
+      {children}
+    </section>
   );
 }
 
-async function Section({ children, padding, background, mobileVisible, anchorId }: {
-  children: React.ReactNode;
-  padding?: string;
-  background?: string;
-  mobileVisible?: boolean;
-  anchorId?: string;
-}) {
-  if (mobileVisible === false) return null;
-  const pad = padding === "none" ? "py-0" : padding === "sm" ? "py-6" : padding === "lg" ? "py-20" : "py-12";
-  const bg = background && background.startsWith("bg-") ? background : background ? `bg-[${background}]` : "bg-white";
+function cnSection(pad: string, className?: string) {
+  return `mx-auto max-w-[1440px] px-4 ${pad} ${className ?? ""}`;
+}
+
+async function ProductCards({ products }: { products: Awaited<ReturnType<typeof getPublishedProducts>> }) {
   return (
-    <section id={anchorId} className={`${pad} ${bg} w-full`}>
-      <div className="mx-auto max-w-7xl px-4">{children}</div>
-    </section>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {products.map((pr) => (
+        <ShowcaseCard
+          key={pr.id}
+          href={`/product/${pr.slug}`}
+          name={pr.name}
+          model={pr.model}
+          price={pr.price}
+          maxPrice={pr.maxPrice}
+          available={pr.available}
+          variants={pr.dots}
+        />
+      ))}
+    </div>
   );
 }
 
 async function BlockNode({ block }: { block: Block }) {
   const { type, props } = block;
-  const anyProps = props as Record<string, never>;
 
   switch (type) {
+    /* ---------- Hero: full-viewport photographic, overlay bottom-RIGHT
+       (RTL mirror of Zellerfeld's bottom-left), floating buy-card on the
+       opposite side. New-in badge → display headline → subhead. ---------- */
     case "hero": {
       const p = props as ComponentProps["hero"];
       const cta = p.cta ? await hrefFor(p.cta.link) : null;
+      const products = await getPublishedProducts({ limit: 1 });
+      const hero = products[0];
       return (
-        <section className="relative min-h-[80vh] w-full overflow-hidden bg-ink">
+        <section className="relative min-h-[88vh] w-full overflow-hidden bg-ink">
           {p.image?.src && (
             <div className="absolute inset-0">
-              {/* hero is the LCP element on / — load eagerly */}
-              <Image src={p.image.src} alt={p.image.alt ?? ""} fill priority className="object-cover opacity-60" />
+              <Image src={p.image.src} alt={p.image.alt ?? ""} fill priority className="object-cover" />
             </div>
           )}
-          <div className="relative mx-auto flex min-h-[80vh] max-w-7xl flex-col justify-end px-4 pb-16">
-            {cta && (
-              <Link
-                href={cta.href}
-                target={cta.newTab ? "_blank" : undefined}
-                className="mb-6 inline-flex w-fit items-center rounded-card bg-flame-700 px-3 py-1 text-xs font-semibold text-white"
-              >
-                {p.cta!.label}
-              </Link>
-            )}
-            <FadeWords
-              text={p.title}
-              className="text-ink drop-shadow-[0_2px_12px_rgba(255,255,255,0.4)] [font-size:clamp(44px,7vw,96px)] font-black leading-none"
-            />
-            {p.subtitle && (
-              <p className="mt-4 max-w-xl text-base text-white/80">{p.subtitle}</p>
+          {/* legibility wash over the bottom third only */}
+          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/55 to-transparent" />
+
+          <div className="relative mx-auto flex min-h-[88vh] max-w-[1440px] flex-col justify-end gap-6 px-4 pb-14 md:flex-row md:items-end md:justify-between">
+            {/* overlay stack — bottom-right in RTL */}
+            <div className="max-w-2xl">
+              {cta && (
+                <span className="mb-5 inline-flex items-center rounded-[30px] bg-flame-700 px-2.5 py-1 text-xs font-semibold text-white">
+                  {p.cta!.label}
+                </span>
+              )}
+              <FadeWords
+                text={p.title}
+                className="block text-white [font-size:clamp(48px,8vw,112px)] font-black leading-[1.02]"
+              />
+              {p.subtitle && <p className="mt-4 max-w-md text-[15px] leading-7 text-white/80">{p.subtitle}</p>}
+            </div>
+
+            {/* floating buy-card — opposite side */}
+            {hero && (
+              <div className="w-full max-w-[280px] shrink-0 md:mb-2">
+                <FloatingProductCard
+                  href={`/product/${hero.slug}`}
+                  name={hero.name}
+                  image={hero.image}
+                  price={hero.price}
+                  maxPrice={hero.maxPrice}
+                />
+              </div>
             )}
           </div>
         </section>
       );
     }
 
+    /* ---------- Ranked editorial row: giant translucent Persian numeral
+       watermark top-right of each plaster card, product centered. ---------- */
     case "productGrid": {
       const p = props as ComponentProps["productGrid"];
-      let products = await getPublishedProducts({ limit: 8 });
-      if (p.source.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: 8 });
-      if (p.source.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: 8 });
+      let products = await getPublishedProducts({ limit: 4 });
+      if (p.source.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: 4 });
+      if (p.source.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: 4 });
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {products.map((pr) => <ProductCard key={pr.id} product={pr} />)}
-          </div>
-        </Section>
-      );
-    }
-
-    case "productSlider": {
-      const p = props as ComponentProps["productSlider"];
-      const products = await getPublishedProducts({ limit: p.source.kind === "COLLECTION" ? undefined : 10 });
-      return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
-            {products.slice(0, 10).map((pr) => (
-              <div key={pr.id} className="w-52 shrink-0 snap-start sm:w-60">
-                <ProductCard product={pr} />
+        <Section>
+          {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {products.map((pr, i) => (
+              <div key={pr.id} className="relative">
+                <RankNumeral rank={i + 1} />
+                <ShowcaseCard
+                  href={`/product/${pr.slug}`}
+                  name={pr.name}
+                  model={pr.model}
+                  price={pr.price}
+                  maxPrice={pr.maxPrice}
+                  available={pr.available}
+                  variants={pr.dots}
+                />
               </div>
             ))}
           </div>
@@ -122,11 +139,54 @@ async function BlockNode({ block }: { block: Block }) {
       );
     }
 
-    case "richText": {
-      const p = props as ComponentProps["richText"];
+    case "productSlider": {
+      const p = props as ComponentProps["productSlider"];
+      const products = await getPublishedProducts({ limit: 8 });
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: p.html }} />
+        <Section>
+          {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
+            {products.slice(0, 8).map((pr) => (
+              <div key={pr.id} className="w-64 shrink-0 snap-start sm:w-72">
+                <ShowcaseCard
+                  href={`/product/${pr.slug}`}
+                  name={pr.name}
+                  model={pr.model}
+                  price={pr.price}
+                  maxPrice={pr.maxPrice}
+                  available={pr.available}
+                  variants={pr.dots}
+                />
+              </div>
+            ))}
+          </div>
+        </Section>
+      );
+    }
+
+    case "categoryTiles": {
+      const p = props as ComponentProps["categoryTiles"];
+      const tiles = await Promise.all(
+        p.categories.map(async (c) => {
+          const cat = await db().category.findUnique({ where: { id: c.categoryId }, select: { slug: true, name: true } });
+          return { href: cat ? `/category/${cat.slug}` : "/", name: cat?.name ?? "دسته", image: c.image };
+        }),
+      );
+      return (
+        <Section>
+          {p.title && <SectionHeader title={p.title} />}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {tiles.map((t) => (
+              <Link key={t.href} href={t.href} className="group overflow-hidden rounded-card bg-plaster">
+                <div className="relative aspect-[4/3]">
+                  {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04]" />}
+                </div>
+                <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-semibold text-ink">
+                  {t.name}
+                </div>
+              </Link>
+            ))}
+          </div>
         </Section>
       );
     }
@@ -139,14 +199,18 @@ async function BlockNode({ block }: { block: Block }) {
       const cols = type === "banner" ? 1 : type === "bannerPair" ? 2 : 3;
       const links = await Promise.all(items.map(async (b) => (b.image?.link ? hrefFor(b.image.link) : null)));
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          <div className={`grid gap-4 ${cols === 1 ? "" : cols === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+        <Section>
+          <div className={`grid gap-4 ${cols === 1 ? "mx-auto max-w-[1100px]" : cols === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
             {items.map((b, i) => {
               const link = links[i];
               const inner = (
-                <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-card bg-plaster">
-                  {b.image?.src && <Image src={b.image.src} alt={b.image.alt ?? b.title ?? ""} fill className="object-cover" />}
-                  {b.title && <div className="absolute inset-0 flex items-center justify-center bg-black/20 p-4 text-center text-white"><span className="font-semibold">{b.title}</span></div>}
+                <div key={i} className="relative aspect-[16/9] max-h-[520px] w-full overflow-hidden rounded-card bg-plaster">
+                  {b.image?.src && <Image src={b.image.src} alt={b.image.alt ?? b.title ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />}
+                  {b.title && (
+                    <div className="absolute bottom-5 right-6 max-w-[70%]">
+                      <span className="text-2xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">{b.title}</span>
+                    </div>
+                  )}
                 </div>
               );
               return link ? (
@@ -160,74 +224,15 @@ async function BlockNode({ block }: { block: Block }) {
       );
     }
 
+    /* ---------- Featured-in press bar: ink full-bleed, 100px ---------- */
     case "uspRow": {
       const p = props as ComponentProps["uspRow"];
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+        <div className="w-full bg-ink">
+          <div className="mx-auto flex h-[88px] max-w-[1440px] flex-wrap items-center justify-evenly gap-4 px-4">
             {p.items.map((it, i) => (
-              <div key={i} className="text-center">
-                {it.icon && <div className="mx-auto mb-2 text-3xl">{it.icon}</div>}
-                <div className="font-semibold">{it.title}</div>
-                {it.text && <div className="mt-1 text-sm text-ash">{it.text}</div>}
-              </div>
+              <span key={i} className="text-sm font-bold text-white/60">{it.title}</span>
             ))}
-          </div>
-        </Section>
-      );
-    }
-
-    case "categoryTiles": {
-      const p = props as ComponentProps["categoryTiles"];
-      const tiles = await Promise.all(
-        p.categories.map(async (c, idx) => {
-          const cat = await db().category.findUnique({ where: { id: c.categoryId }, select: { slug: true, name: true } });
-          return { idx, c, href: cat ? `/category/${cat.slug}` : "/", name: cat?.name ?? "دسته", image: c.image };
-        }),
-      );
-      return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {tiles.map((t) => (
-              <Link key={t.idx} href={t.href} className="overflow-hidden rounded-card bg-plaster p-6 text-center hover:bg-fog/60">
-                {t.image && <Image src={t.image} alt="" width={200} height={200} className="mx-auto mb-3 rounded-card object-cover" />}
-                <span className="font-semibold">{t.name}</span>
-              </Link>
-            ))}
-          </div>
-        </Section>
-      );
-    }
-
-    case "spacer": {
-      const p = props as ComponentProps["spacer"];
-      return <div style={{ height: p.height }} aria-hidden />;
-    }
-
-    case "imageTextSplit": {
-      const p = props as ComponentProps["imageTextSplit"];
-      const img = p.image;
-      const flip = p.imageSide === "RIGHT";
-      return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          <div className={`grid items-center gap-8 md:grid-cols-2 ${flip ? "md:[direction:ltr]" : ""}`}>
-            <div><Image src={img.src} alt={img.alt ?? ""} width={600} height={450} className="w-full rounded-card object-cover" /></div>
-            <div>
-              <h3 className="text-2xl font-semibold">{p.title}</h3>
-              {p.text && <p className="mt-3 text-ash">{p.text}</p>}
-            </div>
-          </div>
-        </Section>
-      );
-    }
-
-    case "slidingStrip": {
-      const p = props as ComponentProps["slidingStrip"];
-      return (
-        <div className="overflow-hidden bg-ink py-3 text-center text-white">
-          <div className="flex gap-8 whitespace-nowrap text-sm">
-            {[...p.items, ...p.items].map((s, i) => <span key={i}>{s}</span>)}
           </div>
         </div>
       );
@@ -236,14 +241,13 @@ async function BlockNode({ block }: { block: Block }) {
     case "testimonials": {
       const p = props as ComponentProps["testimonials"];
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
+        <Section>
+          {p.title && <SectionHeader title={p.title} />}
           <div className="grid gap-4 md:grid-cols-3">
             {p.items.map((t, i) => (
               <div key={i} className="rounded-card bg-plaster p-6">
-                <p className="text-ink">«{t.quote}»</p>
-                <div className="mt-4 font-semibold">{t.author}</div>
-                {t.role && <div className="text-sm text-ash">{t.role}</div>}
+                <p className="text-sm leading-7 text-ink">«{t.quote}»</p>
+                <div className="mt-4 text-code text-xs text-ash">{t.author}{t.role ? ` · ${t.role}` : ""}</div>
               </div>
             ))}
           </div>
@@ -251,33 +255,40 @@ async function BlockNode({ block }: { block: Block }) {
       );
     }
 
-    case "faqAccordion": {
-      const p = props as ComponentProps["faqAccordion"];
+    case "imageTextSplit": {
+      const p = props as ComponentProps["imageTextSplit"];
+      const img = p.image;
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
-          <div className="space-y-3">
-            {p.items.map((it, i) => (
-              <details key={i} className="rounded-card border p-4">
-                <summary className="cursor-pointer font-semibold">{it.question}</summary>
-                <p className="mt-2 text-ash">{it.answer}</p>
-              </details>
-            ))}
+        <Section>
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-plaster">
+              <Image src={img.src} alt={img.alt ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
+            </div>
+            <div>
+              <h3 className="text-3xl font-black text-ink">{p.title}</h3>
+              {p.text && <p className="mt-4 max-w-md leading-8 text-ash">{p.text}</p>}
+            </div>
           </div>
         </Section>
       );
     }
 
-    case "video": {
-      const p = props as ComponentProps["video"];
-      const embed = p.provider === "APARAT" ? aparatEmbed(p.url) : youtubeEmbed(p.url);
-      if (!embed) return null;
+    case "richText": {
+      const p = props as ComponentProps["richText"];
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-4 text-2xl font-semibold">{p.title}</h2>}
-          <div className="aspect-video overflow-hidden rounded-card bg-black">
-            <iframe src={embed} title={p.title ?? "ویدیو"} allowFullScreen className="h-full w-full" />
-          </div>
+        <Section>
+          <div className="mx-auto max-w-3xl leading-9 text-ink [&_a]:text-flame-700 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-black [&_p]:mb-4" dangerouslySetInnerHTML={{ __html: p.html }} />
+        </Section>
+      );
+    }
+
+    case "newsletter": {
+      const p = props as ComponentProps["newsletter"];
+      return (
+        <Section>
+          {p.title && <h2 className="mb-2 text-center text-2xl font-black text-ink">{p.title}</h2>}
+          {p.subtitle && <p className="mb-6 text-center text-sm text-ash">{p.subtitle}</p>}
+          <NewsletterForm />
         </Section>
       );
     }
@@ -286,8 +297,8 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["countdown"];
       const link = p.link ? await hrefFor(p.link) : null;
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-center text-2xl font-extrabold text-ink">{p.title}</h2>}
+        <Section>
+          {p.title && <h2 className="mb-6 text-center text-2xl font-black text-ink">{p.title}</h2>}
           <CountdownTimer endsAt={p.endsAt} linkHref={link?.href} />
         </Section>
       );
@@ -297,13 +308,13 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["blogTeaser"];
       const posts = await getPublishedPosts(p.limit ?? 3);
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
+        <Section>
+          {p.title && <SectionHeader title={p.title} seeAllHref="/blog" />}
           <div className="grid gap-4 md:grid-cols-3">
             {posts.map((post) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="rounded-card border p-4 hover:shadow">
-                <div className="font-semibold">{post.title}</div>
-                {post.excerpt && <p className="mt-2 text-sm text-ash">{post.excerpt}</p>}
+              <Link key={post.id} href={`/blog/${post.slug}`} className="rounded-card bg-plaster p-6 transition-colors hover:bg-fog/60">
+                <div className="font-semibold text-ink">{post.title}</div>
+                {post.excerpt && <p className="mt-2 text-sm leading-6 text-ash">{post.excerpt}</p>}
               </Link>
             ))}
           </div>
@@ -311,47 +322,23 @@ async function BlockNode({ block }: { block: Block }) {
       );
     }
 
-    case "trustBadges": {
-      const p = props as ComponentProps["trustBadges"];
+    case "faqAccordion": {
+      const p = props as ComponentProps["faqAccordion"];
       return (
-        <div className="border-y bg-plaster">
-          <div className="mx-auto flex max-w-7xl flex-wrap justify-center gap-8 py-6">
+        <Section>
+          {p.title && <SectionHeader title={p.title} />}
+          <div className="mx-auto max-w-3xl divide-y divide-plaster border-y border-plaster">
             {p.items.map((it, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm font-semibold">
-                {it.icon && <span>{it.icon}</span>}
-                {it.label}
-              </div>
+              <details key={i} className="group py-4">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-ink marker:hidden">{it.question}</summary>
+                <p className="mt-2 text-sm leading-7 text-ash">{it.answer}</p>
+              </details>
             ))}
           </div>
-        </div>
+        </Section>
       );
     }
 
-    case "newsletter": {
-      const p = props as ComponentProps["newsletter"];
-      return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-2 text-center text-2xl font-extrabold text-ink">{p.title}</h2>}
-          {p.subtitle && <p className="mb-6 text-center text-ash">{p.subtitle}</p>}
-          <NewsletterForm title={p.title} />
-        </Section>
-      );
-    }
-    case "statsRow": {
-      const p = props as ComponentProps["statsRow"];
-      return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {p.items.map((it, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl font-semibold">{it.value}</div>
-                <div className="mt-1 text-ash">{it.label}</div>
-              </div>
-            ))}
-          </div>
-        </Section>
-      );
-    }
     case "comparisonTable": {
       const p = props as ComponentProps["comparisonTable"];
       const products = await db().product.findMany({
@@ -367,32 +354,24 @@ async function BlockNode({ block }: { block: Block }) {
       const valueOf = (productId: string, fieldName: string) =>
         specValues.find((sv) => sv.productId === productId && sv.specField.name === fieldName)?.value ?? "—";
       return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
-          <div className="overflow-x-auto rounded-2xl border border-plaster">
+        <Section>
+          {p.title && <SectionHeader title={p.title} />}
+          <div className="overflow-x-auto rounded-card border border-plaster">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="bg-plaster text-right">
-                  <th className="px-4 py-3 font-semibold">ویژگی</th>
+                  <th className="px-4 py-3 font-semibold text-ash">ویژگی</th>
                   {products.map((pr) => (
-                    <th key={pr.id} className="px-4 py-3 font-semibold">{pr.name}</th>
+                    <th key={pr.id} className="px-4 py-3 font-semibold text-ink">{pr.name}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-plaster">
-                <tr>
-                  <td className="px-4 py-2.5 text-ash">قیمت</td>
-                  {products.map((pr) => (
-                    <td key={pr.id} className="whitespace-nowrap px-4 py-2.5 font-bold text-flame-800">
-                      {pr.variants[0] ? formatToman(pr.variants[0].price) : "—"}
-                    </td>
-                  ))}
-                </tr>
                 {fieldNames.map((name) => (
                   <tr key={name}>
                     <td className="px-4 py-2.5 text-ash">{name}</td>
                     {products.map((pr) => (
-                      <td key={pr.id} className="px-4 py-2.5">{valueOf(pr.id, name)}</td>
+                      <td key={pr.id} className="px-4 py-2.5 text-ink">{valueOf(pr.id, name)}</td>
                     ))}
                   </tr>
                 ))}
@@ -402,29 +381,22 @@ async function BlockNode({ block }: { block: Block }) {
         </Section>
       );
     }
-    case "beforeAfter": {
-      const p = props as ComponentProps["beforeAfter"];
-      return (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="relative aspect-video"><Image src={p.before.src} alt="قبل" fill className="object-cover" /></div>
-          <div className="relative aspect-video"><Image src={p.after.src} alt="بعد" fill className="object-cover" /></div>
-        </div>
-      );
-    }
-    case "map": {
-      const p = props as ComponentProps["map"];
-      return (
-        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-4 text-2xl font-semibold">{p.title}</h2>}
-          <div className="aspect-video overflow-hidden rounded-card bg-plaster">
-            <iframe src={p.embedUrl} className="h-full w-full" />
-          </div>
-        </Section>
-      );
-    }
-    case "customHtml":
-      return <div dangerouslySetInnerHTML={{ __html: (props as ComponentProps["customHtml"]).html }} />;
+
+    case "spacer":
+      return <div style={{ height: (props as ComponentProps["spacer"]).height }} aria-hidden />;
+
     default:
       return null;
   }
+}
+
+export default async function BlockRenderer({ blocks }: { blocks: Block[] }) {
+  const visible = blocks.filter((b) => (b.props as { visible?: boolean })?.visible !== false);
+  return (
+    <main className="min-h-screen bg-canvas">
+      {visible.map((b) => (
+        <BlockNode key={b.id} block={b} />
+      ))}
+    </main>
+  );
 }

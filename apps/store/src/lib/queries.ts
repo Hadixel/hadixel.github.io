@@ -14,6 +14,29 @@ export async function getCategoryTree() {
   };
 }
 
+export interface PublishedProduct {
+  id: string;
+  slug: string;
+  name: string;
+  brand: string;
+  model: string;
+  category: { id: string; name: string; slug: string };
+  price: number;
+  maxPrice: number;
+  available: boolean;
+  image: string | null;
+  variantCount: number;
+  dots: Array<{
+    id: string;
+    colorName: string;
+    colorCode: string | null;
+    images: string[];
+    price: number;
+  }>;
+}
+
+export type PublishedProductList = PublishedProduct[];
+
 export async function getPublishedProducts(opts?: {
   categoryId?: string;
   collectionId?: string;

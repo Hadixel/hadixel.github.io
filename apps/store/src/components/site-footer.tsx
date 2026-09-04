@@ -1,71 +1,72 @@
 import Link from "next/link";
-import { getNavMenu } from "@/lib/nav";
-import { getCategoryTree } from "@/lib/queries";
 import { getSettingOrDefault } from "@/lib/settings";
 import { settingKeys } from "@kmodern/schema";
 
-// Footer: about blurb + contact / FOOTER menu / category links /
-// trust badges (enamad placeholder). Ink background, surface text.
+/*
+ * Footer — deep ink surface (Zellerfeld level 3): hairline columns, ash
+ * text, wordmark. No fluff.
+ */
 export async function SiteFooter() {
-  const [footer, storeName, tagline, contact] = await Promise.all([
-    getNavMenu("FOOTER"),
-    getSettingOrDefault<string>(settingKeys.storeName, "کمدرن"),
-    getSettingOrDefault<string>(settingKeys.storeTagline, ""),
-    getSettingOrDefault<string>(settingKeys.storeContact, ""),
-  ]);
-  const roots = await getCategoryTree();
+  const storeName = await getSettingOrDefault<string>(settingKeys.storeName, "کمدرن");
+  const tagline = await getSettingOrDefault<string>(settingKeys.storeTagline, "");
+  const contact = await getSettingOrDefault<string>(settingKeys.storeContact, "");
+
+  const cols: Array<{ title: string; links: Array<{ label: string; href: string }> }> = [
+    {
+      title: "فروشگاه",
+      links: [
+        { label: "همه محصولات", href: "/products" },
+        { label: "فر", href: "/category/oven-datees" },
+        { label: "اجاق گاز", href: "/category/stove-datees" },
+        { label: "هود", href: "/category/hood-datees" },
+        { label: "سینک", href: "/category/sink-datees" },
+      ],
+    },
+    {
+      title: "حساب",
+      links: [
+        { label: "حساب من", href: "/account" },
+        { label: "سفارش‌های من", href: "/orders" },
+        { label: "سبد خرید", href: "/cart" },
+      ],
+    },
+    {
+      title: "کمدرن",
+      links: [
+        { label: "درباره ما", href: "/about" },
+        { label: "تماس با ما", href: "/contact" },
+        { label: "وبلاگ", href: "/blog" },
+      ],
+    },
+  ];
 
   return (
-    <footer className="mt-16 bg-ink text-slate-line">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-2 lg:grid-cols-4">
-        {/* about + contact */}
+    <footer className="mt-16 w-full bg-ink text-white">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <div className="text-xl font-extrabold text-white">{storeName}</div>
-          {tagline && <p className="mt-3 text-sm leading-6 text-ash">{tagline}</p>}
-          {contact && <p className="mt-4 text-sm leading-6 text-ash">{contact}</p>}
+          <div className="text-xl font-black">{storeName}</div>
+          {tagline && <p className="mt-4 max-w-xs text-sm leading-7 text-white/60">{tagline}</p>}
+          {contact && <p className="mt-4 text-sm leading-7 text-white/60">{contact}</p>}
         </div>
-
-        {/* footer menu */}
-        <div>
-          <div className="mb-4 font-bold text-white">دسترسی سریع</div>
-          <ul className="space-y-2.5 text-sm">
-            {(footer?.tree ?? []).map((item) => (
-              <li key={item.id}>
-                <Link href={item.href} className="transition hover:text-flame-300">{item.label}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* categories */}
-        <div>
-          <div className="mb-4 font-bold text-white">دسته‌بندی‌ها</div>
-          <ul className="space-y-2.5 text-sm">
-            {roots.roots.map((c) => (
-              <li key={c.id}>
-                <Link href={`/category/${c.slug}`} className="transition hover:text-flame-300">{c.name}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* trust */}
-        <div>
-          <div className="mb-4 font-bold text-white">اعتماد شما</div>
-          <ul className="space-y-2.5 text-sm text-ash">
-            <li>ضمانت اصالت فیزیکی کالا</li>
-            <li>پشتیبانی ۷ روز هفته</li>
-            <li>پرداخت در محل برای کرمان</li>
-          </ul>
-          <div className="mt-5 flex h-20 w-20 items-center justify-center rounded-xl border border-dashed border-graphite text-center text-[10px] leading-tight text-ash" title="نماد اعتماد الکترونیکی">
-            نماد اعتماد
+        {cols.map((col) => (
+          <div key={col.title}>
+            <div className="text-code mb-4 text-xs text-white/50">{col.title}</div>
+            <ul className="space-y-2.5">
+              {col.links.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link href={l.href} className="text-sm text-white/70 transition-colors hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        ))}
       </div>
-
-      <div className="border-t border-graphite">
-        <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-ash">
-          © {new Date().getFullYear()} {storeName} — تمامی حقوق محفوظ است.
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 text-xs text-white/40">
+          <span>© ۱۴۰۴ {storeName}</span>
+          <span className="text-code">Powered by Datees</span>
         </div>
       </div>
     </footer>
