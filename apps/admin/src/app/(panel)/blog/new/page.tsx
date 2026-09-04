@@ -7,8 +7,8 @@ export default async function NewPost() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center gap-3">
-        <a href="/blog" className="text-sm text-slate-500 hover:underline">وبلاگ</a>
-        <h1 className="text-xl font-bold text-slate-900">نوشته جدید</h1>
+        <a href="/blog" className="text-sm text-ash hover:underline">وبلاگ</a>
+        <h1 className="text-xl font-bold text-ink">نوشته جدید</h1>
       </div>
       <BlogEditor
         post={{

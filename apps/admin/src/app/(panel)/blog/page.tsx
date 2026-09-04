@@ -32,14 +32,14 @@ export default async function BlogPage({
           subtitle="نوشته‌ها و اخبار"
           actions={<Link href="/blog/new"><Button>نوشته جدید</Button></Link>}
         />
-        <div className="border-b border-slate-100 px-5 py-3">
+        <div className="border-b border-plaster px-5 py-3">
           <form action="/blog" method="get" className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs text-slate-500">جستجو</label>
+              <label className="mb-1 block text-xs text-ash">جستجو</label>
               <Input name="q" defaultValue={q} className="w-56" />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">وضعیت</label>
+              <label className="mb-1 block text-xs text-ash">وضعیت</label>
               <Select name="status" defaultValue={status ?? "ALL"}>
                 <option value="ALL">همه</option>
                 <option value="DRAFT">پیش‌نویس</option>
@@ -68,7 +68,7 @@ export default async function BlogPage({
               {posts.map((p) => (
                 <TR key={p.id}>
                   <TD>
-                    <Link href={`/blog/${p.id}`} className="font-medium text-rose-600 hover:underline">
+                    <Link href={`/blog/${p.id}`} className="font-medium text-ink hover:text-flame-700">
                       {p.featured && <Badge color="amber" className="ml-1">ویژه</Badge>}
                       {p.title}
                     </Link>

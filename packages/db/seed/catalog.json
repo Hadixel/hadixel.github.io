@@ -1,7 +1,7 @@
 [
   {
     "_id": "180",
-    "name": "Datees Stainless Steel Double-Bowl Sink 180",
+    "name": "سینک استیل دولگن دیتیس مدل 180",
     "brand": "Datees",
     "category": "sink",
     "subCategory": "double-bowl",
@@ -14,35 +14,36 @@
     "image": [
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-stainless-sink-180.jpg"
     ],
-    "description": "The Datees 180 stainless steel sink features a double-bowl design with a side drainer, crafted from durable and rust-resistant stainless steel sheet. Easy cleaning and high durability are the key features of this built-in sink.",
+    "description": "سینک استیل 180 دیتیس با طراحی دولگن و آبچکان کناری عرضه شده و از ورق استیل ضدزنگ بادوام و مقاوم در برابر زنگ‌زدگی ساخته شده است. تمیزکاری آسان و دوام بالا، مهم‌ترین ویژگی‌های این سینک توکار به شمار می‌رود.",
     "features": [
-      "Double-bowl sink with drainer",
-      "Rust-resistant stainless steel sheet",
-      "Installation type: Built-in",
-      "Easy installation and cleaning"
+      "سینک دولگن با آبچکان کناری",
+      "ورق استیل ضدزنگ مقاوم در برابر زنگ‌زدگی",
+      "نوع نصب: توکار",
+      "نصب و تمیزکاری آسان"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Sink"
+        "label": "نوع محصول",
+        "value": "سینک"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "180"
       },
       {
-        "label": "Material",
-        "value": "Stainless Steel"
+        "label": "جنس بدنه",
+        "value": "ورق استیل ضدزنگ"
       },
       {
-        "label": "Installation Type",
-        "value": "Built-in"
+        "label": "نوع نصب",
+        "value": "توکار"
       }
-    ]
+    ],
+    "slug": "datees-stainless-steel-double-bowl-sink-180"
   },
   {
     "_id": "197",
-    "name": "Datees Stainless Steel Double-Bowl Sink 197",
+    "name": "سینک استیل دولگن دیتیس مدل 197",
     "brand": "Datees",
     "category": "sink",
     "subCategory": "double-bowl",
@@ -58,69 +59,70 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-stainless-sink-197-angle-2.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-stainless-sink-197-double-bowl.jpg"
     ],
-    "description": "The DB 197 model is part of the Datees product line, featuring a highly elegant and stylish design made of rust-resistant stainless steel sheet with a thickness of 0.8 mm, offering high strength and durability. This sink features the European CE standard, a tray overflow, left/right bowl options, and a striped design.",
+    "description": "مدل DB 197 از خانواده محصولات دیتیس با طراحی بسیار شیک، از ورق استیل ضدزنگ با ضخامت 0.8 میلی‌متر ساخته شده و استحکام و ماندگاری بالایی دارد. این سینک دارای استاندارد اروپایی CE، سرریز لگن، امکان انتخاب لگن چپ یا راست و طرح راه‌راه است.",
     "features": [
-      "Easy installation and cleaning",
-      "Product installation type: Built-in (Corian)",
-      "Equipped with a standard siphon with a square outlet",
-      "Available with left or right bowl (customer's choice)",
-      "Included accessories: Siphon, brackets, sealing tape",
-      "Stainless steel sheet (Grade 304) with 0.8 mm thickness"
+      "نصب و تمیزکاری آسان",
+      "نوع نصب محصول: توکار (کوریان)",
+      "مجهز به سیفون استاندارد با خروجی مربعی",
+      "امکان انتخاب لگن چپ یا راست (طبق سلیقه مشتری)",
+      "لوازم همراه: سیفون، براکت و چسب آب‌بندی",
+      "ورق استیل ضدزنگ (گرید 304) با ضخامت 0.8 میلی‌متر"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Sink"
+        "label": "نوع محصول",
+        "value": "سینک"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DB 197"
       },
       {
-        "label": "Material",
-        "value": "Stainless Steel"
+        "label": "جنس بدنه",
+        "value": "ورق استیل ضدزنگ"
       },
       {
-        "label": "Main Feature",
-        "value": "Rust-resistant stainless steel sheet"
+        "label": "ویژگی اصلی",
+        "value": "ورق استیل ضدزنگ مقاوم در برابر زنگ‌زدگی"
       },
       {
-        "label": "Dimensions",
-        "value": "51 * 116.5 cm"
+        "label": "ابعاد",
+        "value": "51 * 116.5 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "475 * 1135 mm"
+        "label": "ابعاد برش کابینت",
+        "value": "475 * 1135 میلی‌متر"
       },
       {
-        "label": "Bowl Depth",
-        "value": "22 cm"
+        "label": "عمق لگن",
+        "value": "22 سانتی‌متر"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Siphon",
-        "value": "Yes"
+        "label": "سیفون",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "Yes"
+        "label": "براکت کابینت",
+        "value": "دارد"
       },
       {
-        "label": "Sealing Tape",
-        "value": "Yes"
+        "label": "چسب آب‌بندی",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-stainless-steel-double-bowl-sink-197"
   },
   {
     "_id": "202",
-    "name": "Datees Dual-Basket Air Fryer 202",
+    "name": "سرخ‌کن دوسبد دیتیس مدل 202",
     "brand": "Datees",
     "category": "air-fryer",
     "subCategory": "dual-basket",
@@ -134,39 +136,40 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-air-fryer-202-open.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-air-fryer-202-closed.jpg"
     ],
-    "description": "This air fryer features dual baskets for separate cooking, allowing each basket to run a different cooking program. You can easily prepare your healthy diet meals oil-free!",
+    "description": "این سرخ‌کن با داشتن دو سبد مجزا، امکان پخت هم‌زمان دو غذای متفاوت را فراهم می‌کند و هر سبد می‌تواند برنامه پخت مستقل خود را اجرا کند. به این ترتیب می‌توانید وعده‌های سالم رژیمی خود را به سادگی و بدون روغن آماده کنید!",
     "features": [
-      "Two baskets with a capacity of 4 liters each",
-      "10 automatic cooking programs",
-      "Teflon non-stick coating inside the baskets",
-      "Oil drip basket at the bottom of each chamber",
-      "Chamber door microswitch",
-      "Ability to cook two different foods with different temperatures and times",
-      "Equipped with a cooling fan",
-      "Equipped with 4 safety thermal switches"
+      "دو سبد با ظرفیت 4 لیتری برای پخت جداگانه",
+      "10 برنامه پخت خودکار",
+      "پوشش نچسب تفلون در داخل سبدها",
+      "سبد جمع‌آوری روغن در پایین هر محفظه",
+      "میکروسوئیچ ایمنی درب محفظه",
+      "امکان طبخ دو غذای متفاوت با دما و زمان‌های مختلف",
+      "مجهز به فن خنک‌کننده",
+      "مجهز به 4 کلید حرارتی ایمنی"
     ],
     "specs": [
       {
-        "label": "Total Capacity",
-        "value": "8 Liters"
+        "label": "ظرفیت کل",
+        "value": "8 لیتر"
       },
       {
-        "label": "Body Material",
-        "value": "Stainless Steel and Plastic"
+        "label": "جنس بدنه",
+        "value": "ورق استیل ضدزنگ و پلاستیک"
       },
       {
-        "label": "Touch Control Panel",
-        "value": "Yes"
+        "label": "پنل لمسی",
+        "value": "دارد"
       },
       {
-        "label": "Power per Chamber",
-        "value": "1500 Watts"
+        "label": "توان هر محفظه",
+        "value": "1500 وات"
       }
-    ]
+    ],
+    "slug": "datees-dual-basket-air-fryer-202"
   },
   {
     "_id": "203",
-    "name": "Datees 2-Burner Gas Cooktop 203",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 203",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -184,76 +187,77 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-203-black-top-2.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-203-black-angle-2.jpg"
     ],
-    "description": "Designed with an elegant and stylish appearance to bring you a wonderful new cooking experience. This cooktop features 8 mm thick tempered glass, highly resistant to impact and extreme heat. The cast iron grates are enameled, resistant to thermal shock, and dishwasher safe, maintaining their premium quality.",
+    "description": "این اجاق گاز با ظاهری شیک و زیبا طراحی شده تا تجربه‌ای تازه و لذت‌بخش از پخت‌وپز را برای شما به ارمغان بیاورد. شیشه سکوریت آن با ضخامت 8 میلی‌متر، مقاومت بسیار بالایی در برابر ضربه و حرارت شدید دارد. شعله‌پخش‌کن‌های چدنی آن میناکاری‌شده هستند، در برابر شوک حرارتی مقاوم‌اند و کیفیت خود را حتی در ماشین ظرف‌شویی نیز حفظ می‌کنند.",
     "features": [
-      "Number of burners: 2",
-      "Burner power: Large burner: 2.5 kW, Medium burner: 1.8 kW",
-      "Burner caps made of aluminum and enameled iron",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "8 mm tempered glass, resistant to impact and heat",
-      "Drip pan with matte enamel coating",
-      "Two-piece cast iron grate design with matte enamel coating",
-      "Dual-component Zamak and Bakelite knobs with beige plating and knob bases",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 2",
+      "توان شعله: شعله بزرگ: 2.5 کیلووات، شعله متوسط: 1.8 کیلووات",
+      "سرشعله‌های آلومینیومی با آهن میناکاری‌شده",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "شیشه سکوریت 8 میلی‌متری، مقاوم به ضربه و حرارت",
+      "چکه‌گیر با پوشش مینای مات",
+      "طرح شعله‌پخش‌کن چدنی دومحل با پوشش مینای مات",
+      "ولوم دوجزئی زاماک و باکلیت با آبکاری بژ و پایه ولوم",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DG-203"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with 2 gas burners"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به 2 شعله گاز"
       },
       {
-        "label": "Dimensions",
-        "value": "51 * 31 cm"
+        "label": "ابعاد",
+        "value": "51 * 31 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "48.5 * 28 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "48.5 * 28 سانتی‌متر"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "Four units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-2-burner-gas-cooktop-203"
   },
   {
     "_id": "250",
-    "name": "Datees 2-Zone Electric Ceramic Cooktop 250",
+    "name": "اجاق برقی سرامیکی دیتیس مدل 250",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -268,53 +272,54 @@
     "image": [
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-electric-cooktop-250-black.jpg"
     ],
-    "description": "An electric cooktop is an appliance that uses electricity as the heat source for cooking food.",
+    "description": "اجاق برقی دستگاهی است که برای پخت غذا از برق به عنوان منبع گرما استفاده می‌کند. اجاق برقی سرامیکی دیتیس با شیشه سرامیکی مقاوم به حرارت و کنترل تمام‌لمسی، تنظیم دقیق دما و توان را در اختیار شما قرار می‌دهد.",
     "features": [
-      "Number of heating elements: 2",
-      "Full touch control",
-      "9-stage power adjustment",
-      "Heating element power display",
-      "Temperature adjustment thermostat",
-      "Child lock",
-      "Heat-resistant ceramic glass",
-      "Total power: 3000 Watts",
-      "Large element power: 2000 Watts",
-      "Small element power: 1000 Watts"
+      "تعداد منطقه حرارتی: 2",
+      "کنترل تمام‌لمسی",
+      "تنظیم توان در 9 مرحله",
+      "نمایشگر توان المنت‌های حرارتی",
+      "ترموستات تنظیم دما",
+      "قفل کودک",
+      "شیشه سرامیکی مقاوم به حرارت",
+      "توان کل: 3000 وات",
+      "توان المنت بزرگ: 2000 وات",
+      "توان المنت کوچک: 1000 وات"
     ],
     "specs": [
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DGE250"
       },
       {
-        "label": "Number of Elements",
+        "label": "تعداد شعله",
         "value": "2"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Dimensions",
-        "value": "51 * 29 cm"
+        "label": "ابعاد",
+        "value": "51 * 29 سانتی‌متر"
       },
       {
-        "label": "Main Feature",
-        "value": "Heat-resistant ceramic glass"
+        "label": "ویژگی اصلی",
+        "value": "شیشه سرامیکی مقاوم به حرارت"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "49 * 27 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "49 * 27 سانتی‌متر"
       }
-    ]
+    ],
+    "slug": "datees-2-zone-electric-ceramic-cooktop-250"
   },
   {
     "_id": "251",
-    "name": "Datees 2-Burner Electric Hotplate Cooktop 251",
+    "name": "اجاق برقی هات‌پلیت دیتیس مدل 251",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "steel",
@@ -329,52 +334,53 @@
     "image": [
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-electric-hotplate-cooktop-251-black.jpg"
     ],
-    "description": "A unique product featuring an 'Easy to Clean' enameled surface for simple and convenient maintenance, equipped with 2 hotplate elements (large and small) with power ratings of 2000W and 1500W. It offers 6 power levels and includes an operational safety sensor. Additionally, it can be installed as both built-in and tabletop.",
+    "description": "محصولی منحصربه‌فرد با سطح میناکاری «Easy to Clean» برای نگهداری ساده و راحت که به دو المنت هات‌پلیت بزرگ و کوچک با توان 2000 وات و 1500 وات مجهز است. این اجاق دارای 6 مرحله توان کاری و سنسور ایمنی عملکرد است و می‌توان آن را هم به صورت توکار و هم رومیزی نصب کرد.",
     "features": [
-      "Enalemed electric cooktop",
-      "Two hotplate elements",
-      "Easy to Clean enameled surface",
-      "Operational safety sensor",
-      "6 operating power levels",
-      "Large element power: 2000 Watts",
-      "Small element power: 1500 Watts",
-      "Classic-design brass and Bakelite knobs",
-      "Can be installed as built-in or tabletop"
+      "اجاق برقی با بدنه میناکاری",
+      "دو المنت هات‌پلیت",
+      "سطح میناکاری با قابلیت تمیزکاری آسان (Easy to Clean)",
+      "سنسور ایمنی عملکرد",
+      "6 مرحله توان کاری",
+      "توان المنت بزرگ: 2000 وات",
+      "توان المنت کوچک: 1500 وات",
+      "ولوم‌های برنجی و باکلیت با طرح کلاسیک",
+      "قابل نصب به صورت توکار و رومیزی"
     ],
     "specs": [
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DSE251"
       },
       {
-        "label": "Number of Elements",
+        "label": "تعداد شعله",
         "value": "2"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Dimensions",
-        "value": "50 * 30 cm"
+        "label": "ابعاد",
+        "value": "50 * 30 سانتی‌متر"
       },
       {
-        "label": "Main Feature",
-        "value": "Can be installed as built-in or tabletop"
+        "label": "ویژگی اصلی",
+        "value": "قابل نصب به صورت توکار و رومیزی"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "49 * 28.5 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "49 * 28.5 سانتی‌متر"
       }
-    ]
+    ],
+    "slug": "datees-2-burner-electric-hotplate-cooktop-251"
   },
   {
     "_id": "252",
-    "name": "Datees 2-Zone Electric Ceramic Cooktop 252",
+    "name": "اجاق برقی سرامیکی دیتیس مدل 252",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -389,52 +395,53 @@
     "image": [
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-electric-cooktop-252-black.jpg"
     ],
-    "description": "The DGE-252 electric cooktop is a premium product built with Schott ceramic glass. It utilizes EGO heating elements with 9 power levels, delivering a thermal output of 2800W, and is equipped with a safety child lock.",
+    "description": "اجاق برقی DGE-252 محصولی لوکس با شیشه سرامیکی شوت است. این اجاق با بهره‌گیری از المنت‌های EGO و 9 مرحله توان کاری، خروجی حرارتی 2800 واتی ارائه می‌دهد و برای ایمنی بیشتر به قفل کودک مجهز است.",
     "features": [
-      "Equipped with EGO heating elements",
-      "9 operating power levels",
-      "Thermal power of 2800W",
-      "Equipped with timer",
-      "Can be installed as built-in or tabletop",
-      "Schott ceramic glass",
-      "Child lock",
-      "Cut-out dimensions: 280 * 510 mm",
-      "Product dimensions: 80 * 290 * 520 mm"
+      "مجهز به المنت‌های حرارتی EGO",
+      "9 مرحله توان کاری",
+      "توان حرارتی 2800 وات",
+      "مجهز به تایمر",
+      "قابل نصب به صورت توکار و رومیزی",
+      "شیشه سرامیکی شوت",
+      "قفل کودک",
+      "ابعاد برش کابینت: 280 * 510 میلی‌متر",
+      "ابعاد محصول: 80 * 290 * 520 میلی‌متر"
     ],
     "specs": [
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DGE-252"
       },
       {
-        "label": "Cut-out Pattern",
-        "value": "50.5 * 28 cm"
+        "label": "طرح برش",
+        "value": "50.5 * 28 سانتی‌متر"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with EGO elements"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به المنت‌های EGO"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 29 cm"
+        "label": "ابعاد",
+        "value": "52 * 29 سانتی‌متر"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       }
-    ]
+    ],
+    "slug": "datees-2-zone-electric-ceramic-cooktop-252"
   },
   {
     "_id": "253",
-    "name": "Datees 2-Zone Electric Ceramic Cooktop 253",
+    "name": "اجاق برقی سرامیکی دیتیس مدل 253",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -449,55 +456,56 @@
     "image": [
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-electric-cooktop-253-black.jpg"
     ],
-    "description": "The Datees 253 electric cooktop, with its modern design and diverse features, is an ideal choice for contemporary kitchens. Boasting unique characteristics and specifications, it makes cooking significantly easier and more enjoyable.",
+    "description": "اجاق برقی 253 دیتیس با طراحی مدرن و قابلیت‌های متنوع، انتخابی ایده‌آل برای آشپزخانه‌های امروزی است. ویژگی‌ها و مشخصات منحصربه‌فرد این محصول، پخت‌وپز را بسیار آسان‌تر و لذت‌بخش‌تر می‌کند.",
     "features": [
-      "9-stage power adjustment",
-      "Number of elements: 2",
-      "Full touch control",
-      "Can be installed as built-in or tabletop",
-      "Equipped with electronic board protection",
-      "Equipped with heating element power display and digital timer",
-      "Child lock",
-      "Thermostat temperature control with heat-resistant ceramic glass",
-      "Equipped with residual heat indicator (hot surface alarm) when turned off",
-      "Total power: 2000 Watts",
-      "Large element power: 1200 Watts",
-      "Small element power: 800 Watts"
+      "تنظیم توان در 9 مرحله",
+      "تعداد المنت: 2",
+      "کنترل تمام‌لمسی",
+      "قابل نصب به صورت توکار و رومیزی",
+      "مجهز به محافظ برد الکترونیکی",
+      "مجهز به نمایشگر توان المنت و تایمر دیجیتال",
+      "قفل کودک",
+      "کنترل دما با ترموستات و شیشه سرامیکی مقاوم به حرارت",
+      "مجهز به نشانگر حرارت باقی‌مانده (هشدار سطح داغ) پس از خاموشی",
+      "توان کل: 2000 وات",
+      "توان المنت بزرگ: 1200 وات",
+      "توان المنت کوچک: 800 وات"
     ],
     "specs": [
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DGE253"
       },
       {
-        "label": "Cut-out Pattern",
-        "value": "49 * 26.5 cm"
+        "label": "طرح برش",
+        "value": "49 * 26.5 سانتی‌متر"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 29 cm"
+        "label": "ابعاد",
+        "value": "52 * 29 سانتی‌متر"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with element power display and digital timer"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به نمایشگر توان المنت و تایمر دیجیتال"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       }
-    ]
+    ],
+    "slug": "datees-2-zone-electric-ceramic-cooktop-253"
   },
   {
     "_id": "285",
-    "name": "Datees 2-Burner Gas Cooktop 285",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 285",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -514,87 +522,88 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-285-black-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-285-black-angle-2.jpg"
     ],
-    "description": "The Datees built-in gas cooktop comes with an extremely beautiful and stylish design, delivering a fresh and amazing cooking experience. It features 8 mm tempered glass, highly resistant to impact and extreme heat. A unique feature of this cooktop is the burner tilts up to 90 degrees and the adjustable flame length.",
+    "description": "اجاق گاز توکار دیتیس با طراحی بسیار زیبا و شیک عرضه شده تا تجربه‌ای تازه و فوق‌العاده از پخت‌وپز را برای شما رقم بزند. شیشه سکوریت 8 میلی‌متری این اجاق مقاومت بالایی در برابر ضربه و حرارت شدید دارد. ویژگی منحصربه‌فرد این اجاق، تاشدن شعله‌ها تا زاویه 90 درجه و طول شعله قابل تنظیم است.",
     "features": [
-      "Number of burners: 2",
-      "Burner power: Up to 7 kW",
-      "Folding burners with Teflon coating and brass material",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "Equipped with dual-mode (Dual) valves",
-      "Equipped with two dual-mode (Dual) burners",
-      "8 mm tempered glass, highly resistant to heat and impact",
-      "Extremely easy cleaning of glass and gas surface",
-      "Unique burner design",
-      "Metal knobs with knob bases",
-      "Metal grates with Teflon coating",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 2",
+      "توان شعله: تا 7 کیلووات",
+      "شعله‌های تاشو با پوشش تفلون و جنس برنجی",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "مجهز به شیرهای دولحظه‌ای (Dual)",
+      "مجهز به دو شعله دولحظه‌ای (Dual)",
+      "شیشه سکوریت 8 میلی‌متری با مقاومت بالا در برابر حرارت و ضربه",
+      "تمیزکاری بسیار آسان شیشه و سطح گاز",
+      "طرح منحصربه‌فرد شعله‌ها",
+      "ولوم فلزی با پایه ولوم",
+      "شعله‌پخش‌کن‌های فلزی با پوشش تفلون",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DG-285"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "Burners fold up to 90 degrees"
+        "label": "ویژگی اصلی",
+        "value": "تاشدن شعله‌ها تا زاویه 90 درجه"
       },
       {
-        "label": "Dimensions",
-        "value": "43 * 75 cm"
+        "label": "ابعاد",
+        "value": "43 * 75 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "38 * 70 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "38 * 70 سانتی‌متر"
       },
       {
-        "label": "Flame tamer converter",
-        "value": "Yes"
+        "label": "شعله‌پخش‌کن تبدیلی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "Four units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Sealing foam strip",
-        "value": "Yes"
+        "label": "نوار فوم درزگیری",
+        "value": "دارد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-2-burner-gas-cooktop-285"
   },
   {
     "_id": "385",
-    "name": "Datees 3-Burner Gas Cooktop 385",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 385",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -610,83 +619,84 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-385-black-top.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-385-black-angle.jpg"
     ],
-    "description": "Designed with an elegant and stylish look to bring a wonderful new cooking experience. It features 8 mm tempered glass, highly resistant to impact and extreme heat. A unique feature of this cooktop is the burners folding up to 90 degrees and the adjustable flame length.",
+    "description": "این اجاق گاز با ظاهری شیک و جذاب طراحی شده تا تجربه‌ای تازه و فوق‌العاده از پخت‌وپز برای شما به ارمغان بیاورد. شیشه سکوریت 8 میلی‌متری آن مقاومت بالایی در برابر ضربه و حرارت شدید دارد. قابلیت تاشدن شعله‌ها تا زاویه 90 درجه و طول شعله قابل تنظیم از ویژگی‌های منحصربه‌فرد این محصول است.",
     "features": [
-      "Number of burners: 3",
-      "Burner power: Up to 7 kW",
-      "Folding burners with Teflon coating and brass material",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "Equipped with dual-mode (Dual) valves",
-      "Equipped with three dual-mode (Dual) burners",
-      "8 mm tempered glass, highly resistant to heat and impact",
-      "Extremely easy cleaning of glass and gas surface",
-      "Unique burner design",
-      "Metal knobs with knob bases",
-      "Metal grates with Teflon coating",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 3",
+      "توان شعله: تا 7 کیلووات",
+      "شعله‌های تاشو با پوشش تفلون و جنس برنجی",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "مجهز به شیرهای دولحظه‌ای (Dual)",
+      "مجهز به سه شعله دولحظه‌ای (Dual)",
+      "شیشه سکوریت 8 میلی‌متری با مقاومت بالا در برابر حرارت و ضربه",
+      "تمیزکاری بسیار آسان شیشه و سطح گاز",
+      "طرح منحصربه‌فرد شعله‌ها",
+      "ولوم فلزی با پایه ولوم",
+      "شعله‌پخش‌کن‌های فلزی با پوشش تفلون",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DG-385"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "Burners fold up to 90 degrees"
+        "label": "ویژگی اصلی",
+        "value": "تاشدن شعله‌ها تا زاویه 90 درجه"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 86 cm"
+        "label": "ابعاد",
+        "value": "52 * 86 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "48 * 83.5 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "48 * 83.5 سانتی‌متر"
       },
       {
-        "label": "Flame tamer converter",
-        "value": "Yes"
+        "label": "شعله‌پخش‌کن تبدیلی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "Four units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-3-burner-gas-cooktop-385"
   },
   {
     "_id": "551",
-    "name": "Datees 5-Burner Gas Cooktop 551",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 551",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -708,85 +718,86 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-551-white-angle-2.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-551-black-white.jpg"
     ],
-    "description": "Introduced with a beautiful and unique design to offer a new and wonderful cooking experience. It features tempered glass resistant to heat and impact, protecting the unit from damage. A standout feature is the custom-designed enameled cast iron grates (eight-point design). The knobs are made of Zamak and Bakelite for high heat resistance. Available in both black and white glass...",
+    "description": "این اجاق گاز با طرحی زیبا و منحصربه‌فرد معرفی شده تا تجربه‌ای جدید و لذت‌بخش از پخت‌وپز ارائه دهد. شیشه سکوریت مقاوم به حرارت و ضربه، از دستگاه در برابر آسیب محافظت می‌کند. نقطه قوت اصلی این اجاق، شعله‌پخش‌کن‌های چدنی با طراحی اختصاصی هشت‌پر و پوشش مینای مات است. ولوم‌ها از زاماک و باکلیت ساخته شده‌اند و مقاومت بالایی در برابر حرارت دارند. این محصول در دو رنگ مشکی و سفید عرضه می‌شود.",
     "features": [
-      "Number of burners: 5",
-      "Burner power: Wok burner: 3 kW, Large burner: 2.5 kW, Medium burner: 1.8 kW, Small burner: 1.45 kW",
-      "Burner caps made of aluminum and enameled iron",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "Italian Sabaf ignition wire",
-      "8 mm tempered glass, resistant to impact and heat (Black and Ultra Clear)",
-      "Drip pan with matte enamel coating",
-      "Unique eight-point cast iron grate design with matte enamel coating",
-      "Dual-component Zamak and Bakelite knobs with beige plating and knob bases",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 5",
+      "توان شعله: شعله وک: 3 کیلووات، شعله بزرگ: 2.5 کیلووات، شعله متوسط: 1.8 کیلووات، شعله کوچک: 1.45 کیلووات",
+      "سرشعله‌های آلومینیومی با آهن میناکاری‌شده",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "سیم جرقه‌زن Sabaf ایتالیا",
+      "شیشه سکوریت 8 میلی‌متری، مقاوم به ضربه و حرارت (مشکی و اولترا کلیر)",
+      "چکه‌گیر با پوشش مینای مات",
+      "طرح منحصربه‌فرد شعله‌پخش‌کن چدنی هشت‌پر با پوشش مینای مات",
+      "ولوم دوجزئی زاماک و باکلیت با آبکاری بژ و پایه ولوم",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DG-551"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "Unique eight-point cast iron grate design with matte enamel coating"
+        "label": "ویژگی اصلی",
+        "value": "طرح منحصربه‌فرد شعله‌پخش‌کن چدنی هشت‌پر با پوشش مینای مات"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 92 cm"
+        "label": "ابعاد",
+        "value": "52 * 92 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "47.5 * 84 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "47.5 * 84 سانتی‌متر"
       },
       {
-        "label": "Flame tamer converter",
-        "value": "Yes"
+        "label": "شعله‌پخش‌کن تبدیلی",
+        "value": "دارد"
       },
       {
-        "label": "Cross reducer adapter",
-        "value": "Yes"
+        "label": "تبدیل کاهشی ضربدری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "Four units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-5-burner-gas-cooktop-551"
   },
   {
     "_id": "567",
-    "name": "Datees 5-Burner Gas Cooktop 567",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 567",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -813,85 +824,86 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-567-white-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-567-colors.jpg"
     ],
-    "description": "The Datees DG 567 built-in gas cooktop has entered the market to offer an outstanding new cooking experience. Unique features of this built-in hob include high-quality Schott glass (available in beige/champagne, gray, white, and black) and premium Italian Sabaf HE (High Efficiency) burners. Custom-designed cast iron grates, plated metal knobs and bases, and a matte-enameled drip pan are among other standout features of the DG 567.",
+    "description": "اجاق گاز توکار DG 567 دیتیس برای ارائه تجربه‌ای بی‌نظیر از پخت‌وپز وارد بازار شده است. شیشه شوت ایتالیایی باکیفیت (در چهار رنگ بژ/شامپاینی، خاکستری، سفید و مشکی) و شعله‌های Sabaf HE (High Efficiency) ایتالیا از ویژگی‌های برجسته این اجاق توکار هستند. شعله‌پخش‌کن‌های چدنی با طراحی اختصاصی، ولوم‌ها و پایه‌های فلزی آبکاری‌شده و چکه‌گیر با مینای مات از دیگر نقاط قوت DG 567 به شمار می‌روند.",
     "features": [
-      "Number of burners: 5",
-      "Burner power: Wok burner: 3.8 kW, Large burner: 2.8 kW, Medium burner: 1.8 kW, Small burner: 1 kW",
-      "Italian Sabaf HE (High Efficiency) burners",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "Italian Sabaf ignition wire",
-      "8 mm tempered Italian Schott glass, resistant to impact and heat (Black, White, Gray, and Beige)",
-      "Drip pan with matte enamel coating",
-      "Unique cast iron grate design with matte enamel coating",
-      "Metal knobs with knob bases",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 5",
+      "توان شعله: شعله وک: 3.8 کیلووات، شعله بزرگ: 2.8 کیلووات، شعله متوسط: 1.8 کیلووات، شعله کوچک: 1 کیلووات",
+      "شعله‌های Sabaf HE (High Efficiency) ایتالیا",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "سیم جرقه‌زن Sabaf ایتالیا",
+      "شیشه شوت ایتالیایی سکوریت 8 میلی‌متری، مقاوم به ضربه و حرارت (مشکی، سفید، خاکستری و بژ)",
+      "چکه‌گیر با پوشش مینای مات",
+      "طرح منحصربه‌فرد شعله‌پخش‌کن چدنی با پوشش مینای مات",
+      "ولوم فلزی با پایه ولوم",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DG 567"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "8 mm tempered Italian Schott glass, resistant to impact and heat (Black, White, Gray, and Beige)"
+        "label": "ویژگی اصلی",
+        "value": "شیشه شوت ایتالیایی سکوریت 8 میلی‌متری، مقاوم به ضربه و حرارت (مشکی، سفید، خاکستری و بژ)"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 92 cm"
+        "label": "ابعاد",
+        "value": "52 * 92 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "47.5 * 84 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "47.5 * 84 سانتی‌متر"
       },
       {
-        "label": "Flame tamer converter",
-        "value": "Yes"
+        "label": "شعله‌پخش‌کن تبدیلی",
+        "value": "دارد"
       },
       {
-        "label": "Cross reducer adapter",
-        "value": "Yes"
+        "label": "تبدیل کاهشی ضربدری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "4 units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-5-burner-gas-cooktop-567"
   },
   {
     "_id": "596",
-    "name": "Datees 5-Burner Gas Cooktop 596",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 596",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -909,83 +921,84 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-596-black-angle-3.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-596-black-top.jpg"
     ],
-    "description": "The Datees 596 gas cooktop creates a fully smart kitchen with its unique capabilities. Key highlights include a 1.6-inch TFT display with a rotary knob for setting individual timers for each burner. This allows you to auto-shutoff any burner after a specified duration, an exceptionally convenient feature for busy home cooks!",
+    "description": "اجاق گاز 596 دیتیس با قابلیت‌های منحصربه‌فرد خود، آشپزخانه‌ای کاملاً هوشمند برای شما می‌سازد. نمایشگر TFT 1.6 اینچی با ولوم چرخشی که امکان تنظیم تایمر مجزا برای هر شعله را فراهم می‌کند، از نکات برجسته این محصول است. به این ترتیب می‌توانید هر شعله را پس از مدت مشخص به صورت خودکار خاموش کنید؛ قابلیتی بسیار کاربردی برای آشپزهای پرمشغله!",
     "features": [
-      "Number of burners: 5",
-      "Italian Sabaf HE (High Efficiency) burners",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "Italian Sabaf ignition wire",
-      "8 mm tempered glass, resistant to impact and heat",
-      "Matte enameled drip pans in four different sizes",
-      "Unique 5-piece cast iron grate design with matte enamel coating",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 5",
+      "شعله‌های Sabaf HE (High Efficiency) ایتالیا",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "سیم جرقه‌زن Sabaf ایتالیا",
+      "شیشه سکوریت 8 میلی‌متری، مقاوم به ضربه و حرارت",
+      "چکه‌گیرهای مینای مات در چهار اندازه مختلف",
+      "طرح منحصربه‌فرد شعله‌پخش‌کن چدنی پنج‌تکه با پوشش مینای مات",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DG-596"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with a 1.6-inch TFT display with rotary dial for cooking timers"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به نمایشگر TFT 1.6 اینچی با ولوم چرخشی برای تایمر پخت"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 92 cm"
+        "label": "ابعاد",
+        "value": "52 * 92 سانتی‌متر"
       },
       {
-        "label": "Flame tamer converter",
-        "value": "Yes"
+        "label": "شعله‌پخش‌کن تبدیلی",
+        "value": "دارد"
       },
       {
-        "label": "Cross reducer adapter",
-        "value": "Yes"
+        "label": "تبدیل کاهشی ضربدری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "4 units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "6 * 49 * 86 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "6 * 49 * 86 سانتی‌متر"
       }
-    ]
+    ],
+    "slug": "datees-5-burner-gas-cooktop-596"
   },
   {
     "_id": "598",
-    "name": "Datees 5-Burner Gas Cooktop 598",
+    "name": "اجاق گاز شیشه‌ای دیتیس مدل 598",
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
@@ -1003,86 +1016,87 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-598-black-angle-2.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-gas-cooktop-598-black-angle-3.jpg"
     ],
-    "description": "The Datees DG 598 gas cooktop solves all your worries! Safely set up your cooktop and carry on with your daily activities stress-free.",
+    "description": "اجاق گاز DG 598 دیتیس تمام نگرانی‌های شما را برطرف می‌کند! اجاق خود را با خیال راحت راه‌اندازی کنید و بدون دغدغه به کارهای روزمره بپردازید. به لطف 5 تایمر دیجیتال جداگانه و قفل کودک، آرامش خیال در حین پخت‌وپز تضمین شده است.",
     "features": [
-      "Number of burners: 5",
-      "Burner power: Wok burner: 3.8 kW, Large burner: 2.8 kW, Medium burner: 1.8 kW, Small burner: 1 kW",
-      "Italian Sabaf HE (High Efficiency) burners",
-      "Equipped with ultra-fast thermocouple safety valves (Top Time)",
-      "Equipped with Top Time thermocouple wire",
-      "Spanish Orkli valve magnet",
-      "Italian Lorenzo ignition system",
-      "Italian Sabaf ignition wire",
-      "Equipped with 5 separate digital burner timers and child lock",
-      "8 mm tempered glass, resistant to impact and heat",
-      "Drip pan with matte enamel coating",
-      "Unique three-piece cast iron grate design with matte enamel coating",
-      "Metal knobs with knob bases",
-      "0.7 mm galvanized bottom panel",
-      "Energy class: A"
+      "تعداد شعله: 5",
+      "توان شعله: شعله وک: 3.8 کیلووات، شعله بزرگ: 2.8 کیلووات، شعله متوسط: 1.8 کیلووات، شعله کوچک: 1 کیلووات",
+      "شعله‌های Sabaf HE (High Efficiency) ایتالیا",
+      "مجهز به شیرهای ایمنی ترموکوپل فوق سریع (Top Time)",
+      "مجهز به سیم ترموکوپل Top Time",
+      "مگنت شیر اورکلی اسپانیا",
+      "سیستم جرقه‌زن لورنتزینو ایتالیا",
+      "سیم جرقه‌زن Sabaf ایتالیا",
+      "مجهز به 5 تایمر دیجیتال جداگانه برای شعله‌ها و قفل کودک",
+      "شیشه سکوریت 8 میلی‌متری، مقاوم به ضربه و حرارت",
+      "چکه‌گیر با پوشش مینای مات",
+      "طرح منحصربه‌فرد شعله‌پخش‌کن چدنی سه‌تکه با پوشش مینای مات",
+      "ولوم فلزی با پایه ولوم",
+      "صفحه کف گالوانیزه 0.7 میلی‌متری",
+      "رده انرژی: A"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Glass Gas Cooktop"
+        "label": "نوع محصول",
+        "value": "اجاق گاز شیشه‌ای"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "598-DG"
       },
       {
-        "label": "Material",
-        "value": "Glass"
+        "label": "جنس بدنه",
+        "value": "شیشه"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with 5 separate digital burner timers and child lock"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به 5 تایمر دیجیتال جداگانه برای شعله‌ها و قفل کودک"
       },
       {
-        "label": "Dimensions",
-        "value": "52 * 92 cm"
+        "label": "ابعاد",
+        "value": "52 * 92 سانتی‌متر"
       },
       {
-        "label": "Flame tamer converter",
-        "value": "Yes"
+        "label": "شعله‌پخش‌کن تبدیلی",
+        "value": "دارد"
       },
       {
-        "label": "Cross reducer adapter",
-        "value": "Yes"
+        "label": "تبدیل کاهشی ضربدری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Packaging",
-        "value": "Shrink-wrapped carton"
+        "label": "بسته‌بندی",
+        "value": "کارتن شرینک‌پلاست‌شده"
       },
       {
-        "label": "Power Plug",
-        "value": "Yes"
+        "label": "دوشاخه برق",
+        "value": "دارد"
       },
       {
-        "label": "Cabinet Brackets",
-        "value": "4 units"
+        "label": "براکت کابینت",
+        "value": "4 عدد"
       },
       {
-        "label": "Packaging Foam",
-        "value": "Yes"
+        "label": "فوم بسته‌بندی",
+        "value": "دارد"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "4.5 * 47.5 * 89 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "4.5 * 47.5 * 89 سانتی‌متر"
       }
-    ]
+    ],
+    "slug": "datees-5-burner-gas-cooktop-598"
   },
   {
     "_id": "666",
-    "name": "Datees Built-in Electric Oven 666",
+    "name": "فر توکار برقی دیتیس مدل 666",
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
@@ -1098,86 +1112,87 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-666-black-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-666-black-angle-2.jpg"
     ],
-    "description": "The DF-666 built-in oven is a standout Datees model that commands attention thanks to its premium features and capabilities. Highlights include 8 semi-automatic cooking programs, a digital timer with delayed cooking capability, and a Spanish Tecasa temperature control thermostat. It also features beautiful red LED illuminated control knobs.",
+    "description": "فر توکار DF-666 یکی از مدل‌های شاخص دیتیس است که با قابلیت‌ها و امکانات ویژه خود، توجه هر بیننده‌ای را جلب می‌کند. 8 برنامه پخت نیمه‌خودکار، تایمر دیجیتال با قابلیت پخت زمان‌بندی‌شده و ترموستات کنترل دمای Tecasa اسپانیا از جمله این امکانات هستند. ولوم‌های کنترل با نور LED قرمز نیز جلوه‌ای چشم‌نواز به این فر بخشیده‌اند.",
     "features": [
-      "Oven capacity: 78 Liters",
-      "Heating system: Bottom: Electric, Top: Electric, Rear: Electric",
-      "8 semi-automatic cooking programs",
-      "Element power: Grill: 1.8 kW, Rear: 1.4 kW, Top: 1.1 kW, Bottom: 1.1 kW",
-      "Functions: Defrost, Roast, Grill, Conventional Bake, Broil, and Warm",
-      "Easy-to-clean enamel coating",
-      "Self-cleaning enamel coating (Catalytic) for hard-to-reach areas",
-      "Ceramic fiber thermal insulation",
-      "Automatic safety shutoff system",
-      "Automatic cooling fan system",
-      "Convection fan for uniform heat distribution",
-      "Spanish Tecasa thermostat for temperature regulation",
-      "Rotisserie motor and spit",
-      "Two 25-watt square internal lamps",
-      "Digital timer with clock display, adjustable alarm, and child lock",
-      "Delayed cooking function",
-      "Double-glazed glass door with easy-opening system",
-      "Black anodized aluminum handle",
-      "Equipped with red LED illuminated knobs"
+      "ظرفیت فر: 78 لیتر",
+      "سیستم گرمایش: پایین: برقی، بالا: برقی، پشت: برقی",
+      "8 برنامه پخت نیمه‌خودکار",
+      "توان المنت‌ها: گریل: 1.8 کیلووات، پشت: 1.4 کیلووات، بالا: 1.1 کیلووات، پایین: 1.1 کیلووات",
+      "عملکردها: یخ‌زدایی، برشته‌کردن، گریل، پخت معمولی، گریل بالایی و گرم نگه‌داشتن",
+      "پوشش مینا با خاصیت تمیزکاری آسان",
+      "پوشش مینای خودتمیزشونده (کاتالیتیک) برای نقاط دور از دسترس",
+      "عایق حرارتی الیاف سرامیکی",
+      "سیستم خاموشی خودکار ایمنی",
+      "سیستم فن خنک‌کننده خودکار",
+      "فن کانوکشن برای توزیع یکنواخت گرما",
+      "ترموستات Tecasa اسپانیا برای تنظیم دما",
+      "موتور و سیخ گردان",
+      "دو لامپ مربعی داخلی 25 واتی",
+      "تایمر دیجیتال با نمایشگر ساعت، آلارم قابل تنظیم و قفل کودک",
+      "قابلیت پخت زمان‌بندی‌شده (با تأخیر)",
+      "درب شیشه‌ای دوجداره با سیستم باز شدن آسان",
+      "دستگیره آلومینیوم آنودایز مشکی",
+      "مجهز به ولوم‌های روشن با نور LED قرمز"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Built-in Electric Oven"
+        "label": "نوع محصول",
+        "value": "فر توکار برقی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DF-666"
       },
       {
-        "label": "Material",
-        "value": "Glass, enameled iron sheet, and galvanized steel"
+        "label": "جنس بدنه",
+        "value": "شیشه، ورق آهن میناکاری‌شده و فولاد گالوانیزه"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with red LED illuminated knobs"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به ولوم‌های روشن با نور LED قرمز"
       },
       {
-        "label": "Dimensions",
-        "value": "58.5 * 59.5 * 59.5 cm"
+        "label": "ابعاد",
+        "value": "58.5 * 59.5 * 59.5 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "57.5 * 58 * 57.5 cm (Depth * Height * Width)"
+        "label": "ابعاد برش کابینت",
+        "value": "57.5 * 58 * 57.5 سانتی‌متر (عمق * ارتفاع * عرض)"
       },
       {
-        "label": "Deep double-sided enameled trays",
-        "value": "2 units"
+        "label": "توری فر دو طرفه میناکاری عمیق",
+        "value": "2 عدد"
       },
       {
-        "label": "Steak grilling rack",
-        "value": "Yes"
+        "label": "شلف گریل استیک",
+        "value": "دارد"
       },
       {
-        "label": "Oil drip rack for tray",
-        "value": "Yes"
+        "label": "ریل چکه روغن",
+        "value": "دارد"
       },
       {
-        "label": "Tray removal handle",
-        "value": "Yes"
+        "label": "دستگیره خارج‌کردن توری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-built-in-electric-oven-666"
   },
   {
     "_id": "675",
-    "name": "Datees Built-in Electric Oven 675",
+    "name": "فر توکار برقی دیتیس مدل 675",
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
@@ -1202,98 +1217,99 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-675-gray-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-675-colors.jpg"
     ],
-    "description": "The DF-675 built-in oven is a standout model highly regarded for its top-tier features. Key advantages include German-made telescopic rails, a defrost system, an automatic cooling fan thermal switch, a meat probe sensor, convection fan, 15 automatic cooking programs via cooking guide, 13 combined, semi-automatic, and delayed cooking programs, a digital clock, and a dual Persian/English menu. The highlight is the localized Persian cooking programs, making it an excellent addition to your kitchen.",
+    "description": "فر توکار DF-675 مدلی شاخص است که به دلیل امکانات درجه یک خود مورد توجه بسیاری قرار گرفته است. ریل‌های تلسکوپی ساخت آلمان، سیستم یخ‌زدایی، کلید حرارتی فن خنک‌کننده خودکار، سنسور دماسنج گوشت، فن کانوکشن، 15 برنامه پخت خودکار از طریق راهنمای پخت، 13 برنامه ترکیبی و نیمه‌خودکار و پخت با تأخیر، ساعت دیجیتال و منوی دوزبانه فارسی/انگلیسی از مزیت‌های این فر هستند. نکته برجسته، برنامه‌های پخت بومی‌سازی‌شده به زبان فارسی است که آن را به افزودنی عالی برای آشپزخانه شما تبدیل می‌کند.",
     "features": [
-      "Oven capacity: 78 Liters",
-      "Heating system: Bottom: Electric, Top: Electric, Rear: Electric",
-      "13 semi-automatic cooking programs",
-      "15 automatic cooking programs",
-      "Persian and English menu",
-      "Element power: Grill: 1.8 kW, Rear: 1.4 kW, Top: 1.1 kW, Bottom: 1.1 kW",
-      "Functions: Defrost, Roast, Grill, Conventional Bake, Broil, and Warm",
-      "Easy-to-clean enamel coating",
-      "Self-cleaning enamel coating (Catalytic) for hard-to-reach areas",
-      "Ceramic fiber thermal insulation",
-      "Automatic safety shutoff system",
-      "Automatic cooling fan system",
-      "Convection fan for uniform heat distribution",
-      "Digital thermostat for temperature regulation",
-      "German Hettich telescopic rails",
-      "Equipped with meat probe sensor to ensure perfect core cooking",
-      "Rotisserie motor and spit",
-      "Two 25-watt square internal lamps",
-      "Touch display showing both digital and classic clocks",
-      "Delayed cooking function",
-      "Date and time adjustment",
-      "Dual temperature units (Celsius and Fahrenheit)",
-      "Child lock",
-      "Italian Schott glass (available in four colors: Black, Gray, White, and Beige)",
-      "Triple-glazed glass door with easy-opening system",
-      "Soft-closing door mechanism (Soft Close)",
-      "Anodized aluminum handle"
+      "ظرفیت فر: 78 لیتر",
+      "سیستم گرمایش: پایین: برقی، بالا: برقی، پشت: برقی",
+      "13 برنامه پخت نیمه‌خودکار",
+      "15 برنامه پخت خودکار",
+      "منوی فارسی و انگلیسی",
+      "توان المنت‌ها: گریل: 1.8 کیلووات، پشت: 1.4 کیلووات، بالا: 1.1 کیلووات، پایین: 1.1 کیلووات",
+      "عملکردها: یخ‌زدایی، برشته‌کردن، گریل، پخت معمولی، گریل بالایی و گرم نگه‌داشتن",
+      "پوشش مینا با خاصیت تمیزکاری آسان",
+      "پوشش مینای خودتمیزشونده (کاتالیتیک) برای نقاط دور از دسترس",
+      "عایق حرارتی الیاف سرامیکی",
+      "سیستم خاموشی خودکار ایمنی",
+      "سیستم فن خنک‌کننده خودکار",
+      "فن کانوکشن برای توزیع یکنواخت گرما",
+      "ترموستات دیجیتال برای تنظیم دما",
+      "ریل‌های تلسکوپی هتیش آلمان",
+      "مجهز به سنسور دماسنج گوشت (پروب) برای اطمینان از پخت کامل مرکز غذا",
+      "موتور و سیخ گردان",
+      "دو لامپ مربعی داخلی 25 واتی",
+      "نمایشگر لمسی با نمایش ساعت دیجیتال و کلاسیک",
+      "قابلیت پخت زمان‌بندی‌شده (با تأخیر)",
+      "تنظیم تاریخ و ساعت",
+      "پشتیبانی از دو یکان دما (سلسیوس و فارنهایت)",
+      "قفل کودک",
+      "شیشه شوت ایتالیا (در چهار رنگ مشکی، خاکستری، سفید و بژ)",
+      "درب شیشه‌ای سه‌جداره با سیستم باز شدن آسان",
+      "مکانیزم بسته شدن نرم درب (Soft Close)",
+      "دستگیره آلومینیوم آنودایز"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Built-in Electric Oven"
+        "label": "نوع محصول",
+        "value": "فر توکار برقی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DF-675"
       },
       {
-        "label": "Material",
-        "value": "Glass, enameled iron sheet, and galvanized steel"
+        "label": "جنس بدنه",
+        "value": "شیشه، ورق آهن میناکاری‌شده و فولاد گالوانیزه"
       },
       {
-        "label": "Main Feature",
-        "value": "15 automatic cooking programs in Persian language"
+        "label": "ویژگی اصلی",
+        "value": "15 برنامه پخت خودکار به زبان فارسی"
       },
       {
-        "label": "Dimensions",
-        "value": "58.5 * 59.5 * 59.5 cm"
+        "label": "ابعاد",
+        "value": "58.5 * 59.5 * 59.5 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "57.5 * 58 * 57.5 cm (Depth * Height * Width)"
+        "label": "ابعاد برش کابینت",
+        "value": "57.5 * 58 * 57.5 سانتی‌متر (عمق * ارتفاع * عرض)"
       },
       {
-        "label": "Deep double-sided enameled trays",
-        "value": "2 units"
+        "label": "توری فر دو طرفه میناکاری عمیق",
+        "value": "2 عدد"
       },
       {
-        "label": "Steak grilling rack",
-        "value": "Yes"
+        "label": "شلف گریل استیک",
+        "value": "دارد"
       },
       {
-        "label": "Oil drip rack for tray",
-        "value": "Yes"
+        "label": "ریل چکه روغن",
+        "value": "دارد"
       },
       {
-        "label": "Fruit drying basket",
-        "value": "Yes"
+        "label": "سبد خشک‌کن میوه",
+        "value": "دارد"
       },
       {
-        "label": "Tray removal handle",
-        "value": "Yes"
+        "label": "دستگیره خارج‌کردن توری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-built-in-electric-oven-675"
   },
   {
     "_id": "683",
-    "name": "Datees Built-in Electric Oven 683",
+    "name": "فر توکار برقی دیتیس مدل 683",
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
@@ -1313,85 +1329,86 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-683-gray-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-683-black-steel.jpg"
     ],
-    "description": "The DF-683 built-in oven is an exquisite model from Datees, highly appreciated for its unique capabilities. Key highlights include 11 semi-automatic cooking programs, a rapid preheating system, and delayed cooking mode. Other notable features include an easy-to-open door system, a robust defrost function, and more.",
+    "description": "فر توکار DF-683 مدلی چشم‌نواز از دیتیس است که به دلیل قابلیت‌های منحصربه‌فرد خود، طرفداران زیادی دارد. 11 برنامه پخت نیمه‌خودکار، سیستم پیش‌گرمایش سریع و حالت پخت با تأخیر از نکات برجسته آن هستند. سیستم باز شدن آسان درب، عملکرد قدرتمند یخ‌زدایی و سایر امکانات نیز از دیگر ویژگی‌های این فر به شمار می‌روند.",
     "features": [
-      "Oven capacity: 78 Liters",
-      "Heating system: Bottom: Electric, Top: Electric, Rear: Electric",
-      "11 semi-automatic cooking programs",
-      "Element power: Grill: 1.8 kW, Rear: 1.4 kW, Top: 1.1 kW, Bottom: 1.1 kW",
-      "Functions: Defrost, Roast, Grill, Conventional Bake, Broil, and Warm",
-      "Easy-to-clean enamel coating",
-      "Self-cleaning enamel coating (Catalytic) for hard-to-reach areas",
-      "Ceramic fiber thermal insulation",
-      "Automatic safety shutoff system",
-      "Automatic cooling fan system",
-      "Convection fan for uniform heat distribution",
-      "Digital thermostat for temperature regulation",
-      "Equipped with telescopic rails",
-      "Rotisserie motor and spit",
-      "Two 25-watt square internal lamps",
-      "Touch panel displaying clock, adjustable alarm, and child lock",
-      "Delayed cooking function",
-      "Rapid preheating capability",
-      "Italian Schott glass (in black model)",
-      "Double-glazed glass door with easy-opening system (Black and White)",
-      "Soft-closing door mechanism (Soft Close)",
-      "Anodized aluminum handle"
+      "ظرفیت فر: 78 لیتر",
+      "سیستم گرمایش: پایین: برقی، بالا: برقی، پشت: برقی",
+      "11 برنامه پخت نیمه‌خودکار",
+      "توان المنت‌ها: گریل: 1.8 کیلووات، پشت: 1.4 کیلووات، بالا: 1.1 کیلووات، پایین: 1.1 کیلووات",
+      "عملکردها: یخ‌زدایی، برشته‌کردن، گریل، پخت معمولی، گریل بالایی و گرم نگه‌داشتن",
+      "پوشش مینا با خاصیت تمیزکاری آسان",
+      "پوشش مینای خودتمیزشونده (کاتالیتیک) برای نقاط دور از دسترس",
+      "عایق حرارتی الیاف سرامیکی",
+      "سیستم خاموشی خودکار ایمنی",
+      "سیستم فن خنک‌کننده خودکار",
+      "فن کانوکشن برای توزیع یکنواخت گرما",
+      "ترموستات دیجیتال برای تنظیم دما",
+      "مجهز به ریل‌های تلسکوپی",
+      "موتور و سیخ گردان",
+      "دو لامپ مربعی داخلی 25 واتی",
+      "پنل لمسی با نمایش ساعت، آلارم قابل تنظیم و قفل کودک",
+      "قابلیت پخت زمان‌بندی‌شده (با تأخیر)",
+      "قابلیت پیش‌گرمایش سریع",
+      "شیشه شوت ایتالیا (در مدل مشکی)",
+      "درب شیشه‌ای دوجداره با سیستم باز شدن آسان (مشکی و سفید)",
+      "مکانیزم بسته شدن نرم درب (Soft Close)",
+      "دستگیره آلومینیوم آنودایز"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Built-in Electric Oven"
+        "label": "نوع محصول",
+        "value": "فر توکار برقی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DF-683"
       },
       {
-        "label": "Material",
-        "value": "Glass, enameled iron sheet, and galvanized steel"
+        "label": "جنس بدنه",
+        "value": "شیشه، ورق آهن میناکاری‌شده و فولاد گالوانیزه"
       },
       {
-        "label": "Main Feature",
-        "value": "11 semi-automatic cooking programs"
+        "label": "ویژگی اصلی",
+        "value": "11 برنامه پخت نیمه‌خودکار"
       },
       {
-        "label": "Dimensions",
-        "value": "58.5 * 59.5 * 59.5 cm"
+        "label": "ابعاد",
+        "value": "58.5 * 59.5 * 59.5 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "57.5 * 58 * 57.5 cm (Depth * Height * Width)"
+        "label": "ابعاد برش کابینت",
+        "value": "57.5 * 58 * 57.5 سانتی‌متر (عمق * ارتفاع * عرض)"
       },
       {
-        "label": "Deep double-sided enameled tray",
-        "value": "1 unit"
+        "label": "توری فر دو طرفه میناکاری عمیق",
+        "value": "1 عدد"
       },
       {
-        "label": "Steak grilling rack",
-        "value": "Yes"
+        "label": "شلف گریل استیک",
+        "value": "دارد"
       },
       {
-        "label": "Tray removal handle",
-        "value": "Yes"
+        "label": "دستگیره خارج‌کردن توری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-built-in-electric-oven-683"
   },
   {
     "_id": "697",
-    "name": "Datees Built-in Electric Oven 697",
+    "name": "فر توکار برقی دیتیس مدل 697",
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
@@ -1407,88 +1424,89 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-697-black-front.png",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-697-black-front-2.png"
     ],
-    "description": "The DF-697 built-in electric oven is a premium and practical home appliance featuring an elegant design and highly efficient performance.",
+    "description": "فر توکار برقی DF-697 محصولی لوکس و کاربردی با طراحی شیک و عملکرد بسیار کارآمد است. اتصال WiFi و کنترل هوشمند از طریق اپلیکیشن به همراه منوی فارسی و انگلیسی، آن را به فریمی هوشمند و مدرن برای آشپزخانه شما تبدیل کرده است.",
     "features": [
-      "Heating system: Bottom: Electric, Top: Electric, Rear: Electric",
-      "27 automatic cooking programs",
-      "12 semi-automatic cooking programs",
-      "WiFi connectivity and smart App control, featuring Persian and English menus",
-      "OTA firmware updates and remote troubleshooting without hardware replacement",
-      "Functions: Defrost, Roast, Grill, Conventional Bake, Broil, and Warm",
-      "Easy-to-clean enamel coating",
-      "Self-cleaning enamel coating (Catalytic) for hard-to-reach areas",
-      "Ceramic fiber thermal insulation",
-      "Automatic safety shutoff system",
-      "Automatic cooling fan system",
-      "Convection fan for uniform heat distribution",
-      "Digital thermostat for temperature regulation",
-      "German Hettich telescopic rails",
-      "Equipped with meat probe sensor to ensure perfect core cooking",
-      "Rotisserie motor and spit",
-      "Dual 1.6-inch TFT rotary dial displays with high-resolution graphics and low power consumption",
-      "Delayed cooking capability, date and time adjustment",
-      "Dual temperature units (Celsius and Fahrenheit)",
-      "Child lock",
-      "Italian Schott glass",
-      "Triple-glazed glass door with easy-opening system",
-      "Soft-closing door mechanism (Soft Close)",
-      "Flat anodized aluminum handle",
-      "Fruit drying basket"
+      "سیستم گرمایش: پایین: برقی، بالا: برقی، پشت: برقی",
+      "27 برنامه پخت خودکار",
+      "12 برنامه پخت نیمه‌خودکار",
+      "اتصال WiFi و کنترل هوشمند با اپلیکیشن، همراه با منوی فارسی و انگلیسی",
+      "به‌روزرسانی نرم‌افزار از طریق OTA و عیب‌یابی از راه دور بدون تعویض قطعات",
+      "عملکردها: یخ‌زدایی، برشته‌کردن، گریل، پخت معمولی، گریل بالایی و گرم نگه‌داشتن",
+      "پوشش مینا با خاصیت تمیزکاری آسان",
+      "پوشش مینای خودتمیزشونده (کاتالیتیک) برای نقاط دور از دسترس",
+      "عایق حرارتی الیاف سرامیکی",
+      "سیستم خاموشی خودکار ایمنی",
+      "سیستم فن خنک‌کننده خودکار",
+      "فن کانوکشن برای توزیع یکنواخت گرما",
+      "ترموستات دیجیتال برای تنظیم دما",
+      "ریل‌های تلسکوپی هتیش آلمان",
+      "مجهز به سنسور دماسنج گوشت (پروب) برای اطمینان از پخت کامل مرکز غذا",
+      "موتور و سیخ گردان",
+      "دو نمایشگر TFT 1.6 اینچی چرخشی با گرافیک باکیفیت و مصرف انرژی کم",
+      "قابلیت پخت زمان‌بندی‌شده، تنظیم تاریخ و ساعت",
+      "پشتیبانی از دو یکان دما (سلسیوس و فارنهایت)",
+      "قفل کودک",
+      "شیشه شوت ایتالیا",
+      "درب شیشه‌ای سه‌جداره با سیستم باز شدن آسان",
+      "مکانیزم بسته شدن نرم درب (Soft Close)",
+      "دستگیره تخت آلومینیوم آنودایز",
+      "سبد خشک‌کن میوه"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Built-in Oven"
+        "label": "نوع محصول",
+        "value": "فر توکار"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DF-697"
       },
       {
-        "label": "Material",
-        "value": "Glass, enameled iron sheet, and galvanized steel"
+        "label": "جنس بدنه",
+        "value": "شیشه، ورق آهن میناکاری‌شده و فولاد گالوانیزه"
       },
       {
-        "label": "Main Feature",
-        "value": "WiFi connectivity and smart App control with Persian/English menus"
+        "label": "ویژگی اصلی",
+        "value": "اتصال WiFi و کنترل هوشمند با اپلیکیشن و منوی فارسی/انگلیسی"
       },
       {
-        "label": "Dimensions",
-        "value": "57 * 57 * 58 cm"
+        "label": "ابعاد",
+        "value": "57 * 57 * 58 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "58 * 57 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "58 * 57 سانتی‌متر"
       },
       {
-        "label": "Deep double-sided enameled tray",
-        "value": "Yes"
+        "label": "توری فر دو طرفه میناکاری عمیق",
+        "value": "دارد"
       },
       {
-        "label": "Steak grilling rack",
-        "value": "Yes"
+        "label": "شلف گریل استیک",
+        "value": "دارد"
       },
       {
-        "label": "Oil drip rack for tray",
-        "value": "Yes"
+        "label": "ریل چکه روغن",
+        "value": "دارد"
       },
       {
-        "label": "Tray removal handle",
-        "value": "Yes"
+        "label": "دستگیره خارج‌کردن توری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-built-in-electric-oven-697"
   },
   {
     "_id": "698",
-    "name": "Datees Built-in Electric Oven 698",
+    "name": "فر توکار برقی دیتیس مدل 698",
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
@@ -1504,87 +1522,88 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-698-black-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-oven-698-black-angle-2.png"
     ],
-    "description": "The TFT built-in electric oven is an advanced and efficient appliance with a modern design and diverse features to satisfy various cooking needs. With an electric heating system in three zones (bottom, top, and rear) and 15 semi-automatic programs, it makes preparing varied dishes effortless.",
+    "description": "فر توکار برقی TFT محصولی پیشرفته و کارآمد با طراحی مدرن و قابلیت‌های متنوع است که نیازهای مختلف پخت‌وپز را برآورده می‌کند. این فر با سیستم گرمایش برقی در سه ناحیه (پایین، بالا و پشت) و 15 برنامه پخت نیمه‌خودکار، تهیه غذاهای متنوع را بی‌دغدغه می‌سازد.",
     "features": [
-      "Heating system: Bottom: Electric, Top: Electric, Rear: Electric",
-      "15 semi-automatic cooking programs",
-      "WiFi connectivity and smart App control, featuring Persian and English menus",
-      "OTA firmware updates and remote troubleshooting without hardware replacement",
-      "Functions: Defrost, Roast, Grill, Conventional Bake, Broil, and Warm",
-      "Easy-to-clean enamel coating",
-      "Self-cleaning enamel coating (Catalytic) for hard-to-reach areas",
-      "Ceramic fiber thermal insulation",
-      "Automatic safety shutoff system",
-      "Automatic cooling fan system",
-      "Convection fan for uniform heat distribution",
-      "Digital thermostat for temperature regulation",
-      "German Hettich telescopic rails",
-      "Equipped with meat probe sensor to ensure perfect core cooking",
-      "Rotisserie motor and spit",
-      "Dual 1.6-inch TFT rotary dial displays with high-resolution graphics and low power consumption",
-      "Delayed cooking capability, date and time adjustment",
-      "Dual temperature units (Celsius and Fahrenheit)",
-      "Child lock",
-      "Italian Schott glass",
-      "Triple-glazed glass door with easy-opening system",
-      "Soft-closing door mechanism (Soft Close)",
-      "Flat anodized aluminum handle",
-      "Fruit drying basket"
+      "سیستم گرمایش: پایین: برقی، بالا: برقی، پشت: برقی",
+      "15 برنامه پخت نیمه‌خودکار",
+      "اتصال WiFi و کنترل هوشمند با اپلیکیشن، همراه با منوی فارسی و انگلیسی",
+      "به‌روزرسانی نرم‌افزار از طریق OTA و عیب‌یابی از راه دور بدون تعویض قطعات",
+      "عملکردها: یخ‌زدایی، برشته‌کردن، گریل، پخت معمولی، گریل بالایی و گرم نگه‌داشتن",
+      "پوشش مینا با خاصیت تمیزکاری آسان",
+      "پوشش مینای خودتمیزشونده (کاتالیتیک) برای نقاط دور از دسترس",
+      "عایق حرارتی الیاف سرامیکی",
+      "سیستم خاموشی خودکار ایمنی",
+      "سیستم فن خنک‌کننده خودکار",
+      "فن کانوکشن برای توزیع یکنواخت گرما",
+      "ترموستات دیجیتال برای تنظیم دما",
+      "ریل‌های تلسکوپی هتیش آلمان",
+      "مجهز به سنسور دماسنج گوشت (پروب) برای اطمینان از پخت کامل مرکز غذا",
+      "موتور و سیخ گردان",
+      "دو نمایشگر TFT 1.6 اینچی چرخشی با گرافیک باکیفیت و مصرف انرژی کم",
+      "قابلیت پخت زمان‌بندی‌شده، تنظیم تاریخ و ساعت",
+      "پشتیبانی از دو یکان دما (سلسیوس و فارنهایت)",
+      "قفل کودک",
+      "شیشه شوت ایتالیا",
+      "درب شیشه‌ای سه‌جداره با سیستم باز شدن آسان",
+      "مکانیزم بسته شدن نرم درب (Soft Close)",
+      "دستگیره تخت آلومینیوم آنودایز",
+      "سبد خشک‌کن میوه"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Built-in Electric Oven"
+        "label": "نوع محصول",
+        "value": "فر توکار برقی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "DF-698TFT"
       },
       {
-        "label": "Material",
-        "value": "Glass, enameled iron sheet, and galvanized steel"
+        "label": "جنس بدنه",
+        "value": "شیشه، ورق آهن میناکاری‌شده و فولاد گالوانیزه"
       },
       {
-        "label": "Main Feature",
-        "value": "WiFi connectivity and smart App control with Persian/English menus"
+        "label": "ویژگی اصلی",
+        "value": "اتصال WiFi و کنترل هوشمند با اپلیکیشن و منوی فارسی/انگلیسی"
       },
       {
-        "label": "Dimensions",
-        "value": "57.5 * 57 * 58 cm"
+        "label": "ابعاد",
+        "value": "57.5 * 57 * 58 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "58 * 57 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "58 * 57 سانتی‌متر"
       },
       {
-        "label": "Deep double-sided enameled tray",
-        "value": "Yes"
+        "label": "توری فر دو طرفه میناکاری عمیق",
+        "value": "دارد"
       },
       {
-        "label": "Steak grilling rack",
-        "value": "Yes"
+        "label": "شلف گریل استیک",
+        "value": "دارد"
       },
       {
-        "label": "Oil drip rack for tray",
-        "value": "Yes"
+        "label": "ریل چکه روغن",
+        "value": "دارد"
       },
       {
-        "label": "Tray removal handle",
-        "value": "Yes"
+        "label": "دستگیره خارج‌کردن توری",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-built-in-electric-oven-698"
   },
   {
     "_id": "volira",
-    "name": "Datees Volira Built-in Hood",
+    "name": "هود توکار مخفی دیتیس سری والیرا",
     "brand": "Datees",
     "category": "hood",
     "subCategory": "built-in",
@@ -1599,56 +1618,57 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-built-in-hood-volira-left.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-built-in-hood-volira-right.jpg"
     ],
-    "description": "A combination of smart technology, minimalist design, and whisper-quiet performance.\nIf you are searching for a hood that seamlessly integrates into modern kitchens while offering advanced features for added convenience, the Datees voice-controlled built-in hood is an excellent choice. Featuring a concealed (built-in) design, it keeps your kitchen clutter-free and unified. Empowered by a 6-speed turbo motor with 700 to 900 m³/h extraction power, it delivers outstanding and quiet performance (less than 60 dB).",
+    "description": "ترکیبی از فناوری هوشمند، طراحی مینیمال و عملکردی بسیار کم‌صدا.\nاگر به دنبال هودی هستید که بی‌نقص در آشپزخانه‌های مدرن جای بگیرد و امکانات پیشرفته‌ای برای راحتی بیشتر ارائه کند، هود توکار با قابلیت کنترل صوتی دیتیس انتخابی عالی است. طراحی مخفی (توکار) این هود، آشپزخانه شما را مرتب و یکپارچه نگه می‌دارد. موتور توربو 6 دور با توان مکش 700 تا 900 متر مکعب بر ساعت، عملکردی فوق‌العاده و کم‌صدای زیر 60 دسیبل ارائه می‌دهد.",
     "features": [
-      "Voice command control",
-      "Electric actuator with gesture control and voice activation",
-      "Product type: Concealed (built-in) hood",
-      "6-speed turbo motor",
-      "Motor material: Aluminum housing (scroll), Ultramid impeller",
-      "Motor equipped with thermal overload protection (Thermogard)",
-      "Extraction rate: 700 to 900 m³/h",
-      "Noise level: Normal, motor noise under 60 dB",
-      "6-button touch control panel",
-      "Equipped with motion/gesture control for power and speed adjustments",
-      "Equipped with Auto mode utilizing odor and heat sensors",
-      "Equipped with shutdown timer",
-      "Aluminum filter (3-layer, washable)",
-      "Remote control included",
-      "2 LED lamps",
-      "Tempered glass, resistant to heat and impact",
-      "Equipped with electrostatic black frame"
+      "قابلیت کنترل با فرمان صوتی",
+      "جک برقی با کنترل ژست‌محور و فعال‌سازی صوتی",
+      "نوع محصول: هود توکار مخفی",
+      "موتور توربو 6 دور",
+      "جنس موتور: بدنه آلومینیومی (اسکرول)، پروانه Ultramid",
+      "موتور مجهز به محافظ حرارتی (Thermogard)",
+      "میزان مکش: 700 تا 900 متر مکعب بر ساعت",
+      "میزان صدا: عادی، صدای موتور کمتر از 60 دسیبل",
+      "پنل لمسی 6 دکمه‌ای",
+      "مجهز به کنترل روشن/خاموش و تنظیم دور موتور با حرکت دست",
+      "مجهز به حالت Auto با استفاده از سنسورهای بو و حرارت",
+      "مجهز به تایمر خاموشی",
+      "فیلتر آلومینیومی (سه‌لایه، قابل شست‌وشو)",
+      "همراه با ریموت کنترل",
+      "2 لامپ LED",
+      "شیشه سکوریت، مقاوم به حرارت و ضربه",
+      "مجهز به قاب مشکی الکترواستاتیک"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Concealed (built-in) Hood"
+        "label": "نوع محصول",
+        "value": "هود توکار مخفی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "Volira"
       },
       {
-        "label": "Material",
-        "value": "Tempered glass and iron sheet"
+        "label": "جنس بدنه",
+        "value": "شیشه سکوریت و ورق آهن"
       },
       {
-        "label": "Main Feature",
-        "value": "Electric actuator with gesture control, speed adjustment, and voice control"
+        "label": "ویژگی اصلی",
+        "value": "جک برقی با کنترل ژست‌محور، تنظیم دور موتور و کنترل صوتی"
       },
       {
-        "label": "Dimensions",
-        "value": "Width 80 cm"
+        "label": "ابعاد",
+        "value": "عرض 80 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "26 * 78 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "26 * 78 سانتی‌متر"
       }
-    ]
+    ],
+    "slug": "datees-volira-built-in-hood"
   },
   {
     "_id": "aro",
-    "name": "Datees Aro Built-in Hood",
+    "name": "هود توکار مخفی دیتیس سری آرو",
     "brand": "Datees",
     "category": "hood",
     "subCategory": "built-in",
@@ -1663,75 +1683,76 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-built-in-hood-aro-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-built-in-hood-aro-angle-2.jpg"
     ],
-    "description": "The Datees Arrow built-in (concealed) hood is crafted to meet modern technological standards. Packed with outstanding features, it includes an electric actuator, a 6-speed turbo motor with an aluminum scroll for powerful yet quiet extraction, gesture/motion controls, and advanced odor and heat sensors.",
+    "description": "هود توکار (مخفی) Arrow دیتیس مطابق با استانداردهای روز فناوری طراحی و ساخته شده است. این هود با امکانات چشمگیر خود شامل جک برقی، موتور توربو 6 دور با بدنه اسکرول آلومینیومی برای مکشی قدرتمند اما کم‌صدا، کنترل‌های حرکتی/ژست‌محور و سنسورهای پیشرفته بو و حرارت، تجربه‌ای مدرن از پخت‌وپز را رقم می‌زند.",
     "features": [
-      "Product type: Concealed (built-in) hood",
-      "6-speed turbo motor",
-      "Motor material: Aluminum housing (scroll), Ultramid impeller",
-      "Motor equipped with thermal overload protection (Thermogard)",
-      "Extraction rate: 700 to 900 m³/h",
-      "Noise level: Normal, motor noise under 60 dB",
-      "6-button touch control panel",
-      "Equipped with motion/gesture startup control",
-      "Equipped with Auto mode utilizing odor and heat sensors",
-      "Equipped with shutdown timer",
-      "Aluminum filter (3-layer, washable)",
-      "Remote control included",
-      "2 LED lamps",
-      "Electric actuator with gesture startup control",
-      "Tempered glass, resistant to heat and impact",
-      "Equipped with electrostatic black frame"
+      "نوع محصول: هود توکار مخفی",
+      "موتور توربو 6 دور",
+      "جنس موتور: بدنه آلومینیومی (اسکرول)، پروانه Ultramid",
+      "موتور مجهز به محافظ حرارتی (Thermogard)",
+      "میزان مکش: 700 تا 900 متر مکعب بر ساعت",
+      "میزان صدا: عادی، صدای موتور کمتر از 60 دسیبل",
+      "پنل لمسی 6 دکمه‌ای",
+      "مجهز به کنترل روشن‌شدن با حرکت/ژست دست",
+      "مجهز به حالت Auto با استفاده از سنسورهای بو و حرارت",
+      "مجهز به تایمر خاموشی",
+      "فیلتر آلومینیومی (سه‌لایه، قابل شست‌وشو)",
+      "همراه با ریموت کنترل",
+      "2 لامپ LED",
+      "جک برقی با قابلیت روشن‌شدن با حرکت دست",
+      "شیشه سکوریت، مقاوم به حرارت و ضربه",
+      "مجهز به قاب مشکی الکترواستاتیک"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Concealed (built-in) Hood"
+        "label": "نوع محصول",
+        "value": "هود توکار مخفی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "Arrow"
       },
       {
-        "label": "Material",
-        "value": "Tempered glass and iron sheet"
+        "label": "جنس بدنه",
+        "value": "شیشه سکوریت و ورق آهن"
       },
       {
-        "label": "Main Feature",
-        "value": "Electric actuator with gesture startup control"
+        "label": "ویژگی اصلی",
+        "value": "جک برقی با قابلیت روشن‌شدن با حرکت دست"
       },
       {
-        "label": "Dimensions",
-        "value": "Width 80 cm"
+        "label": "ابعاد",
+        "value": "عرض 80 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "26 * 77.2 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "26 * 77.2 سانتی‌متر"
       },
       {
-        "label": "Flexible duct hose",
-        "value": "Yes"
+        "label": "کانال خروجی انعطاف‌پذیر",
+        "value": "دارد"
       },
       {
-        "label": "Outlet valve and adapter",
-        "value": "Yes"
+        "label": "شیر خروجی و تبدیل",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-aro-built-in-hood"
   },
   {
     "_id": "falcon",
-    "name": "Datees Falcon Built-in Hood",
+    "name": "هود توکار مخفی دیتیس سری فالکون",
     "brand": "Datees",
     "category": "hood",
     "subCategory": "built-in",
@@ -1745,79 +1766,80 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-built-in-hood-falcon-front.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-built-in-hood-falcon-angle.jpg"
     ],
-    "description": "The Datees Falcon built-in (concealed) hood brings unique styling and cutting-edge technology. Key features of this full-glass hood include a 6-speed turbo motor delivering high-suction, low-noise performance, gesture/motion sensor controls, and advanced odor and heat sensors.",
+    "description": "هود توکار (مخفی) Falcon دیتیس ظاهری متفاوت و فناوری روز دنیا را در کنار هم قرار داده است. از ویژگی‌های کلیدی این هود تمام‌شیشه می‌توان به موتور توربو 6 دور با مکش بالا و صدای کم، کنترل‌های حساس به حرکت/ژست و سنسورهای پیشرفته بو و حرارت اشاره کرد.",
     "features": [
-      "Product type: Concealed (built-in) hood",
-      "6-speed turbo motor",
-      "Motor material: Galvanized iron housing (scroll), Ultramid impeller",
-      "Motor equipped with thermal overload protection (Thermogard)",
-      "Extraction rate: 700 to 900 m³/h",
-      "Noise level: Normal, motor noise under 60 dB",
-      "6-button touch control panel",
-      "Equipped with motion/gesture startup control",
-      "Equipped with Auto mode utilizing odor and heat sensors",
-      "Equipped with shutdown timer",
-      "Aluminum filter (3-layer, washable)",
-      "Remote control included",
-      "50 cm linear LED lamp",
-      "Equipped with mechanical damper struts",
-      "Tempered glass, resistant to heat and impact",
-      "Equipped with black glass frame"
+      "نوع محصول: هود توکار مخفی",
+      "موتور توربو 6 دور",
+      "جنس موتور: بدنه آهنی گالوانیزه (اسکرول)، پروانه Ultramid",
+      "موتور مجهز به محافظ حرارتی (Thermogard)",
+      "میزان مکش: 700 تا 900 متر مکعب بر ساعت",
+      "میزان صدا: عادی، صدای موتور کمتر از 60 دسیبل",
+      "پنل لمسی 6 دکمه‌ای",
+      "مجهز به کنترل روشن‌شدن با حرکت/ژست دست",
+      "مجهز به حالت Auto با استفاده از سنسورهای بو و حرارت",
+      "مجهز به تایمر خاموشی",
+      "فیلتر آلومینیومی (سه‌لایه، قابل شست‌وشو)",
+      "همراه با ریموت کنترل",
+      "لامپ LED خطی 50 سانتی‌متری",
+      "مجهز به جک مکانیکی دمپر",
+      "شیشه سکوریت، مقاوم به حرارت و ضربه",
+      "مجهز به قاب شیشه‌ای مشکی"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Concealed (built-in) Hood"
+        "label": "نوع محصول",
+        "value": "هود توکار مخفی"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "Falcon"
       },
       {
-        "label": "Material",
-        "value": "Tempered glass and iron sheet"
+        "label": "جنس بدنه",
+        "value": "شیشه سکوریت و ورق آهن"
       },
       {
-        "label": "Main Feature",
-        "value": "70 cm width - All-glass design"
+        "label": "ویژگی اصلی",
+        "value": "عرض 70 سانتی‌متر - طراحی تمام‌شیشه"
       },
       {
-        "label": "Dimensions",
-        "value": "Width 70 cm"
+        "label": "ابعاد",
+        "value": "عرض 70 سانتی‌متر"
       },
       {
-        "label": "Cut-out Dimensions",
-        "value": "26 * 68 cm"
+        "label": "ابعاد برش کابینت",
+        "value": "26 * 68 سانتی‌متر"
       },
       {
-        "label": "Flexible duct hose",
-        "value": "Yes"
+        "label": "کانال خروجی انعطاف‌پذیر",
+        "value": "دارد"
       },
       {
-        "label": "Adapter valve",
-        "value": "Yes"
+        "label": "شیر تبدیل",
+        "value": "دارد"
       },
       {
-        "label": "Outlet damper",
-        "value": "Yes"
+        "label": "دمپر خروجی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-falcon-built-in-hood"
   },
   {
     "_id": "lavida",
-    "name": "Datees Lavida Chimney Hood",
+    "name": "هود دیواری زاویه‌دار دیتیس سری لاویدا",
     "brand": "Datees",
     "category": "hood",
     "subCategory": "chimney",
@@ -1832,78 +1854,79 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-chimney-hood-lavida-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-chimney-hood-lavida-angle-2.jpg"
     ],
-    "description": "The Datees Lavida hood is engineered to outstanding technological standards. Key benefits include a high-suction, low-noise 6-speed turbo motor and advanced odor and heat sensors. The motor is equipped with thermal overload protection (Thermogard) and features a metal housing (scroll), offering an extraction rate of 700 to 900 m³/h.",
+    "description": "هود Lavida دیتیس مطابق با استانداردهای برجسته فناوری مهندسی شده است. موتور توربو 6 دور با مکش بالا و صدای کم و سنسورهای پیشرفته بو و حرارت از مزیت‌های اصلی این هود هستند. موتور مجهز به محافظ حرارتی (Thermogard) با بدنه فلزی (اسکرول)، میزان مکشی معادل 700 تا 900 متر مکعب بر ساعت ارائه می‌دهد.",
     "features": [
-      "Product type: Wall-mounted (angled) hood",
-      "6-speed turbo motor",
-      "Motor material: Galvanized iron housing (scroll), Ultramid impeller",
-      "Motor equipped with thermal overload protection (Thermogard)",
-      "Extraction rate: 700 to 900 m³/h",
-      "Noise level: Normal, motor noise under 60 dB",
-      "4-button touch control panel",
-      "Equipped with Auto mode utilizing odor and heat sensors",
-      "1-minute shutdown timer",
-      "Aluminum filter (3-layer, washable)",
-      "Remote control included",
-      "2 LED lamps",
-      "Equipped with mechanical gas struts",
-      "Tempered glass, resistant to heat and impact",
-      "Equipped with black electrostatic powder-coated iron cover"
+      "نوع محصول: هود دیواری زاویه‌دار",
+      "موتور توربو 6 دور",
+      "جنس موتور: بدنه آهنی گالوانیزه (اسکرول)، پروانه Ultramid",
+      "موتور مجهز به محافظ حرارتی (Thermogard)",
+      "میزان مکش: 700 تا 900 متر مکعب بر ساعت",
+      "میزان صدا: عادی، صدای موتور کمتر از 60 دسیبل",
+      "پنل لمسی 4 دکمه‌ای",
+      "مجهز به حالت Auto با استفاده از سنسورهای بو و حرارت",
+      "تایمر خاموشی 1 دقیقه‌ای",
+      "فیلتر آلومینیومی (سه‌لایه، قابل شست‌وشو)",
+      "همراه با ریموت کنترل",
+      "2 لامپ LED",
+      "مجهز به جک گازی مکانیکی",
+      "شیشه سکوریت، مقاوم به حرارت و ضربه",
+      "مجهز به کاور آهنی با پوشش پودری الکترواستاتیک مشکی"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Wall-mounted (Angled) Hood"
+        "label": "نوع محصول",
+        "value": "هود دیواری زاویه‌دار"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "Lavida"
       },
       {
-        "label": "Material",
-        "value": "Tempered glass, iron sheet with electrostatic finish"
+        "label": "جنس بدنه",
+        "value": "شیشه سکوریت، ورق آهن با پوشش الکترواستاتیک"
       },
       {
-        "label": "Main Feature",
-        "value": "Equipped with Auto mode utilizing odor and heat sensors"
+        "label": "ویژگی اصلی",
+        "value": "مجهز به حالت Auto با استفاده از سنسورهای بو و حرارت"
       },
       {
-        "label": "Dimensions",
-        "value": "Width 90 cm"
+        "label": "ابعاد",
+        "value": "عرض 90 سانتی‌متر"
       },
       {
-        "label": "Flexible duct hose",
-        "value": "Yes"
+        "label": "کانال خروجی انعطاف‌پذیر",
+        "value": "دارد"
       },
       {
-        "label": "Outlet valve and adapter",
-        "value": "Yes"
+        "label": "شیر خروجی و تبدیل",
+        "value": "دارد"
       },
       {
-        "label": "Outlet damper",
-        "value": "Yes"
+        "label": "دمپر خروجی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Wall mounting bracket",
-        "value": "Yes"
+        "label": "براکت نصب دیواری",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-lavida-chimney-hood"
   },
   {
     "_id": "mozikal",
-    "name": "Datees Mozikal Chimney Hood",
+    "name": "هود دیواری زاویه‌دار دیتیس سری موزیکال",
     "brand": "Datees",
     "category": "hood",
     "subCategory": "chimney",
@@ -1918,75 +1941,76 @@
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-chimney-hood-mozikal-angle.jpg",
       "/home/asd/dev/projects/react/E-commerce/apps/legacy-store/src/assets/datees-chimney-hood-mozikal-angle-2.jpg"
     ],
-    "description": "The Datees Musical (Mozikal) hood blends unique functionality and contemporary design. It features a high-suction, low-noise 3-speed turbo motor, premium aesthetics, and advanced odor and heat sensors. The motor is protected with thermal guards (Thermogard) and features a metal housing (scroll), offering an extraction rate of 700 to 900 m³/h.",
+    "description": "هود Musical (موزیکال) دیتیس عملکردی منحصربه‌فرد و طراحی مدرن را با هم ترکیب کرده است. این هود به موتور توربو 3 دور با مکش بالا و صدای کم، ظاهری شیک و سنسورهای پیشرفته بو و حرارت مجهز است. موتور با محافظ‌های حرارتی (Thermogard) ایمن‌سازی شده و با بدنه فلزی (اسکرول)، میزان مکشی بین 700 تا 900 متر مکعب بر ساعت دارد.",
     "features": [
-      "Product type: Wall-mounted (angled) hood",
-      "3-speed turbo motor",
-      "Motor material: Galvanized iron housing (scroll), Ultramid impeller",
-      "Motor equipped with thermal overload protection (Thermogard)",
-      "Extraction rate: 700 to 900 m³/h",
-      "Noise level: Normal, motor noise under 60 dB",
-      "4-button touch control panel",
-      "Equipped with Auto mode utilizing odor and heat sensors",
-      "1-minute shutdown timer",
-      "Aluminum filter (3-layer, washable)",
-      "Music player and FM radio with Bluetooth and USB connectivity",
-      "Remote control included",
-      "Equipped with melody remote control",
-      "2 LED lamps",
-      "Equipped with mechanical gas struts",
-      "Tempered glass, resistant to heat and impact",
-      "Equipped with black electrostatic powder-coated iron cover"
+      "نوع محصول: هود دیواری زاویه‌دار",
+      "موتور توربو 3 دور",
+      "جنس موتور: بدنه آهنی گالوانیزه (اسکرول)، پروانه Ultramid",
+      "موتور مجهز به محافظ حرارتی (Thermogard)",
+      "میزان مکش: 700 تا 900 متر مکعب بر ساعت",
+      "میزان صدا: عادی، صدای موتور کمتر از 60 دسیبل",
+      "پنل لمسی 4 دکمه‌ای",
+      "مجهز به حالت Auto با استفاده از سنسورهای بو و حرارت",
+      "تایمر خاموشی 1 دقیقه‌ای",
+      "فیلتر آلومینیومی (سه‌لایه، قابل شست‌وشو)",
+      "پخش موسیقی و رادیو FM با قابلیت اتصال بلوتوث و USB",
+      "همراه با ریموت کنترل",
+      "مجهز به ریموت کنترل ملودی",
+      "2 لامپ LED",
+      "مجهز به جک گازی مکانیکی",
+      "شیشه سکوریت، مقاوم به حرارت و ضربه",
+      "مجهز به کاور آهنی با پوشش پودری الکترواستاتیک مشکی"
     ],
     "specs": [
       {
-        "label": "Product Type",
-        "value": "Wall-mounted (Angled) Hood"
+        "label": "نوع محصول",
+        "value": "هود دیواری زاویه‌دار"
       },
       {
-        "label": "Model Name",
+        "label": "نام مدل",
         "value": "Musical"
       },
       {
-        "label": "Material",
-        "value": "Tempered glass, iron sheet with electrostatic finish"
+        "label": "جنس بدنه",
+        "value": "شیشه سکوریت، ورق آهن با پوشش الکترواستاتیک"
       },
       {
-        "label": "Main Feature",
-        "value": "Built-in music player and FM radio"
+        "label": "ویژگی اصلی",
+        "value": "پخش موسیقی داخلی و رادیو FM"
       },
       {
-        "label": "Dimensions",
-        "value": "Width 90 cm"
+        "label": "ابعاد",
+        "value": "عرض 90 سانتی‌متر"
       },
       {
-        "label": "Flexible duct hose",
-        "value": "Yes"
+        "label": "کانال خروجی انعطاف‌پذیر",
+        "value": "دارد"
       },
       {
-        "label": "Outlet valve and adapter",
-        "value": "Yes"
+        "label": "شیر خروجی و تبدیل",
+        "value": "دارد"
       },
       {
-        "label": "Outlet damper",
-        "value": "Yes"
+        "label": "دمپر خروجی",
+        "value": "دارد"
       },
       {
-        "label": "User Manual",
-        "value": "Yes"
+        "label": "دفترچه راهنما",
+        "value": "دارد"
       },
       {
-        "label": "Warranty Card",
-        "value": "Yes"
+        "label": "کارت گارانتی",
+        "value": "دارد"
       },
       {
-        "label": "Wall mounting bracket",
-        "value": "Yes"
+        "label": "براکت نصب دیواری",
+        "value": "دارد"
       },
       {
-        "label": "Installation Pack",
-        "value": "Yes"
+        "label": "پک نصب",
+        "value": "دارد"
       }
-    ]
+    ],
+    "slug": "datees-mozikal-chimney-hood"
   }
 ]

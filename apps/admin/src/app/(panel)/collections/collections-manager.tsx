@@ -35,7 +35,7 @@ export function CollectionsManager({ collections, products }: { collections: Col
         title="افزودن مجموعه"
       />
       {collections.length === 0 ? (
-        <Card><CardBody className="text-sm text-slate-400">مجموعه‌ای تعریف نشده است</CardBody></Card>
+        <Card><CardBody className="text-sm text-ash">مجموعه‌ای تعریف نشده است</CardBody></Card>
       ) : (
         collections.map((c) => <CollectionCard key={c.id} collection={c} products={products} />)
       )}
@@ -50,9 +50,9 @@ function CollectionCard({ collection, products }: { collection: CollectionSeed; 
       <CardHeader
         title={
           <button type="button" onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
-            <span className="text-slate-400">{expanded ? "▾" : "▴"}</span>
+            <span className="text-ash">{expanded ? "▾" : "▴"}</span>
             <span>{collection.name}</span>
-            <span className="text-xs font-normal text-slate-400">{faDigits(collection.items.length)} محصول</span>
+            <span className="text-xs font-normal text-ash">{faDigits(collection.items.length)} محصول</span>
           </button>
         }
         subtitle={<span dir="ltr">{collection.slug}</span>}
@@ -97,7 +97,7 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={seed.id} />
-      {title && <h3 className="text-base font-semibold text-slate-900">{title}</h3>}
+      {title && <h3 className="text-base font-semibold text-ink">{title}</h3>}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Field label="نام" required><Input name="name" value={name} onChange={(e) => setName(e.target.value)} required /></Field>
         <Field label="اسلاگ" required><Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required /></Field>
@@ -105,9 +105,9 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-700">محصولات مجموعه</p>
+        <p className="mb-2 text-sm font-semibold text-ink">محصولات مجموعه</p>
         <div className="mb-2 flex items-center gap-2">
-          <select value={picker} onChange={(e) => setPicker(e.target.value)} className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <select value={picker} onChange={(e) => setPicker(e.target.value)} className="flex-1 rounded-card border border-fog px-3 py-2 text-sm">
             {products.filter((p) => !hasProduct(p.id)).map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -115,14 +115,14 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
           <Button type="button" variant="secondary" size="sm" onClick={addItem}>افزودن</Button>
         </div>
         {items.length > 0 && (
-          <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+          <ul className="divide-y divide-plaster rounded-card border border-plaster">
             {items.map((it, i) => (
               <li key={it.productId} className="flex items-center justify-between px-3 py-2 text-sm">
                 <span>{it.productName ?? it.productId}</span>
                 <span className="flex items-center gap-1">
-                  <button type="button" onClick={() => moveItem(i, -1)} className="rounded px-1.5 text-slate-500 hover:bg-slate-100" disabled={i === 0}>↑</button>
-                  <button type="button" onClick={() => moveItem(i, 1)} className="rounded px-1.5 text-slate-500 hover:bg-slate-100" disabled={i === items.length - 1}>↓</button>
-                  <button type="button" onClick={() => setItems((is) => is.filter((_, k) => k !== i))} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
+                  <button type="button" onClick={() => moveItem(i, -1)} className="rounded px-1.5 text-ash hover:bg-plaster" disabled={i === 0}>↑</button>
+                  <button type="button" onClick={() => moveItem(i, 1)} className="rounded px-1.5 text-ash hover:bg-plaster" disabled={i === items.length - 1}>↓</button>
+                  <button type="button" onClick={() => setItems((is) => is.filter((_, k) => k !== i))} className="rounded px-1.5 text-red-700 hover:bg-red-50">حذف</button>
                 </span>
               </li>
             ))}
@@ -136,7 +136,7 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
           <DeleteCollectionButton id={seed.id} />
         )}
         <span className="flex-1" />
-        {state.error && <span className="text-sm text-red-600">{state.error}</span>}
+        {state.error && <span className="text-sm text-red-700">{state.error}</span>}
         {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
         <Button type="submit" disabled={pending}>{pending ? "…" : isEdit ? "ذخیره" : "افزودن"}</Button>
       </div>
@@ -154,7 +154,7 @@ function DeleteCollectionButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این مجموعه؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span className="mr-2 text-xs text-red-600">{state.error}</span>}
+      {state.error && <span className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

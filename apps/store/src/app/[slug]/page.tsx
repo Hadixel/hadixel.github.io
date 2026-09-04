@@ -15,7 +15,7 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
   const blocks = (page.publishedBlocks as Block[] | null) ?? [];
   return (
     <div>
-      <div className="border-b bg-gray-50">
+      <div className="border-b bg-plaster">
         <div className="mx-auto max-w-7xl px-4 py-8">
           <h1 className="text-2xl font-bold">{page.title}</h1>
         </div>

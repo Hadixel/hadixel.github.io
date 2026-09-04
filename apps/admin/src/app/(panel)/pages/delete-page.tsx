@@ -16,7 +16,7 @@ export function DeletePageButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این صفحه؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span className="mr-2 text-xs text-red-600">{state.error}</span>}
+      {state.error && <span className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

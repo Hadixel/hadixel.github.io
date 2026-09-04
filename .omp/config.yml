@@ -1,0 +1,5 @@
+modelRoles:
+  default: 9router/bai/glm-5.3-flash
+  smol: 9router/bai/glm-5.3-flash:auto
+  slow: 9router/bai/glm-5.3-flash:xhigh
+  vision: 9router/bai/glm-5.3-flash:auto

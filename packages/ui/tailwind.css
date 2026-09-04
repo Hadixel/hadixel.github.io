@@ -1,0 +1,113 @@
+/* Showcase design language — single source of tokens (ADR-0001).
+   Consumed via `@import "@kmodern/ui/tailwind.css";` in each app's globals.css. */
+
+/* ---------- Typography ---------- */
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: url("/fonts/Vazirmatn-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+/* Space Mono: Latin technical strings only (model codes, SKUs) */
+@font-face {
+  font-family: "Space Mono";
+  src: url("/fonts/SpaceMono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Space Mono";
+  src: url("/fonts/SpaceMono-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ---------- Theme ---------- */
+@theme {
+  /* Flame blue — the single chromatic accent (activation moments only, ≤3%) */
+  --color-flame-50: #eff6ff;
+  --color-flame-100: #dbeafe;
+  --color-flame-200: #bfdbfe;
+  --color-flame-500: #3b82f6;
+  --color-flame-600: #2563eb;
+  --color-flame-700: #1d4ed8;
+  --color-flame-800: #1e40af;
+
+  /* Monochrome system */
+  --color-canvas: #ffffff;
+  --color-plaster: #ecedee;
+  --color-fog: #d7d7d7;
+  --color-slate-line: #a1a4aa;
+  --color-graphite: #444955;
+  --color-ash: #737780;
+  --color-charcoal: #3b3b3b;
+  --color-ink: #111111;
+
+  /* Legacy-mapped aliases (transitional — sweep removes these usages) */
+  --color-surface: #ecedee;
+  --color-brand-50: var(--color-flame-50);
+  --color-brand-100: var(--color-flame-100);
+  --color-brand-600: var(--color-flame-700);
+  --color-brand-700: var(--color-flame-800);
+
+  /* Fonts */
+  --font-sans: Vazirmatn, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Radii — 10px everywhere, 30px pills only for badges */
+  --radius-card: 10px;
+
+  /* Base */
+  --color-background: #ffffff;
+  --color-foreground: #111111;
+}
+
+/* ---------- Base layer ---------- */
+@layer base {
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-flame-100);
+  }
+}
+
+/* ---------- Showcase utilities ---------- */
+@utility text-price {
+  /* Persian-digit prices: tabular so totals align */
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+@utility text-code {
+  /* Latin technical strings (model codes, SKUs) */
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}

@@ -19,7 +19,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   ]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-plaster">
       <Sidebar ordersAwaiting={ordersAwaiting} lowStock={lowStock} />
       <div className="mr-64">
         <Topbar name={ctx.admin.name} email={ctx.admin.email} />

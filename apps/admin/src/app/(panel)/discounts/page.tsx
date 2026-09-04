@@ -45,10 +45,10 @@ export default async function DiscountsPage() {
               {discounts.map((d) => (
                 <TR key={d.id}>
                   <TD>
-                    <Link href={`/discounts/${d.id}`} className="font-medium text-rose-600 hover:underline">
+                    <Link href={`/discounts/${d.id}`} className="font-medium text-ink hover:text-flame-700">
                       {d.mode === "COUPON" ? d.code : d.id.slice(0, 8)}
                     </Link>
-                    <div className="text-xs text-slate-400">{MODE_LABELS[d.mode]}</div>
+                    <div className="text-xs text-ash">{MODE_LABELS[d.mode]}</div>
                   </TD>
                   <TD>{TYPE_LABELS[d.type] ?? d.type}</TD>
                   <TD>{SCOPE_LABELS[d.scope] ?? d.scope}</TD>

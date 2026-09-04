@@ -17,8 +17,8 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center gap-3">
-        <Link href="/blog" className="text-sm text-slate-500 hover:underline">وبلاگ</Link>
-        <h1 className="text-xl font-bold text-slate-900">ویرایش نوشته: {post.title}</h1>
+        <Link href="/blog" className="text-sm text-ash hover:underline">وبلاگ</Link>
+        <h1 className="text-xl font-bold text-ink">ویرایش نوشته: {post.title}</h1>
       </div>
       <BlogEditor
         post={{

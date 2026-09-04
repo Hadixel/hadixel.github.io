@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
 // 011 device cart: localStorage + mirrored into the kmodern_cart cookie for
 // server reads at checkout. Items: {variantId, qty}.
-
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 export interface CartLine {
   variantId: string;
   qty: number;
@@ -32,6 +31,9 @@ const KEY = "kmodern_cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
+  // persist only after the stored cart is loaded (state, so it batches with
+  // the loaded lines — a ref would flip before setLines applies)
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
@@ -43,9 +45,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore corrupt cart */
     }
+    setHydrated(true);
   }, []);
-
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(lines));
       document.cookie = `kmodern_cart=${encodeURIComponent(JSON.stringify(lines))};path=/;max-age=2592000;samesite=lax`;

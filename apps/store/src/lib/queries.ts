@@ -19,11 +19,21 @@ export async function getPublishedProducts(opts?: {
   collectionId?: string;
   search?: string;
   limit?: number;
-  sort?: "newest" | "price_asc" | "price_desc";
+  sort?: "newest" | "price-asc" | "price-desc";
 }) {
+  // category filter covers the whole (2-level) subtree
+  let categoryIds: string[] | undefined;
+  if (opts?.categoryId) {
+    const children = await db().category.findMany({
+      where: { parentId: opts.categoryId },
+      select: { id: true },
+    });
+    categoryIds = [opts.categoryId, ...children.map((c) => c.id)];
+  }
+
   const where = {
     status: "PUBLISHED" as const,
-    ...(opts?.categoryId ? { categoryId: opts.categoryId } : {}),
+    ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
     ...(opts?.collectionId
       ? { collectionItems: { some: { collectionId: opts.collectionId } } }
       : {}),
@@ -37,8 +47,14 @@ export async function getPublishedProducts(opts?: {
   };
   const orderBy = [{ createdAt: "desc" as const }];
 
+  // Prisma cannot order by an aggregate over a relation (min variants.price);
+  // for price sorts fetch a wider createdAt-ordered window and sort in memory.
+  const priceSort = opts?.sort === "price-asc" || opts?.sort === "price-desc";
+  const take = priceSort ? Math.max(opts?.limit ?? 48, 200) : (opts?.limit ?? 48);
+
   const products = await db().product.findMany({
     where,
+    orderBy,
     include: {
       category: true,
       variants: {
@@ -46,24 +62,32 @@ export async function getPublishedProducts(opts?: {
         orderBy: { price: "asc" },
       },
     },
-    take: opts?.limit ?? 48,
+    take,
   });
-  let mapped = products.map((p) => ({
+  const mapped = products.map((p) => ({
     id: p.id,
     slug: p.slug,
     name: p.name,
     brand: p.brand,
     model: p.model,
     category: p.category,
-    price: Math.min(...p.variants.map((v) => v.price)),
-    maxPrice: Math.max(...p.variants.map((v) => v.price)),
+    price: p.variants.length ? Math.min(...p.variants.map((v) => v.price)) : 0,
+    maxPrice: p.variants.length ? Math.max(...p.variants.map((v) => v.price)) : 0,
     available: p.variants.length > 0,
     image: p.variants[0]?.images?.[0] ?? null,
     variantCount: p.variants.length,
+    // Color dots (CONTEXT.md): per-variant color + imagery for card-level swap
+    dots: p.variants.map((v) => ({
+      id: v.id,
+      colorName: v.colorName,
+      colorCode: v.colorCode,
+      images: v.images,
+      price: v.price,
+    })),
   }));
-  if (opts?.sort === "price_asc") mapped = mapped.sort((a, b) => a.price - b.price);
-  if (opts?.sort === "price_desc") mapped = mapped.sort((a, b) => b.price - a.price);
-  return mapped;
+  if (opts?.sort === "price-asc") mapped.sort((a, b) => a.price - b.price);
+  if (opts?.sort === "price-desc") mapped.sort((a, b) => b.price - a.price);
+  return priceSort && opts?.limit ? mapped.slice(0, opts.limit) : mapped;
 }
 
 export async function getProductBySlug(slug: string) {

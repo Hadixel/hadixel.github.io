@@ -21,7 +21,7 @@ export function DeletePostButton({ id, title }: { id: string; title: string }) {
     >
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span className="mr-2 text-xs text-red-600">{state.error}</span>}
+      {state.error && <span className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

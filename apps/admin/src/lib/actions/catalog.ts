@@ -63,8 +63,9 @@ export async function saveProduct(_prev: ActionState, formData: FormData): Promi
     seo: (seo ?? null) as never,
   };
 
+  let productId: string;
   try {
-    const product = await db().$transaction(async (tx) => {
+    productId = await db().$transaction(async (tx) => {
       const p = id
         ? await tx.product.update({ where: { id }, data: productData })
         : await tx.product.create({ data: productData });
@@ -105,17 +106,16 @@ export async function saveProduct(_prev: ActionState, formData: FormData): Promi
           create: { productId: p.id, specFieldId: sf.id, value },
         });
       }
-      return p;
+      return p.id;
     });
 
     await recordAudit({
       adminUserId: admin.id,
       action: id ? "PRODUCT_UPDATED" : "PRODUCT_CREATED",
       entityType: "PRODUCT",
-      entityId: product.id,
+      entityId: productId,
       meta: { slug, name, ip, ua },
     });
-    redirect(`/products/${product.id}`);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "خطای ناشناخته";
     if (msg.includes("slug") && msg.includes("Unique")) return { error: "این اسلاگ قبلاً استفاده شده است" };
@@ -123,6 +123,9 @@ export async function saveProduct(_prev: ActionState, formData: FormData): Promi
     if (msg.includes("Foreign key")) return { error: "دسته‌بندی یا دادهٔ مرتبط معتبر نیست" };
     return { error: `ذخیره نشد: ${msg}` };
   }
+
+  // redirect AFTER the try/catch — NEXT_REDIRECT must not be swallowed
+  redirect(`/products/${productId}`);
 }
 
 export async function saveCategory(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -74,7 +74,7 @@ function AddCategoryForm({ roots }: { roots: CategorySeed[] }) {
           </Field>
           <div className="md:col-span-5 flex items-center justify-end gap-2">
             <input type="hidden" name="specFields" value="[]" />
-            {state.error && <span className="text-sm text-red-600">{state.error}</span>}
+            {state.error && <span className="text-sm text-red-700">{state.error}</span>}
             {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
             <Button type="submit" disabled={pending}>{pending ? "…" : "افزودن"}</Button>
           </div>
@@ -91,7 +91,7 @@ function CategoryCard({ category, childrenCats }: { category: CategorySeed; chil
       <CardHeader
         title={
           <button type="button" onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
-            <span className="text-slate-400">{expanded ? "▾" : "▴"}</span>
+            <span className="text-ash">{expanded ? "▾" : "▴"}</span>
             <span>{category.name}</span>
             {category.productCount > 0 && <Badge>{faDigits(category.productCount)} محصول</Badge>}
             {category.childCount > 0 && <Badge color="blue">{faDigits(category.childCount)} زیردسته</Badge>}
@@ -103,7 +103,7 @@ function CategoryCard({ category, childrenCats }: { category: CategorySeed; chil
         <CardBody className="space-y-4">
           <CategoryForm category={category} rootOptions={categoriesRoots(category)} />
           {childrenCats.map((child) => (
-            <div key={child.id} className="rounded-lg border border-slate-100 p-3">
+            <div key={child.id} className="rounded-card border border-plaster p-3">
               <CategoryForm category={child} rootOptions={categoriesRoots(child)} nested />
             </div>
           ))}
@@ -150,7 +150,7 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-700">فیلدهای مشخصات فنی</p>
+        <p className="mb-2 text-sm font-semibold text-ink">فیلدهای مشخصات فنی</p>
         <div className="space-y-2">
           {specFields.map((f, i) => (
             <div key={i} className="grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -162,10 +162,10 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
                 <option value="enum">گزینه‌ای</option>
               </Select>
               <Input placeholder="واحد" value={f.unit ?? ""} onChange={(e) => updateField(i, { unit: e.target.value })} />
-              <div className="flex items-center gap-2 px-1 text-sm text-slate-600">
+              <div className="flex items-center gap-2 px-1 text-sm text-ink">
                 <Checkbox label="قابل فیلتر" checked={f.filterable} onChange={(e) => updateField(i, { filterable: e.target.checked })} />
               </div>
-              <button type="button" onClick={() => setSpecFields((fs) => fs.filter((_, idx) => idx !== i))} className="text-sm text-red-600 hover:underline">
+              <button type="button" onClick={() => setSpecFields((fs) => fs.filter((_, idx) => idx !== i))} className="text-sm text-ink hover:text-flame-700">
                 حذف
               </button>
             </div>
@@ -173,7 +173,7 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
           <button
             type="button"
             onClick={() => setSpecFields((fs) => [...fs, { name: "", type: "string", unit: "", filterable: true, sortOrder: fs.length }])}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+            className="rounded-card border border-fog px-3 py-1.5 text-sm hover:bg-plaster"
           >
             + افزودن فیلد
           </button>
@@ -184,7 +184,7 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
       <div className="flex items-center justify-end gap-3">
         <DeleteCategoryButton id={category.id} />
         <span className="flex-1" />
-        {state.error && <span className="text-sm text-red-600">{state.error}</span>}
+        {state.error && <span className="text-sm text-red-700">{state.error}</span>}
         {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
         <Button type="submit" disabled={pending}>{pending ? "…" : "ذخیره"}</Button>
       </div>
@@ -202,7 +202,7 @@ function DeleteCategoryButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این دسته؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span className="mr-2 text-xs text-red-600">{state.error}</span>}
+      {state.error && <span className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

@@ -24,17 +24,17 @@ export function AdjustStockRow({ variantId }: { variantId: string }) {
         name="delta"
         required
         placeholder="+/−"
-        className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-sm"
+        className="w-16 rounded-card border border-fog px-2 py-1 text-sm"
         dir="ltr"
       />
       <input
         type="text"
         name="note"
         placeholder="یادداشت"
-        className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-sm"
+        className="w-24 rounded-card border border-fog px-2 py-1 text-sm"
       />
       <Button type="submit" variant="secondary" size="sm" disabled={pending}>ثبت</Button>
-      {state.error && <span className="text-xs text-red-600">{state.error}</span>}
+      {state.error && <span className="text-xs text-red-700">{state.error}</span>}
       {state.ok && <span className="text-xs text-emerald-600">✓</span>}
     </form>
   );

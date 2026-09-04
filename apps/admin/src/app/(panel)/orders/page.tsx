@@ -59,23 +59,23 @@ export default async function OrdersPage({
             </Link>
           }
         />
-        <div className="border-b border-slate-100 px-5 py-3">
+        <div className="border-b border-plaster px-5 py-3">
           <form action="/orders" method="get" className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs text-slate-500">جستجوی شماره سفارش</label>
-              <input name="search" defaultValue={search} placeholder="مثلاً 1404-000042" className="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <label className="mb-1 block text-xs text-ash">جستجوی شماره سفارش</label>
+              <input name="search" defaultValue={search} placeholder="مثلاً 1404-000042" className="w-48 rounded-card border border-fog px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">وضعیت اجرا</label>
-              <select name="status" defaultValue={fulfillment ?? "ALL"} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <label className="mb-1 block text-xs text-ash">وضعیت اجرا</label>
+              <select name="status" defaultValue={fulfillment ?? "ALL"} className="rounded-card border border-fog px-3 py-2 text-sm">
                 {FULFILLMENT_STATUSES.map((s) => (
                   <option key={s} value={s}>{s === "ALL" ? "همه" : s}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">وضعیت پرداخت</label>
-              <select name="payment" defaultValue={payment ?? "ALL"} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <label className="mb-1 block text-xs text-ash">وضعیت پرداخت</label>
+              <select name="payment" defaultValue={payment ?? "ALL"} className="rounded-card border border-fog px-3 py-2 text-sm">
                 {PAYMENT_STATUSES.map((s) => (
                   <option key={s} value={s}>{s === "ALL" ? "همه" : s}</option>
                 ))}
@@ -84,7 +84,7 @@ export default async function OrdersPage({
             <div className="flex gap-2">
               <Button variant="secondary">اعمال فیلتر</Button>
               {hasFilters && (
-                <Link href="/orders" className="inline-flex items-center rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100">
+                <Link href="/orders" className="inline-flex items-center rounded-card px-3 py-2 text-sm text-ash hover:bg-plaster">
                   حذف فیلترها
                 </Link>
               )}
@@ -111,14 +111,14 @@ export default async function OrdersPage({
               {orders.map((o) => (
                 <TR key={o.id}>
                   <TD>
-                    <Link href={`/orders/${o.id}`} className="text-rose-600 hover:underline">{o.orderNumber}</Link>
+                    <Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link>
                   </TD>
                   <TD>{o.customer.name || o.customer.phone}</TD>
                   <TD>{formatToman(o.total)}</TD>
                   <TD className="text-xs">{o.paymentMethod}</TD>
                   <TD><StatusBadge status={o.paymentStatus} /></TD>
                   <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                  <TD className="text-xs text-slate-500">{formatJalaliDateTime(o.placedAt)}</TD>
+                  <TD className="text-xs text-ash">{formatJalaliDateTime(o.placedAt)}</TD>
                 </TR>
               ))}
             </TBody>
@@ -145,7 +145,7 @@ function Pager({ page, totalPages, href }: { page: number; totalPages: number; h
         href={href(p)}
         className={
           "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm " +
-          (p === page ? "border-rose-600 bg-rose-600 text-white" : "border-slate-300 text-slate-600 hover:bg-slate-50")
+          (p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster")
         }
       >
         {faDigits(p)}

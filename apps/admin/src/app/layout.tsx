@@ -9,8 +9,10 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // html attrs are static; Dark Reader and similar extensions mutate them
+  // before React loads (adds data-darkreader-*) — suppress the false positive
   return (
-    <html lang="fa" dir="rtl">
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

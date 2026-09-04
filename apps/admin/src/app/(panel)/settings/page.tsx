@@ -72,7 +72,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-slate-900">تنظیمات</h1>
+      <h1 className="text-xl font-bold text-ink">تنظیمات</h1>
       <SettingsForm sections={SECTION_DEFS} initial={Object.fromEntries(all.map((s) => [s.key, current(s.key)]))} />
     </div>
   );

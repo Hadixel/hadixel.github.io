@@ -46,7 +46,7 @@ export function OrderStatusTransitions({
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">وضعیت اجرا (فعلی: {STATUS_LABELS[fulfilled] ?? fulfilled})</h3>
+        <h3 className="mb-2 text-sm font-semibold text-ink">وضعیت اجرا (فعلی: {STATUS_LABELS[fulfilled] ?? fulfilled})</h3>
         <form action={formAction} className="space-y-2">
           <input type="hidden" name="orderId" value={orderId} />
           <input type="hidden" name="dimension" value="FULFILLMENT" />
@@ -63,13 +63,13 @@ export function OrderStatusTransitions({
               </Button>
             </>
           ) : (
-            <p className="text-sm text-slate-400">این وضعیت پایانی است.</p>
+            <p className="text-sm text-ash">این وضعیت پایانی است.</p>
           )}
         </form>
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">وضعیت پرداخت (فعلی: {STATUS_LABELS[paid] ?? paid})</h3>
+        <h3 className="mb-2 text-sm font-semibold text-ink">وضعیت پرداخت (فعلی: {STATUS_LABELS[paid] ?? paid})</h3>
         <form action={formAction} className="space-y-2">
           <input type="hidden" name="orderId" value={orderId} />
           <input type="hidden" name="dimension" value="PAYMENT" />
@@ -86,13 +86,13 @@ export function OrderStatusTransitions({
               </Button>
             </>
           ) : (
-            <p className="text-sm text-slate-400">کمپایانی در پرداخت.</p>
+            <p className="text-sm text-ash">کمپایانی در پرداخت.</p>
           )}
         </form>
       </div>
 
-      {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-      {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+      {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
     </div>
   );
 }

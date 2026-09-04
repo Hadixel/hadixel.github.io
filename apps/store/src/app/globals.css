@@ -1,19 +1,5 @@
 @import "tailwindcss";
+@import "@kmodern/ui/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
+/* Scan the shared UI package for class usage (workspace symlink is outside auto-detection) */
+@source "../../../../packages/ui/src";

@@ -5,9 +5,24 @@ import type { Block, ComponentProps } from "@kmodern/schema";
 import { hrefFor } from "@/lib/nav";
 import { getPublishedPosts, getPublishedProducts, getCollections } from "@/lib/queries";
 import { formatToman } from "@kmodern/schema";
+import { FadeWords } from "@kmodern/ui";
+import { CountdownTimer } from "./countdown-timer";
+import { NewsletterForm } from "./newsletter-form";
+import { ProductCard } from "./product-grid";
 
 // 005 page-builder renderer. Block list from DB Page.publishedBlocks; each
 // type renders server-side. visibility/mobileVisible honored when set.
+
+// Aparat: https://www.aparat.com/v/{hash} -> iframe embed
+function aparatEmbed(url: string): string | null {
+  const hash = url.match(/aparat\.com\/v\/([A-Za-z0-9-]+)/)?.[1];
+  return hash ? `https://www.aparat.com/video/video/embed/videohash/${hash}/vt/frame` : null;
+}
+
+function youtubeEmbed(url: string): string | null {
+  const id = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/)?.[1];
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+}
 
 export default async function BlockRenderer({ blocks }: { blocks: Block[] }) {
   const visible = blocks.filter((b) => b.props.visible !== false);
@@ -46,23 +61,29 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["hero"];
       const cta = p.cta ? await hrefFor(p.cta.link) : null;
       return (
-        <section className="relative w-full overflow-hidden bg-slate-900 py-24 text-white">
+        <section className="relative min-h-[80vh] w-full overflow-hidden bg-ink">
           {p.image?.src && (
             <div className="absolute inset-0">
-              <Image src={p.image.src} alt={p.image.alt ?? ""} fill className="object-cover opacity-40" />
+              {/* hero is the LCP element on / — load eagerly */}
+              <Image src={p.image.src} alt={p.image.alt ?? ""} fill priority className="object-cover opacity-60" />
             </div>
           )}
-          <div className="relative mx-auto max-w-7xl px-4 text-center">
-            <h1 className="text-4xl font-bold md:text-5xl">{p.title}</h1>
-            {p.subtitle && <p className="mt-4 text-lg text-slate-200">{p.subtitle}</p>}
+          <div className="relative mx-auto flex min-h-[80vh] max-w-7xl flex-col justify-end px-4 pb-16">
             {cta && (
               <Link
                 href={cta.href}
                 target={cta.newTab ? "_blank" : undefined}
-                className="mt-8 inline-block rounded-full bg-amber-500 px-8 py-3 font-semibold text-slate-900 hover:bg-amber-400"
+                className="mb-6 inline-flex w-fit items-center rounded-card bg-flame-700 px-3 py-1 text-xs font-semibold text-white"
               >
                 {p.cta!.label}
               </Link>
+            )}
+            <FadeWords
+              text={p.title}
+              className="text-ink drop-shadow-[0_2px_12px_rgba(255,255,255,0.4)] [font-size:clamp(44px,7vw,96px)] font-black leading-none"
+            />
+            {p.subtitle && (
+              <p className="mt-4 max-w-xl text-base text-white/80">{p.subtitle}</p>
             )}
           </div>
         </section>
@@ -76,7 +97,7 @@ async function BlockNode({ block }: { block: Block }) {
       if (p.source.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: 8 });
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-2xl font-bold">{p.title}</h2>}
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {products.map((pr) => <ProductCard key={pr.id} product={pr} />)}
           </div>
@@ -89,9 +110,13 @@ async function BlockNode({ block }: { block: Block }) {
       const products = await getPublishedProducts({ limit: p.source.kind === "COLLECTION" ? undefined : 10 });
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-2xl font-bold">{p.title}</h2>}
-          <div className="grid grid-cols-2 gap-4 overflow-x-auto md:grid-cols-5">
-            {products.slice(0, 10).map((pr) => <ProductCard key={pr.id} product={pr} />)}
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
+            {products.slice(0, 10).map((pr) => (
+              <div key={pr.id} className="w-52 shrink-0 snap-start sm:w-60">
+                <ProductCard product={pr} />
+              </div>
+            ))}
           </div>
         </Section>
       );
@@ -119,9 +144,9 @@ async function BlockNode({ block }: { block: Block }) {
             {items.map((b, i) => {
               const link = links[i];
               const inner = (
-                <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
+                <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-card bg-plaster">
                   {b.image?.src && <Image src={b.image.src} alt={b.image.alt ?? b.title ?? ""} fill className="object-cover" />}
-                  {b.title && <div className="absolute inset-0 flex items-center justify-center bg-black/20 p-4 text-center text-white"><span className="font-bold">{b.title}</span></div>}
+                  {b.title && <div className="absolute inset-0 flex items-center justify-center bg-black/20 p-4 text-center text-white"><span className="font-semibold">{b.title}</span></div>}
                 </div>
               );
               return link ? (
@@ -144,7 +169,7 @@ async function BlockNode({ block }: { block: Block }) {
               <div key={i} className="text-center">
                 {it.icon && <div className="mx-auto mb-2 text-3xl">{it.icon}</div>}
                 <div className="font-semibold">{it.title}</div>
-                {it.text && <div className="mt-1 text-sm text-gray-500">{it.text}</div>}
+                {it.text && <div className="mt-1 text-sm text-ash">{it.text}</div>}
               </div>
             ))}
           </div>
@@ -162,11 +187,11 @@ async function BlockNode({ block }: { block: Block }) {
       );
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-2xl font-bold">{p.title}</h2>}
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {tiles.map((t) => (
-              <Link key={t.idx} href={t.href} className="overflow-hidden rounded-xl bg-gray-100 p-6 text-center hover:bg-gray-200">
-                {t.image && <Image src={t.image} alt="" width={200} height={200} className="mx-auto mb-3 rounded-lg object-cover" />}
+              <Link key={t.idx} href={t.href} className="overflow-hidden rounded-card bg-plaster p-6 text-center hover:bg-fog/60">
+                {t.image && <Image src={t.image} alt="" width={200} height={200} className="mx-auto mb-3 rounded-card object-cover" />}
                 <span className="font-semibold">{t.name}</span>
               </Link>
             ))}
@@ -187,10 +212,10 @@ async function BlockNode({ block }: { block: Block }) {
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
           <div className={`grid items-center gap-8 md:grid-cols-2 ${flip ? "md:[direction:ltr]" : ""}`}>
-            <div><Image src={img.src} alt={img.alt ?? ""} width={600} height={450} className="w-full rounded-xl object-cover" /></div>
+            <div><Image src={img.src} alt={img.alt ?? ""} width={600} height={450} className="w-full rounded-card object-cover" /></div>
             <div>
-              <h3 className="text-2xl font-bold">{p.title}</h3>
-              {p.text && <p className="mt-3 text-gray-600">{p.text}</p>}
+              <h3 className="text-2xl font-semibold">{p.title}</h3>
+              {p.text && <p className="mt-3 text-ash">{p.text}</p>}
             </div>
           </div>
         </Section>
@@ -200,7 +225,7 @@ async function BlockNode({ block }: { block: Block }) {
     case "slidingStrip": {
       const p = props as ComponentProps["slidingStrip"];
       return (
-        <div className="overflow-hidden bg-slate-900 py-3 text-center text-white">
+        <div className="overflow-hidden bg-ink py-3 text-center text-white">
           <div className="flex gap-8 whitespace-nowrap text-sm">
             {[...p.items, ...p.items].map((s, i) => <span key={i}>{s}</span>)}
           </div>
@@ -212,13 +237,13 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["testimonials"];
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-2xl font-bold">{p.title}</h2>}
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
           <div className="grid gap-4 md:grid-cols-3">
             {p.items.map((t, i) => (
-              <div key={i} className="rounded-xl bg-gray-50 p-6">
-                <p className="text-gray-700">«{t.quote}»</p>
+              <div key={i} className="rounded-card bg-plaster p-6">
+                <p className="text-ink">«{t.quote}»</p>
                 <div className="mt-4 font-semibold">{t.author}</div>
-                {t.role && <div className="text-sm text-gray-500">{t.role}</div>}
+                {t.role && <div className="text-sm text-ash">{t.role}</div>}
               </div>
             ))}
           </div>
@@ -230,12 +255,12 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["faqAccordion"];
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-2xl font-bold">{p.title}</h2>}
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
           <div className="space-y-3">
             {p.items.map((it, i) => (
-              <details key={i} className="rounded-lg border p-4">
+              <details key={i} className="rounded-card border p-4">
                 <summary className="cursor-pointer font-semibold">{it.question}</summary>
-                <p className="mt-2 text-gray-600">{it.answer}</p>
+                <p className="mt-2 text-ash">{it.answer}</p>
               </details>
             ))}
           </div>
@@ -245,35 +270,40 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "video": {
       const p = props as ComponentProps["video"];
-      const embed =
-        p.provider === "APARAT"
-          ? p.url
-          : p.url.includes("youtube.com") || p.url.includes("youtu.be")
-            ? null
-            : p.url;
+      const embed = p.provider === "APARAT" ? aparatEmbed(p.url) : youtubeEmbed(p.url);
+      if (!embed) return null;
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          <div className="aspect-video overflow-hidden rounded-xl bg-black">
-            <video controls poster={p.thumbnail} className="h-full w-full">
-              <source src={embed ?? undefined} />
-            </video>
+          {p.title && <h2 className="mb-4 text-2xl font-semibold">{p.title}</h2>}
+          <div className="aspect-video overflow-hidden rounded-card bg-black">
+            <iframe src={embed} title={p.title ?? "ویدیو"} allowFullScreen className="h-full w-full" />
           </div>
         </Section>
       );
     }
 
-    case "countdown":
+    case "countdown": {
+      const p = props as ComponentProps["countdown"];
+      const link = p.link ? await hrefFor(p.link) : null;
+      return (
+        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
+          {p.title && <h2 className="mb-6 text-center text-2xl font-extrabold text-ink">{p.title}</h2>}
+          <CountdownTimer endsAt={p.endsAt} linkHref={link?.href} />
+        </Section>
+      );
+    }
+
     case "blogTeaser": {
       const p = props as ComponentProps["blogTeaser"];
       const posts = await getPublishedPosts(p.limit ?? 3);
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-6 text-2xl font-bold">{p.title}</h2>}
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
           <div className="grid gap-4 md:grid-cols-3">
             {posts.map((post) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="rounded-xl border p-4 hover:shadow">
+              <Link key={post.id} href={`/blog/${post.slug}`} className="rounded-card border p-4 hover:shadow">
                 <div className="font-semibold">{post.title}</div>
-                {post.excerpt && <p className="mt-2 text-sm text-gray-500">{post.excerpt}</p>}
+                {post.excerpt && <p className="mt-2 text-sm text-ash">{post.excerpt}</p>}
               </Link>
             ))}
           </div>
@@ -284,7 +314,7 @@ async function BlockNode({ block }: { block: Block }) {
     case "trustBadges": {
       const p = props as ComponentProps["trustBadges"];
       return (
-        <div className="border-y bg-gray-50">
+        <div className="border-y bg-plaster">
           <div className="mx-auto flex max-w-7xl flex-wrap justify-center gap-8 py-6">
             {p.items.map((it, i) => (
               <div key={i} className="flex items-center gap-2 text-sm font-semibold">
@@ -297,8 +327,16 @@ async function BlockNode({ block }: { block: Block }) {
       );
     }
 
-    case "newsletter":
-      return <div />;
+    case "newsletter": {
+      const p = props as ComponentProps["newsletter"];
+      return (
+        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
+          {p.title && <h2 className="mb-2 text-center text-2xl font-extrabold text-ink">{p.title}</h2>}
+          {p.subtitle && <p className="mb-6 text-center text-ash">{p.subtitle}</p>}
+          <NewsletterForm title={p.title} />
+        </Section>
+      );
+    }
     case "statsRow": {
       const p = props as ComponentProps["statsRow"];
       return (
@@ -306,16 +344,64 @@ async function BlockNode({ block }: { block: Block }) {
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {p.items.map((it, i) => (
               <div key={i} className="text-center">
-                <div className="text-3xl font-bold">{it.value}</div>
-                <div className="mt-1 text-gray-500">{it.label}</div>
+                <div className="text-3xl font-semibold">{it.value}</div>
+                <div className="mt-1 text-ash">{it.label}</div>
               </div>
             ))}
           </div>
         </Section>
       );
     }
-    case "comparisonTable":
-      return null; // admin-created; storefront renders latest
+    case "comparisonTable": {
+      const p = props as ComponentProps["comparisonTable"];
+      const products = await db().product.findMany({
+        where: { id: { in: p.productIds }, status: "PUBLISHED" },
+        include: { variants: { orderBy: { price: "asc" }, take: 1 } },
+      });
+      if (products.length < 2) return null;
+      const specValues = await db().productSpecValue.findMany({
+        where: { productId: { in: products.map((pr) => pr.id) } },
+        select: { productId: true, value: true, specFieldId: true, specField: { select: { name: true } } },
+      });
+      const fieldNames = [...new Set(specValues.map((sv) => sv.specField.name))];
+      const valueOf = (productId: string, fieldName: string) =>
+        specValues.find((sv) => sv.productId === productId && sv.specField.name === fieldName)?.value ?? "—";
+      return (
+        <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
+          {p.title && <h2 className="mb-8 text-2xl font-black text-ink">{p.title}</h2>}
+          <div className="overflow-x-auto rounded-2xl border border-plaster">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="bg-plaster text-right">
+                  <th className="px-4 py-3 font-semibold">ویژگی</th>
+                  {products.map((pr) => (
+                    <th key={pr.id} className="px-4 py-3 font-semibold">{pr.name}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-plaster">
+                <tr>
+                  <td className="px-4 py-2.5 text-ash">قیمت</td>
+                  {products.map((pr) => (
+                    <td key={pr.id} className="whitespace-nowrap px-4 py-2.5 font-bold text-flame-800">
+                      {pr.variants[0] ? formatToman(pr.variants[0].price) : "—"}
+                    </td>
+                  ))}
+                </tr>
+                {fieldNames.map((name) => (
+                  <tr key={name}>
+                    <td className="px-4 py-2.5 text-ash">{name}</td>
+                    {products.map((pr) => (
+                      <td key={pr.id} className="px-4 py-2.5">{valueOf(pr.id, name)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      );
+    }
     case "beforeAfter": {
       const p = props as ComponentProps["beforeAfter"];
       return (
@@ -329,8 +415,8 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["map"];
       return (
         <Section padding={p.padding} background={p.background} mobileVisible={p.mobileVisible} anchorId={p.anchorId}>
-          {p.title && <h2 className="mb-4 text-2xl font-bold">{p.title}</h2>}
-          <div className="aspect-video overflow-hidden rounded-xl bg-gray-100">
+          {p.title && <h2 className="mb-4 text-2xl font-semibold">{p.title}</h2>}
+          <div className="aspect-video overflow-hidden rounded-card bg-plaster">
             <iframe src={p.embedUrl} className="h-full w-full" />
           </div>
         </Section>
@@ -341,18 +427,4 @@ async function BlockNode({ block }: { block: Block }) {
     default:
       return null;
   }
-}
-
-async function ProductCard({ product }: { product: { slug: string; name: string; price: number; maxPrice: number; image: string | null } }) {
-  return (
-    <Link href={`/product/${product.slug}`} className="group rounded-xl border p-4 transition hover:shadow-lg">
-      <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-100">
-        {product.image ? <Image src={product.image} alt={product.name} fill className="object-cover" /> : <div className="flex h-full items-center justify-center text-gray-400">بدون تصویر</div>}
-      </div>
-      <div className="text-sm font-semibold leading-snug">{product.name}</div>
-      <div className="mt-2 text-sm text-gray-500">
-        {product.price === product.maxPrice ? formatToman(product.price) : `${formatToman(product.price)} – ${formatToman(product.maxPrice)}`}
-      </div>
-    </Link>
-  );
 }

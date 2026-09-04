@@ -30,7 +30,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const statusBanner = {
     success: { text: "پرداخت موفق بود", cls: "bg-green-50 text-green-700 border-green-200" },
     failed: { text: "پرداخت ناموفق بود", cls: "bg-red-50 text-red-700 border-red-200" },
-    pending: { text: "در انتظار پرداخت", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+    pending: { text: "در انتظار پرداخت", cls: "bg-flame-50 text-flame-800 border-flame-100" },
     cod: { text: "سفارش با پرداخت هنگام تحویل ثبت شد", cls: "bg-blue-50 text-blue-700 border-blue-200" },
     c2c: { text: "سفارش ثبت شد — کارت به کارت کنید و رسید را ارسال نمایید", cls: "bg-blue-50 text-blue-700 border-blue-200" },
   }[sp.payment ?? ""] ?? null;
@@ -41,18 +41,18 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <div className={`mb-6 rounded-xl border px-5 py-4 font-semibold ${statusBanner.cls}`}>{statusBanner.text}</div>
       )}
       <h1 className="text-2xl font-bold">سفارش {toFaDigits(order.orderNumber)}</h1>
-      <p className="mt-1 text-sm text-gray-500">ثبت شده در {new Date(order.placedAt).toLocaleDateString("fa-IR")}</p>
+      <p className="mt-1 text-sm text-ash">ثبت شده در {new Date(order.placedAt).toLocaleDateString("fa-IR")}</p>
 
       {/* C2C instructions */}
       {order.paymentMethod === "CARD_TO_CARD" && order.paymentStatus === "AWAITING" && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+        <div className="mt-6 rounded-xl border border-flame-100 bg-flame-50 p-5">
           <h2 className="font-bold">پرداخت کارت به کارت</h2>
-          <p className="mt-2 text-sm text-gray-700">
+          <p className="mt-2 text-sm text-ink">
             مبلغ {formatToman(order.total)} را به شماره کارت زیر واریز و تصویر رسید را برای پشتیبانی ارسال کنید:
           </p>
           <div className="mt-3 rounded-lg bg-white p-3 text-center">
             <div className="font-mono text-lg tracking-widest" dir="ltr">{c2cCard}</div>
-            <div className="mt-1 text-sm text-gray-600">{c2cHolder} — {c2cBank}</div>
+            <div className="mt-1 text-sm text-ash">{c2cHolder} — {c2cBank}</div>
           </div>
         </div>
       )}
@@ -60,7 +60,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div className="rounded-xl border p-5">
           <h3 className="mb-3 font-bold">آدرس تحویل</h3>
-          <p className="text-sm leading-6 text-gray-700">
+          <p className="text-sm leading-6 text-ink">
             {address?.recipientName}<br />
             {address?.province}، {address?.city}<br />
             {address?.addressLine}<br />
@@ -69,7 +69,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </div>
         <div className="rounded-xl border p-5">
           <h3 className="mb-3 font-bold">وضعیت</h3>
-          <div className="space-y-2 text-sm text-gray-700">
+          <div className="space-y-2 text-sm text-ink">
             <div className="flex justify-between"><span>تحویل</span><span>{fulfillmentLabel[order.fulfillmentStatus]}</span></div>
             <div className="flex justify-between"><span>پرداخت</span><span>{paymentLabel[order.paymentStatus]}</span></div>
             <div className="flex justify-between"><span>روش پرداخت</span><span>{order.paymentMethod === "ONLINE" ? "آنلاین" : order.paymentMethod === "COD" ? "هنگام تحویل" : "کارت به کارت"}</span></div>
@@ -82,10 +82,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <div className="divide-y">
           {order.items.map((it) => (
             <div key={it.id} className="flex items-center gap-4 px-5 py-3">
-              {it.image && <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gray-50"><Image src={it.image} alt={it.productName} fill sizes="56px" className="object-contain" /></div>}
+              {it.image && <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-plaster"><Image src={it.image} alt={it.productName} fill sizes="56px" className="object-contain" /></div>}
               <div className="flex-1">
                 <div className="text-sm font-semibold">{it.productName}</div>
-                <div className="text-xs text-gray-500">{it.colorName} · {toFaDigits(it.quantity)} عدد</div>
+                <div className="text-xs text-ash">{it.colorName} · {toFaDigits(it.quantity)} عدد</div>
               </div>
               <div className="text-sm font-bold">{formatToman(it.lineTotal)}</div>
             </div>
@@ -104,7 +104,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       )}
 
       <div className="mt-8 text-center">
-        <Link href="/orders" className="text-sm text-gray-500 hover:text-amber-600">مشاهده همه سفارشها</Link>
+        <Link href="/orders" className="text-sm text-ash hover:text-flame-700">مشاهده همه سفارشها</Link>
       </div>
     </div>
   );

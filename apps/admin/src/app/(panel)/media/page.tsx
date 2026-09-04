@@ -15,8 +15,8 @@ export default async function MediaPage() {
           subtitle={`${faDigits(items.length)} فایل`}
           actions={
             <form action="/api/admin/media/upload" method="post" encType="multipart/form-data" className="flex items-center gap-2">
-              <input type="file" name="file" className="text-sm text-slate-500" />
-              <button type="submit" className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700">آپلود</button>
+              <input type="file" name="file" className="text-sm text-ash" />
+              <button type="submit" className="rounded-card bg-ink px-4 py-2 text-sm text-white hover:bg-graphite">آپلود</button>
             </form>
           }
         />

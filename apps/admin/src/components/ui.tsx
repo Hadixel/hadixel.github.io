@@ -19,17 +19,17 @@ export function Button({
 }) {
   const styles = {
     primary:
-      "bg-rose-600 text-white hover:bg-rose-700 disabled:bg-rose-300 disabled:cursor-not-allowed",
+      "bg-flame-700 text-white hover:bg-flame-800 disabled:bg-flame-300 disabled:cursor-not-allowed",
     secondary:
-      "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:opacity-50",
-    ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
+      "bg-white text-ink border border-fog hover:bg-plaster disabled:opacity-50",
+    ghost: "bg-transparent text-ink hover:bg-plaster",
     danger: "bg-red-600 text-white hover:bg-red-700",
   } as const;
   const sizes = { sm: "px-2.5 py-1.5 text-xs", md: "px-4 py-2 text-sm" } as const;
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-rose-300",
+        "inline-flex items-center justify-center gap-1.5 rounded-card font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-flame-300",
         styles[variant],
         sizes[size],
         className,
@@ -40,7 +40,7 @@ export function Button({
 }
 
 export function Label({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <label className={cn("mb-1 block text-sm font-medium text-slate-700", className)}>{children}</label>;
+  return <label className={cn("mb-1 block text-sm font-medium text-ink", className)}>{children}</label>;
 }
 
 export function Field({
@@ -61,20 +61,20 @@ export function Field({
   return (
     <div className={cn("mb-4", className)}>
       {label && (
-        <div className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-700">
+        <div className="mb-1 flex items-center gap-1 text-sm font-medium text-ink">
           <span>{label}</span>
-          {required && <span className="text-rose-500">*</span>}
+          {required && <span className="text-flame-600">*</span>}
         </div>
       )}
       {children}
-      {hint && !error && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {hint && !error && <p className="mt-1 text-xs text-ash">{hint}</p>}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }
 
 const inputCls =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-100";
+  "w-full rounded-card border border-fog bg-white px-3 py-2 text-sm text-ink placeholder:text-ash focus:border-flame-500 focus:outline-none focus:ring-2 focus:ring-flame-100";
 
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(inputCls, className)} {...props} />;
@@ -94,23 +94,23 @@ export function Select({ className, children, ...props }: React.SelectHTMLAttrib
 
 export function Checkbox({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-      <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-400" {...props} />
+    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+      <input type="checkbox" className="h-4 w-4 rounded border-fog text-flame-700 focus:ring-flame-500" {...props} />
       {label}
     </label>
   );
 }
 
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("rounded-xl border border-slate-200 bg-white shadow-sm", className)}>{children}</div>;
+  return <div className={cn("rounded-card border border-plaster bg-canvas", className)}>{children}</div>;
 }
 
 export function CardHeader({ title, subtitle, actions }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+    <div className="flex items-start justify-between gap-4 border-b border-plaster px-5 py-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
+        <h2 className="text-base font-semibold text-ink">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-sm text-ash">{subtitle}</p>}
       </div>
       {actions}
     </div>
@@ -121,15 +121,20 @@ export function CardBody({ className, children }: { className?: string; children
   return <div className={cn("px-5 py-4", className)}>{children}</div>;
 }
 
+/* Badge — Showcase pill anatomy (30px, fill-only differentiation). The
+   chroma spectrum is retired: flame/pale/spate/emerald-muted only. */
 const badgeColors: Record<string, string> = {
-  gray: "bg-slate-100 text-slate-700",
-  green: "bg-emerald-100 text-emerald-800",
-  amber: "bg-amber-100 text-amber-800",
-  red: "bg-red-100 text-red-700",
-  blue: "bg-sky-100 text-sky-800",
-  violet: "bg-violet-100 text-violet-800",
-  rose: "bg-rose-100 text-rose-700",
-  teal: "bg-teal-100 text-teal-800",
+  gray: "bg-plaster text-ink",
+  slate: "bg-plaster text-ink",
+  green: "bg-emerald-100 text-emerald-900",
+  emerald: "bg-emerald-100 text-emerald-900",
+  amber: "bg-flame-100 text-flame-800",
+  red: "bg-red-100 text-red-800",
+  blue: "bg-flame-100 text-flame-800",
+  sky: "bg-flame-100 text-flame-800",
+  violet: "bg-plaster text-ink",
+  rose: "bg-flame-100 text-flame-800",
+  teal: "bg-emerald-100 text-emerald-900",
 };
 
 export function Badge({
@@ -142,7 +147,7 @@ export function Badge({
   children: React.ReactNode;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium", badgeColors[color], className)}>
+    <span className={cn("inline-flex items-center gap-1 rounded-[30px] px-2 py-0.5 text-xs font-medium", badgeColors[color], className)}>
       {children}
     </span>
   );
@@ -157,15 +162,15 @@ export function Table({ children }: { children: React.ReactNode }) {
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
-  return <thead className="border-b border-slate-200 text-xs text-slate-500">{children}</thead>;
+  return <thead className="border-b border-plaster text-xs text-ash">{children}</thead>;
 }
 
 export function TBody({ children }: { children: React.ReactNode }) {
-  return <tbody className="divide-y divide-slate-100">{children}</tbody>;
+  return <tbody className="divide-y divide-plaster">{children}</tbody>;
 }
 
 export function TR({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
-  return <tr onClick={onClick} className={cn("hover:bg-slate-50", className, onClick && "cursor-pointer")}>{children}</tr>;
+  return <tr onClick={onClick} className={cn("hover:bg-plaster", className, onClick && "cursor-pointer")}>{children}</tr>;
 }
 
 export function TH({ children, className, dir }: { children?: React.ReactNode; className?: string; dir?: string }) {
@@ -194,7 +199,7 @@ export function Pagination({
         href={`${basePath}${sep}page=${p}`}
         className={cn(
           "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm",
-          p === page ? "border-rose-600 bg-rose-600 text-white" : "border-slate-300 text-slate-600 hover:bg-slate-50",
+          p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster",
         )}
       >
         {label ?? faDigits(p)}
@@ -209,7 +214,7 @@ export function Pagination({
 export function EmptyState({ text }: { text: string }) {
   return (
     <div className="py-14 text-center">
-      <p className="text-sm text-slate-400">{text}</p>
+      <p className="text-sm text-ash">{text}</p>
     </div>
   );
 }
@@ -218,7 +223,7 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-rose-600",
+        "inline-block h-4 w-4 animate-spin rounded-[30px] border-2 border-fog border-t-flame-700",
         className,
       )}
     />

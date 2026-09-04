@@ -43,8 +43,8 @@ export default function CartPage() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-20 text-center">
         <h1 className="text-2xl font-bold">سبد خرید</h1>
-        <p className="mt-4 text-gray-500">سبد شما خالی است.</p>
-        <Link href="/products" className="mt-6 inline-block rounded-full bg-amber-500 px-8 py-3 font-semibold hover:bg-amber-400">مشاهده محصولات</Link>
+        <p className="mt-4 text-ash">سبد شما خالی است.</p>
+        <Link href="/products" className="mt-6 inline-block rounded-card bg-flame-700 px-8 py-3 font-bold text-white transition hover:bg-flame-600">مشاهده محصولات</Link>
       </div>
     );
   }
@@ -55,21 +55,21 @@ export default function CartPage() {
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           {data.lines.map((l) => (
-            <div key={l.variantId} className="flex gap-4 rounded-xl border p-4">
-              <Link href={`/product/${l.productSlug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                {l.image ? <Image src={l.image} alt={l.productName} fill sizes="96px" className="object-contain" /> : <div className="flex h-full items-center justify-center text-gray-300">img</div>}
+            <div key={l.variantId} className="flex gap-4 rounded-2xl border border-plaster bg-white p-4 transition hover:border-flame-200">
+              <Link href={`/product/${l.productSlug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-plaster">
+                {l.image ? <Image src={l.image} alt={l.productName} fill sizes="96px" className="object-contain" /> : <div className="flex h-full items-center justify-center text-slate-line">img</div>}
               </Link>
               <div className="flex flex-1 flex-col">
-                <Link href={`/product/${l.productSlug}`} className="font-semibold">{l.productName}</Link>
-                <div className="mt-1 text-sm text-gray-500">{l.colorName} · {toFaDigits(l.sku)}</div>
+                <Link href={`/product/${l.productSlug}`} className="font-semibold text-ink">{l.productName}</Link>
+                <div className="mt-1 text-sm text-ash">{l.colorName} · {toFaDigits(l.sku)}</div>
                 {!l.available && <div className="mt-1 text-sm text-red-500">موجودی کافی نیست</div>}
                 <div className="mt-auto flex items-center justify-between pt-3">
-                  <div className="flex items-center rounded-full border">
-                    <button className="px-3 py-1 hover:bg-gray-50" onClick={() => setQty(l.variantId, l.qty - 1)}>−</button>
+                  <div className="flex items-center rounded-card border border-plaster">
+                    <button className="px-3 py-1 hover:bg-plaster" onClick={() => setQty(l.variantId, l.qty - 1)}>−</button>
                     <span className="min-w-8 text-center">{toFaDigits(l.qty)}</span>
-                    <button className="px-3 py-1 hover:bg-gray-50" onClick={() => setQty(l.variantId, l.qty + 1)}>+</button>
+                    <button className="px-3 py-1 hover:bg-plaster" onClick={() => setQty(l.variantId, l.qty + 1)}>+</button>
                   </div>
-                  <div className="text-sm font-bold">{formatToman(l.lineTotal)}</div>
+                  <div className="whitespace-nowrap text-sm font-extrabold text-flame-800">{formatToman(l.lineTotal)}</div>
                   <button onClick={() => remove(l.variantId)} className="text-sm text-red-400 hover:text-red-600">حذف</button>
                 </div>
               </div>
@@ -77,16 +77,16 @@ export default function CartPage() {
           ))}
         </div>
 
-        <aside className="h-fit rounded-xl border p-6">
+        <aside className="h-fit rounded-xl border border-plaster bg-canvas p-6">
           <div className="flex justify-between text-lg">
             <span>جمع کل</span>
             <span className="font-bold">{formatToman(data.subtotal)}</span>
           </div>
-          <div className="mt-1 text-sm text-gray-500">هزینه ارسال در گام بعد محاسبه میشود.</div>
-          <Link href="/checkout" className="mt-6 block rounded-full bg-amber-500 py-3 text-center font-semibold hover:bg-amber-400">
+          <div className="mt-1 text-sm text-ash">هزینه ارسال در گام بعد محاسبه می‌شود.</div>
+          <Link href="/checkout" className="mt-6 block rounded-card bg-flame-700 py-3 text-center font-bold text-white transition hover:bg-flame-600">
             ادامه و پرداخت
           </Link>
-          <Link href="/products" className="mt-3 block text-center text-sm text-gray-500 hover:text-amber-600">ادامه خرید</Link>
+          <Link href="/products" className="mt-3 block text-center text-sm text-ash transition hover:text-flame-800">ادامه خرید</Link>
         </aside>
       </div>
     </div>

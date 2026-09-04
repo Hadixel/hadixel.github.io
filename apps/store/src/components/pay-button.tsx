@@ -21,7 +21,7 @@ export default function PayButton({ orderId }: { orderId: string }) {
           setBusy(false);
         }
       }}
-      className="mt-6 w-full rounded-full bg-amber-500 py-3.5 font-bold text-slate-900 hover:bg-amber-400 disabled:opacity-50"
+      className="mt-6 w-full rounded-card bg-flame-700 py-3.5 font-bold text-white hover:bg-flame-600 disabled:opacity-50"
     >
       {busy ? "در حال اتصال به درگاه…" : "پرداخت آنلاین"}
     </button>

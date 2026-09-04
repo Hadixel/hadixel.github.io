@@ -8,6 +8,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveProduct } from "@/lib/actions/catalog";
 import type { ActionState } from "@/lib/actions/auth";
+import { MediaPickerButton } from "./media-picker-button";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 
 export interface CategoryOption {
@@ -55,9 +56,18 @@ export function ProductForm({ product, categories }: ProductSeed) {
   const [categoryId, setCategoryId] = useState(p?.categoryId ?? "");
   const specFields = categories.find((c) => c.id === categoryId)?.specFields ?? [];
   const [specValues, setSpecValues] = useState<Record<string, string>>(p?.specValues ?? {});
-  const [variants, setVariants] = useState(p?.variants ?? [emptyVariant()]);
+  // variants keyed by a local uid so unsaved rows can be removed too;
+  // `id` stays empty until the row is saved server-side
+  const [variants, setVariants] = useState(() =>
+    (p?.variants.length ? p.variants : [emptyVariant()]).map((v, i) => ({
+      ...v,
+      uid: v.id || `new-${Date.now()}-${i}`,
+    })),
+  );
   const [imagesByVariant, setImagesByVariant] = useState<Record<string, string>>(
-    Object.fromEntries((p?.variants ?? []).map((v) => [v.id, v.images.join("\n")])),
+    Object.fromEntries(
+      (p?.variants.length ? p.variants : []).map((v) => [v.id || `unsaved`, v.images.join("\n")]),
+    ),
   );
   const [features, setFeatures] = useState((p?.features ?? []).join("\n"));
   const [seo, setSeo] = useState({
@@ -95,7 +105,7 @@ export function ProductForm({ product, categories }: ProductSeed) {
               <Field label="دسته‌بندی" required>
                 <select
                   name="categoryId"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-card border border-fog px-3 py-2 text-sm"
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                   required
@@ -153,14 +163,14 @@ export function ProductForm({ product, categories }: ProductSeed) {
             title="تنوع‌ها"
             subtitle="هر رنگ = یک تنوع با قیمت/موجودی/SKU/تصاویر جداگانه"
             actions={
-              <button type="button" onClick={() => setVariants((vs) => [...vs, emptyVariant()])} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
+              <button type="button" onClick={() => setVariants((vs) => [...vs, { ...emptyVariant(), uid: `new-${Date.now()}` }])} className="rounded-card border border-fog px-3 py-1.5 text-sm hover:bg-plaster">
                 + تنوع
               </button>
             }
           />
           <CardBody className="space-y-4">
             {variants.map((v, i) => (
-              <div key={i} className="rounded-lg border border-slate-200 p-3">
+              <div key={v.uid} className="rounded-card border border-plaster p-3">
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <Field label="نام رنگ"><Input value={v.colorName} onChange={(e) => setVariant(i, { colorName: e.target.value })} /></Field>
                   <Field label="کد رنگ"><Input value={v.colorCode ?? ""} dir="ltr" onChange={(e) => setVariant(i, { colorCode: e.target.value })} /></Field>
@@ -169,18 +179,26 @@ export function ProductForm({ product, categories }: ProductSeed) {
                   <Field label="موجودی"><Input type="number" value={v.stock} dir="ltr" onChange={(e) => setVariant(i, { stock: Number(e.target.value) || 0 })} /></Field>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
-                  <Checkbox label="مجموی پس‌افت" checked={v.allowBackorder} onChange={(e) => setVariant(i, { allowBackorder: e.target.checked })} />
-                  {v.id && (
-                    <button type="button" onClick={() => setVariants((vs) => vs.filter((_, idx) => idx !== i))} className="text-sm text-red-600 hover:underline">
-                      حذف تنوع
-                    </button>
-                  )}
+                  <Checkbox label="مجموع پس‌کرایه" checked={v.allowBackorder} onChange={(e) => setVariant(i, { allowBackorder: e.target.checked })} />
+                  <button type="button" onClick={() => setVariants((vs) => vs.filter((_, idx) => idx !== i))} className="text-sm text-red-600 hover:underline">
+                    حذف تنوع
+                  </button>
                 </div>
                 <Field label="تصاویر (هر URL در یک خط)">
+                  <div className="flex items-start gap-2">
                   <Textarea
-                    value={imagesByVariant[v.id ?? `__${i}`] ?? v.images.join("\n")}
-                    onChange={(e) => setImagesByVariant({ ...imagesByVariant, [v.id ?? `__${i}`]: e.target.value })}
-                  />
+                    value={imagesByVariant[v.uid] ?? v.images.join("\n")}
+                    onChange={(e) => setImagesByVariant({ ...imagesByVariant, [v.uid]: e.target.value })}
+                    />
+                    <MediaPickerButton
+                      onPick={(url) =>
+                        setImagesByVariant((m) => {
+                          const cur = (m[v.uid] ?? v.images.join("\n")).split("\n").map((s) => s.trim()).filter(Boolean);
+                          return { ...m, [v.uid]: [...cur, url].join("\n") };
+                        })
+                      }
+                    />
+                  </div>
                 </Field>
               </div>
             ))}
@@ -192,7 +210,7 @@ export function ProductForm({ product, categories }: ProductSeed) {
               price: v.price,
               stock: v.stock,
               allowBackorder: v.allowBackorder,
-              images: (imagesByVariant[v.id ?? `__${i}`] ?? "").split("\n").map((s) => s.trim()).filter(Boolean),
+              images: (imagesByVariant[v.uid] ?? "").split("\n").map((s) => s.trim()).filter(Boolean),
             })))} />
           </CardBody>
         </Card>
@@ -217,7 +235,7 @@ export function ProductForm({ product, categories }: ProductSeed) {
           </CardBody>
         </Card>
 
-        {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
         <div className="flex justify-end gap-3">
           <Button type="button" variant="secondary" onClick={() => router.back()}>انصراف</Button>
           <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره محصول"}</Button>
@@ -228,5 +246,5 @@ export function ProductForm({ product, categories }: ProductSeed) {
 }
 
 function emptyVariant() {
-  return { id: "", colorName: "", colorCode: "", sku: "", price: 0, stock: 0, allowBackorder: false, images: [] as string[] };
+  return { id: "", uid: "", colorName: "", colorCode: "", sku: "", price: 0, stock: 0, allowBackorder: false, images: [] as string[] };
 }

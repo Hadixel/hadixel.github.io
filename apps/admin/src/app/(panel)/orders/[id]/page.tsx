@@ -25,8 +25,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/orders" className="text-sm text-slate-500 hover:underline">سفارش‌ها</Link>
-        <h1 className="text-xl font-bold text-slate-900">سفارش {order.orderNumber}</h1>
+        <Link href="/orders" className="text-sm text-ash hover:underline">سفارش‌ها</Link>
+        <h1 className="text-xl font-bold text-ink">سفارش {order.orderNumber}</h1>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -64,11 +64,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   ))}
                 </TBody>
               </Table>
-              <div className="space-y-1 border-t border-slate-100 px-5 py-4 text-sm">
+              <div className="space-y-1 border-t border-plaster px-5 py-4 text-sm">
                 <div className="flex justify-between"><span>جمع کالا</span><span>{formatToman(order.subtotal)}</span></div>
-                <div className="flex justify-between"><span>تخفیف</span><span className="text-red-600">−{formatToman(order.discountAmount)}</span></div>
+                <div className="flex justify-between"><span>تخفیف</span><span className="text-red-700">−{formatToman(order.discountAmount)}</span></div>
                 <div className="flex justify-between"><span>ارسال</span><span>{formatToman(order.deliveryFee)}</span></div>
-                <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-bold"><span>قابل پرداخت</span><span>{formatToman(order.total)}</span></div>
+                <div className="flex justify-between border-t border-plaster pt-2 text-base font-bold"><span>قابل پرداخت</span><span>{formatToman(order.total)}</span></div>
               </div>
             </CardBody>
           </Card>
@@ -77,17 +77,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <CardHeader title="رویدادها" subtitle="تاریخچهٔ وضعیت سفارش" />
             <CardBody className="p-0">
               {order.events.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-slate-400">رویدادی ثبت نشده است</p>
+                <p className="px-5 py-6 text-sm text-ash">رویدادی ثبت نشده است</p>
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-plaster">
                   {order.events.map((ev) => (
                     <li key={ev.id} className="flex items-start justify-between gap-4 px-5 py-3 text-sm">
                       <div>
-                        <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-xs font-medium">{ev.dimension === "FULFILLMENT" ? "اجرا" : "پرداخت"}</span>
-                        <span dir="ltr" className="text-slate-700">{ev.from === "" ? "—" : ev.from} → {ev.to}</span>
-                        {ev.note && <p className="mt-1 text-xs text-slate-400">{ev.note}</p>}
+                        <span className="ml-2 rounded bg-plaster px-2 py-0.5 text-xs font-medium">{ev.dimension === "FULFILLMENT" ? "اجرا" : "پرداخت"}</span>
+                        <span dir="ltr" className="text-ink">{ev.from === "" ? "—" : ev.from} → {ev.to}</span>
+                        {ev.note && <p className="mt-1 text-xs text-ash">{ev.note}</p>}
                       </div>
-                      <div className="text-left text-xs text-slate-400">
+                      <div className="text-left text-xs text-ash">
                         <div>{ev.actor}</div>
                         <div>{formatJalaliDateTime(ev.at)}</div>
                       </div>
@@ -101,11 +101,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
         <div className="space-y-5">
           <Card>
-            <CardHeader title="مشتری" actions={<Link href={`/customers/${order.customerId}`} className="text-xs text-rose-600 hover:underline">مشاهده</Link>} />
+            <CardHeader title="مشتری" actions={<Link href={`/customers/${order.customerId}`} className="text-xs text-ink hover:text-flame-700">مشاهده</Link>} />
             <CardBody className="space-y-1 text-sm">
-              <div className="font-medium text-slate-800">{order.customer.name || order.customer.phone}</div>
-              <div dir="ltr" className="text-slate-500 text-left">{order.customer.phone}</div>
-              {order.customer.email && <div dir="ltr" className="text-left text-slate-500">{order.customer.email}</div>}
+              <div className="font-medium text-ink">{order.customer.name || order.customer.phone}</div>
+              <div dir="ltr" className="text-ash text-left">{order.customer.phone}</div>
+              {order.customer.email && <div dir="ltr" className="text-left text-ash">{order.customer.email}</div>}
             </CardBody>
           </Card>
 
@@ -129,9 +129,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               )}
               <p>{address.addressLine}</p>
               {address.recipientName && <p>{address.recipientName}</p>}
-              {address.recipientPhone && <p dir="ltr" className="text-left text-slate-500">{address.recipientPhone}</p>}
-              {address.postalCode && <p dir="ltr" className="text-left text-slate-500">{address.postalCode}</p>}
-              {!address.addressLine && <p className="text-slate-400">آدرسی ثبت نشده</p>}
+              {address.recipientPhone && <p dir="ltr" className="text-left text-ash">{address.recipientPhone}</p>}
+              {address.postalCode && <p dir="ltr" className="text-left text-ash">{address.postalCode}</p>}
+              {!address.addressLine && <p className="text-ash">آدرسی ثبت نشده</p>}
             </CardBody>
           </Card>
 
@@ -139,7 +139,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <CardHeader title="رزروها" />
             <CardBody>
               {order.reservations.length === 0 ? (
-                <p className="text-sm text-slate-400">رزروی ثبت نشده</p>
+                <p className="text-sm text-ash">رزروی ثبت نشده</p>
               ) : (
                 <ul className="space-y-1 text-sm">{order.reservations.map((r) => (
                   <li key={r.id} className="flex justify-between"><span>تعداد {faDigits(r.qty)}</span><Badge color={r.status === "COMMITTED" ? "green" : r.status === "ACTIVE" ? "blue" : "gray"}>{r.status}</Badge></li>
@@ -151,7 +151,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {order.adminNote && (
             <Card>
               <CardHeader title="یادداشت ادمین" />
-              <CardBody><p className="text-sm text-slate-700">{order.adminNote}</p></CardBody>
+              <CardBody><p className="text-sm text-ink">{order.adminNote}</p></CardBody>
             </Card>
           )}
         </div>
@@ -163,8 +163,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{value}</span>
+      <span className="text-ash">{label}</span>
+      <span className="font-medium text-ink">{value}</span>
     </div>
   );
 }

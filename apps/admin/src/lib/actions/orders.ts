@@ -100,9 +100,18 @@ export async function createManualOrder(_prev: ActionState, formData: FormData):
   const deliveryFee = Number(formData.get("deliveryFee")) || 0;
   const adminNote = field(formData, "adminNote") || null;
   const items = jsonParse<ManualItemInput[]>(formData.get("items") as string | null, []);
-  const address = jsonParse<Record<string, unknown>>(formData.get("address") as string | null, {});
+  // the manual-order form posts dot-named address fields (no hidden JSON blob)
+  const address = {
+    recipientName: field(formData, "address.recipientName"),
+    recipientPhone: field(formData, "address.recipientPhone"),
+    province: field(formData, "address.province"),
+    city: field(formData, "address.city"),
+    addressLine: field(formData, "address.addressLine"),
+    postalCode: field(formData, "address.postalCode"),
+  };
 
   if (!customerId) return { error: "مشتری را انتخاب کنید" };
+  if (!address.recipientName || !address.recipientPhone) return { error: "نام و موبایل گیرنده الزامی است" };
   if (!items.length) return { error: "حداقل یک آیتم اضافه کنید" };
   if (items.some((i) => !i.variantId || !Number.isFinite(i.qty) || i.qty <= 0)) {
     return { error: "آیتم‌های نامعتبر" };
@@ -131,7 +140,7 @@ export async function createManualOrder(_prev: ActionState, formData: FormData):
       data: {
         orderNumber,
         customerId,
-        shippingAddress: (Object.keys(address).length ? address : { recipientName: "", recipientPhone: "", province: "", city: "", addressLine: "", postalCode: "" }) as never,
+        shippingAddress: address as never,
         fulfillmentStatus: "PENDING",
         paymentStatus: paidAtPlace ? "PAID" : "AWAITING",
         paymentMethod,

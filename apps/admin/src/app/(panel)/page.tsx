@@ -15,12 +15,16 @@ export default async function DashboardPage() {
     db().order.count({ where: { paymentStatus: "AWAITING" } }),
     (async () => {
       const threshold = await getSettingOrDefault<number>(settingKeys.inventoryLowStockThreshold, 3);
-      return db().variant.findMany({
-        where: { stock: { lte: threshold } },
-        include: { product: { select: { name: true, slug: true } } },
-        orderBy: { stock: "asc" },
-        take: 10,
-      });
+      const [variants, total] = await Promise.all([
+        db().variant.findMany({
+          where: { stock: { lte: threshold } },
+          include: { product: { select: { name: true, slug: true } } },
+          orderBy: { stock: "asc" },
+          take: 10,
+        }),
+        db().variant.count({ where: { stock: { lte: threshold } } }),
+      ]);
+      return { variants, total };
     })(),
     (async () => {
       const [products, pages, posts] = await Promise.all([
@@ -37,16 +41,16 @@ export default async function DashboardPage() {
     }),
   ]);
 
-const lowStock = lowStockVariants;
+const lowStock = lowStockVariants.variants;
 
   return (
     <div className="space-y-6">
       {/* stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-<StatCard title="سفارش‌های امروز" value={todayOrders} href="/orders" className="bg-rose-50" />
-        <StatCard title="در انتظار پرداخت" value={awaitingOrders} href="/orders?status=AWAITING" className="bg-amber-50" />
-        <StatCard title="کم‌موجودی" value={lowStock.length} href="/inventory" className="bg-orange-50" />
-        <StatCard title="پیش‌نویس‌ها" value={drafts.total} href="/products?status=DRAFT" className="bg-slate-100" />
+<StatCard title="سفارش‌های امروز" value={todayOrders} href="/orders" />
+        <StatCard title="در انتظار پرداخت" value={awaitingOrders} href="/orders?status=AWAITING" />
+        <StatCard title="کم‌موجودی" value={lowStockVariants.total} href="/inventory" />
+        <StatCard title="پیش‌نویس‌ها" value={drafts.total} href="/products?status=DRAFT" />
       </div>
 
       {/* drafts breakdown + recent */}
@@ -54,17 +58,17 @@ const lowStock = lowStockVariants;
         <Card>
           <CardHeader title="پیش‌نویس‌ها" subtitle="محصولات، صفحات و نوشته‌ها" />
           <CardBody className="flex gap-6">
-            <Link href="/products?status=DRAFT" className="rounded-lg bg-slate-50 px-4 py-3 text-sm hover:bg-slate-100">
-              <span className="block text-lg font-bold text-slate-800">{faDigits(drafts.products)}</span>
-              <span className="text-slate-500">محصول</span>
+            <Link href="/products?status=DRAFT" className="rounded-card bg-plaster px-4 py-3 text-sm hover:bg-plaster">
+              <span className="block text-lg font-bold text-ink">{faDigits(drafts.products)}</span>
+              <span className="text-ash">محصول</span>
             </Link>
-            <Link href="/pages?status=DRAFT" className="rounded-lg bg-slate-50 px-4 py-3 text-sm hover:bg-slate-100">
-              <span className="block text-lg font-bold text-slate-800">{faDigits(drafts.pages)}</span>
-              <span className="text-slate-500">صفحه</span>
+            <Link href="/pages?status=DRAFT" className="rounded-card bg-plaster px-4 py-3 text-sm hover:bg-plaster">
+              <span className="block text-lg font-bold text-ink">{faDigits(drafts.pages)}</span>
+              <span className="text-ash">صفحه</span>
             </Link>
-            <Link href="/blog?status=DRAFT" className="rounded-lg bg-slate-50 px-4 py-3 text-sm hover:bg-slate-100">
-              <span className="block text-lg font-bold text-slate-800">{faDigits(drafts.posts)}</span>
-              <span className="text-slate-500">نوشته</span>
+            <Link href="/blog?status=DRAFT" className="rounded-card bg-plaster px-4 py-3 text-sm hover:bg-plaster">
+              <span className="block text-lg font-bold text-ink">{faDigits(drafts.posts)}</span>
+              <span className="text-ash">نوشته</span>
             </Link>
           </CardBody>
         </Card>
@@ -88,11 +92,11 @@ const lowStock = lowStockVariants;
                 <TBody>
                   {recentOrders.map((o) => (
                     <TR key={o.id}>
-                      <TD><Link href={`/orders/${o.id}`} className="text-rose-600 hover:underline">{o.orderNumber}</Link></TD>
+                      <TD><Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link></TD>
                       <TD>{o.customer.name || o.customer.phone}</TD>
                       <TD>{formatToman(o.total)}</TD>
                       <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                      <TD className="text-xs text-slate-500">{formatJalaliDateTime(o.placedAt)}</TD>
+                      <TD className="text-xs text-ash">{formatJalaliDateTime(o.placedAt)}</TD>
                     </TR>
                   ))}
                 </TBody>
@@ -104,7 +108,7 @@ const lowStock = lowStockVariants;
 
       {/* low stock */}
       <Card>
-        <CardHeader title="کم‌موجودی" subtitle="تنوع‌هایی که موجودی آن‌ها در آستانهٔ کم‌بود قرار دارد" actions={<Link href="/inventory" className="text-sm text-rose-600 hover:underline">مدیریت موجودی</Link>} />
+        <CardHeader title="کم‌موجودی" subtitle="تنوع‌هایی که موجودی آن‌ها در آستانهٔ کم‌بود قرار دارد" actions={<Link href="/inventory" className="text-sm text-ink hover:text-flame-700">مدیریت موجودی</Link>} />
         <CardBody className="p-0">
           {lowStock.length === 0 ? (
             <EmptyState text="همهٔ تنوع‌ها موجودی کافی دارند" />
@@ -122,7 +126,7 @@ const lowStock = lowStockVariants;
               <TBody>
                 {lowStock.map((v) => (
                   <TR key={v.id}>
-                    <TD><Link href={`/products/${v.productId}`} className="text-rose-600 hover:underline">{v.product.name}</Link></TD>
+                    <TD><Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.product.name}</Link></TD>
                     <TD>{v.colorName || "—"}</TD>
                     <TD className="text-xs"><span dir="ltr">{v.sku}</span></TD>
                     <TD><Badge color={v.stock <= 0 ? "red" : "amber"}>{faDigits(v.stock)}</Badge></TD>
@@ -140,9 +144,9 @@ const lowStock = lowStockVariants;
 
 function StatCard({ title, value, href, className }: { title: string; value: number; href: string; className?: string }) {
   return (
-    <Link href={href} className={`rounded-xl border border-slate-200 p-5 shadow-sm transition hover:shadow ${className ?? "bg-white"}`}>
-      <p className="text-sm text-slate-500">{title}</p>
-      <p className="mt-2 text-3xl font-bold text-slate-900">{faDigits(value)}</p>
+    <Link href={href} className={`rounded-card border border-plaster p-5 transition-colors hover:bg-plaster/40 ${className ?? "bg-white"}`}>
+      <p className="text-sm text-ash">{title}</p>
+      <p className="mt-2 text-3xl font-bold text-ink">{faDigits(value)}</p>
     </Link>
   );
 }

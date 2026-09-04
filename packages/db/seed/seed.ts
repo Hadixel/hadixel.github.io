@@ -22,6 +22,7 @@ const catalog = JSON.parse(readFileSync(join(HERE, "catalog.json"), "utf8")) as 
 
 interface CatalogProduct {
   _id: string;
+  slug: string; // Latin URL slug — display name is Persian
   name: string;
   brand: string;
   category: string;
@@ -43,6 +44,24 @@ const WEIGHTS: Record<string, number> = {
   stove: 18,
   oven: 35,
   hood: 18,
+};
+
+// Persian display names for root categories and subcategories (URL slugs stay Latin)
+const FA_ROOTS: Record<string, string> = {
+  sink: "سینک",
+  hood: "هود",
+  oven: "فر",
+  stove: "اجاق گاز",
+  "air-fryer": "سرخ‌کن",
+};
+
+const FA_SUBS: Record<string, string> = {
+  "double-bowl": "دولگن",
+  "built-in": "توکار",
+  chimney: "شومینه‌ای",
+  steel: "استیل",
+  glass: "شیشه‌ای",
+  "dual-basket": "دوسبد",
 };
 
 // color token -> image partition (013: split by filename color token)
@@ -73,8 +92,14 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
         data: { name: prod.category, slug, weightKg: WEIGHTS[prod.category] ?? 1, sortOrder: 0 },
       }));
       roots[prod.category] = cat.id;
+      await prisma.category.update({
+        where: { id: cat.id },
+        data: { name: FA_ROOTS[prod.category] ?? prod.category },
+      });
       // spec fields derived from first product's specs (category-defined)
+      const labels = new Set<string>();
       for (const s of prod.specs) {
+        labels.add(s.label);
         try {
           await prisma.categorySpecField.upsert({
             where: { categoryId_name: { categoryId: cat.id, name: s.label } },
@@ -82,6 +107,14 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
             create: { categoryId: cat.id, name: s.label, type: specType(s.value) },
           });
         } catch { /* duplicate in same run */ }
+      }
+      // drop spec fields left over from a previous (e.g. English) labeling
+      const stale = await prisma.categorySpecField.findMany({ where: { categoryId: cat.id } });
+      for (const f of stale) {
+        if (!labels.has(f.name)) {
+          await prisma.productSpecValue.deleteMany({ where: { specFieldId: f.id } });
+          await prisma.categorySpecField.delete({ where: { id: f.id } });
+        }
       }
     }
     const key = `${prod.category}/${prod.subCategory}`;
@@ -96,6 +129,10 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
           weightKg: WEIGHTS[prod.category] ?? 1,
         },
       }));
+      await prisma.category.update({
+        where: { id: child.id },
+        data: { name: FA_SUBS[prod.subCategory] ?? prod.subCategory },
+      });
       cats[key] = child.id;
     }
   }
@@ -103,26 +140,34 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
   // 2. Products + variants (color = full variant)
   let variantCount = 0;
   for (const prod of catalog) {
-    const slug = slugify(prod.name);
+    // slug stays Latin (URLs + image dirs depend on it); display text is Persian
     const productId = (
-      await prisma.product.findUnique({ where: { slug } })
-        ?? await prisma.product.create({
-          data: {
-            slug,
-            name: prod.name,
-            brand: prod.brand ?? "Datees",
-            model: prod._id,
-            categoryId: cats[`${prod.category}/${prod.subCategory}`],
-            description: prod.description,
-            features: prod.features,
-            extraSpecs: { specs: prod.specs },
-            status: "PUBLISHED",
-            allowBackorder: true,
-          },
-        })
+      await prisma.product.upsert({
+        where: { slug: prod.slug },
+        update: {
+          name: prod.name,
+          description: prod.description,
+          features: prod.features,
+          extraSpecs: { specs: prod.specs },
+        },
+        create: {
+          slug: prod.slug,
+          name: prod.name,
+          brand: prod.brand ?? "Datees",
+          model: prod._id,
+          categoryId: cats[`${prod.category}/${prod.subCategory}`],
+          description: prod.description,
+          features: prod.features,
+          extraSpecs: { specs: prod.specs },
+          status: "PUBLISHED",
+          allowBackorder: true,
+        },
+      })
     ).id;
 
     // split images by color token; shared/unmatched go to every variant (013)
+    // Emit the canonical 013 URL convention directly (products/{slug}/variant-{color}/img-N)
+    // so a bare db:seed never re-clobbers URLs that db:images rewrote.
     const byColor: Record<string, string[]> = {};
     const shared: string[] = [];
     for (const img of prod.image) {
@@ -134,7 +179,9 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
 
     for (const color of prod.colors) {
       const key = color.toLowerCase();
-      const images = [...shared, ...(byColor[key] ?? [])];
+      const images = [...shared, ...(byColor[key] ?? [])].map(
+        (src, i) => `/products/${prod.slug}/variant-${key}/img-${i + 1}${extname(src) || ".jpg"}`,
+      );
       const sku = `${(prod.brand ?? "BRAND").toUpperCase()}-${prod._id}-${key.toUpperCase()}`;
       await prisma.variant.upsert({
         where: { sku },
@@ -153,12 +200,13 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
       variantCount++;
     }
 
-    // 3. Spec values + features persist for order history (009) — store as
-    // ProductSpecValue where a category field exists
-    const cat = prod.category;
-    // copy specs as ProductSpecValue keyed to the category's fields
+    // copy specs as ProductSpecValue keyed to the ROOT category's fields
+    // (fields live on roots; names repeat across roots — never write cross-category)
+    const thisCatId = roots[prod.category];
     for (const s of prod.specs) {
-      const fields = await prisma.categorySpecField.findMany({ where: { name: s.label } });
+      const fields = await prisma.categorySpecField.findMany({
+        where: { name: s.label, categoryId: thisCatId },
+      });
       for (const f of fields) {
         try {
           await prisma.productSpecValue.upsert({

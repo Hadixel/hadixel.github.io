@@ -67,14 +67,14 @@ export default async function ProductsPage({
             </Link>
           }
         />
-        <div className="border-b border-slate-100 px-5 py-3">
+        <div className="border-b border-plaster px-5 py-3">
           <form action="/products" method="get" className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs text-slate-500">جستجو</label>
+              <label className="mb-1 block text-xs text-ash">جستجو</label>
               <Input name="q" defaultValue={q} placeholder="نام، مدل، برند، اسلاگ" className="w-56" />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">وضعیت</label>
+              <label className="mb-1 block text-xs text-ash">وضعیت</label>
               <Select name="status" defaultValue={status ?? "ALL"}>
                 <option value="ALL">همه</option>
                 <option value="DRAFT">پیش‌نویس</option>
@@ -83,7 +83,7 @@ export default async function ProductsPage({
               </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">دسته‌بندی</label>
+              <label className="mb-1 block text-xs text-ash">دسته‌بندی</label>
               <Select name="category" defaultValue={category ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {categories.map((c) => (
@@ -93,7 +93,7 @@ export default async function ProductsPage({
             </div>
             <Button variant="secondary">اعمال</Button>
             {hasFilters && (
-              <Link href="/products" className="px-3 py-2 text-sm text-slate-500 hover:underline">حذف فیلترها</Link>
+              <Link href="/products" className="px-3 py-2 text-sm text-ash hover:underline">حذف فیلترها</Link>
             )}
           </form>
         </div>
@@ -116,14 +116,14 @@ export default async function ProductsPage({
               {products.map((p) => (
                 <TR key={p.id}>
                   <TD>
-                    <Link href={`/products/${p.id}`} className="font-medium text-rose-600 hover:underline">{p.name}</Link>
-                    <div className="text-xs text-slate-400"><span dir="ltr">{p.slug}</span></div>
+                    <Link href={`/products/${p.id}`} className="font-medium text-ink hover:text-flame-700">{p.name}</Link>
+                    <div className="text-xs text-ash"><span dir="ltr">{p.slug}</span></div>
                   </TD>
                   <TD>{p.category.name}</TD>
                   <TD className="text-xs">{p.model}</TD>
                   <TD>{faDigits(p._count.variants)}</TD>
                   <TD><StatusBadge status={p.status} /></TD>
-                  <TD className="text-xs text-slate-500">{faDigits(p.updatedAt.toLocaleDateString("fa-IR"))}</TD>
+                  <TD className="text-xs text-ash">{faDigits(p.updatedAt.toLocaleDateString("fa-IR"))}</TD>
                 </TR>
               ))}
             </TBody>
@@ -139,7 +139,7 @@ export default async function ProductsPage({
               href={`/products?${baseQs.toString()}${baseQs.size ? "&" : ""}page=${p}`}
               className={
                 "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm " +
-                (p === page ? "border-rose-600 bg-rose-600 text-white" : "border-slate-300 text-slate-600 hover:bg-slate-50")
+                (p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster")
               }
             >
               {faDigits(p)}

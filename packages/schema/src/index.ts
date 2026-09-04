@@ -11,7 +11,8 @@ export const linkRefSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("BLOG_INDEX") }),
   z.object({ type: z.literal("BLOG_POST"), targetId: z.string() }),
   z.object({ type: z.literal("COLLECTION"), targetId: z.string() }),
-  z.object({ type: z.literal("EXTERNAL"), url: z.string().url(), newTab: z.boolean().default(true) }),
+  // url may be site-relative ("/products") — the storefront renders it verbatim
+  z.object({ type: z.literal("EXTERNAL"), url: z.string().min(1), newTab: z.boolean().default(true) }),
   z.object({ type: z.literal("NONE") }),
 ]);
 

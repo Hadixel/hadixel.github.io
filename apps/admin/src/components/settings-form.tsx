@@ -46,8 +46,8 @@ export function SettingsForm({
             key={key}
             type="button"
             onClick={() => setSection(key)}
-            className={`block w-full rounded-lg px-3 py-2 text-right text-sm ${
-              section === key ? "bg-slate-900 font-medium text-white" : "text-slate-600 hover:bg-slate-100"
+            className={`block w-full rounded-card px-3 py-2 text-right text-sm ${
+              section === key ? "bg-ink font-medium text-white" : "text-ink hover:bg-plaster"
             }`}
           >
             <span className="ml-2">{s.icon}</span>
@@ -83,8 +83,8 @@ export function SettingsForm({
               ))}
             </div>
 
-            {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-            {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+            {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+            {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
             <div className="flex justify-end">
               <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره تنظیمات"}</Button>
             </div>

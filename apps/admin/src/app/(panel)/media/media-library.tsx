@@ -25,7 +25,7 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
         <div className="mb-4">
           <Input placeholder="جستجوی فایل…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        {err && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
+        {err && <p className="mb-3 rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
         {filtered.length === 0 ? (
           <EmptyState text="فایلی یافت نشد" />
         ) : (
@@ -34,22 +34,22 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
               const isImage = /\.(jpe?g|png|webp|gif|svg|avif)$/i.test(it.key);
               const isVideo = /\.(mp4|webm)$/i.test(it.key);
               return (
-                <div key={it.key} className="overflow-hidden rounded-xl border border-slate-200">
-                  <div className="flex h-28 items-center justify-center bg-slate-50">
+                <div key={it.key} className="overflow-hidden rounded-card border border-plaster">
+                  <div className="flex h-28 items-center justify-center bg-plaster">
                     {isImage ? (
                       <img src={it.url} alt={it.key} className="h-full w-full object-cover" />
                     ) : isVideo ? (
-                      <span className="text-xs text-slate-400">ویدیو</span>
+                      <span className="text-xs text-ash">ویدیو</span>
                     ) : (
-                      <span className="text-xs text-slate-400">PDF</span>
+                      <span className="text-xs text-ash">PDF</span>
                     )}
                   </div>
                   <div className="p-2">
-                    <p className="truncate text-[11px] text-slate-500" dir="ltr" title={it.key}>{it.key}</p>
+                    <p className="truncate text-[11px] text-ash" dir="ltr" title={it.key}>{it.key}</p>
                     <div className="mt-1 flex items-center justify-between gap-1">
                       <button
                         type="button"
-                        className="text-[11px] text-sky-600 hover:underline"
+                        className="text-[11px] text-flame-700 hover:underline"
                         onClick={async () => {
                           await navigator.clipboard.writeText(it.url);
                           alert("آدرس کپی شد");
@@ -65,7 +65,7 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
                         }}
                       >
                         <input type="hidden" name="key" value={it.key} />
-                        <button type="submit" disabled={pending && deleting === it.key} className="text-[11px] text-red-600 hover:underline">
+                        <button type="submit" disabled={pending && deleting === it.key} className="text-[11px] text-ink hover:text-flame-700">
                           حذف
                         </button>
                       </form>

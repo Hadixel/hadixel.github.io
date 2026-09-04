@@ -17,7 +17,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "../../..");
 const catalog = JSON.parse(readFileSync(join(HERE, "catalog.json"), "utf8")) as Array<{
   _id: string;
-  name: string;
+  slug: string; // Latin URL slug (display name is Persian)
   colors: string[];
   image: string[];
 }>;
@@ -30,7 +30,7 @@ async function main() {
   try {
     let copied = 0;
     for (const prod of catalog) {
-      const slug = slugify(prod.name);
+      const slug = prod.slug;
       const byColor: Record<string, string[]> = {};
       const shared: string[] = [];
       for (const img of prod.image) {

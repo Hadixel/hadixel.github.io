@@ -13,7 +13,7 @@ export default async function CollectionsPage() {
   ]);
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-xl font-bold text-slate-900">مجموعه‌ها</h1>
+      <h1 className="mb-4 text-xl font-bold text-ink">مجموعه‌ها</h1>
       <CollectionsManager
         products={products}
         collections={collections.map((c) => ({

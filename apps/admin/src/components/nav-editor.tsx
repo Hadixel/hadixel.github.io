@@ -196,9 +196,9 @@ export function NavEditor({ seed }: { seed: NavSeed }) {
         <CardHeader title={`منوی ${seed.location === "HEADER" ? "سربرگ" : seed.location === "FOOTER" ? "پاصفحه" : "موبایل"}`} subtitle={seed.name} />
         <CardBody>
           <div className="mb-4 flex items-center gap-3">
-            <span className="text-sm text-slate-600">ساختار درختی منو:</span>
+            <span className="text-sm text-ink">ساختار درختی منو:</span>
             <Button type="button" variant="secondary" onClick={addRoot}>+ افزودن آیتم ریشه</Button>
-            <span className="text-xs text-slate-400">{items.length} آیتم ریشه</span>
+            <span className="text-xs text-ash">{items.length} آیتم ریشه</span>
           </div>
 
           <div className="space-y-3">
@@ -218,14 +218,14 @@ export function NavEditor({ seed }: { seed: NavSeed }) {
               />
             ))}
             {items.length === 0 && (
-              <p className="rounded-lg border border-dashed border-slate-300 py-8 text-center text-sm text-slate-400">منو خالی است</p>
+              <p className="rounded-card border border-dashed border-fog py-8 text-center text-sm text-ash">منو خالی است</p>
             )}
           </div>
         </CardBody>
       </Card>
 
-      {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-      {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+      {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره منو"}</Button>
       </div>
@@ -259,7 +259,7 @@ function ItemEditor({
   const isCategory = item.childSource === "CATEGORY";
 
   return (
-    <div className={`rounded-xl border bg-white ${depth > 0 ? "ml-6 border-slate-200" : "border-slate-300"}`}>
+    <div className={`rounded-card border bg-white ${depth > 0 ? "ml-6 border-plaster" : "border-fog"}`}>
       <div className="space-y-3 p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Field label="عنوان"><Input value={item.label} onChange={(e) => patchItem(path, { label: e.target.value })} /></Field>
@@ -340,15 +340,15 @@ function ItemEditor({
           </div>
         )}
 
-        <div className="rounded-lg bg-slate-50 p-3">
+        <div className="rounded-card bg-plaster p-3">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">بنرهای پیشنهادی (Promo)</span>
+            <span className="text-xs font-semibold text-ash">بنرهای پیشنهادی (Promo)</span>
             <Button type="button" variant="secondary" size="sm" onClick={() => addPromo(path)}>+ تبلیغ</Button>
           </div>
           {item.promos.length > 0 && (
             <div className="space-y-2">
               {item.promos.map((p, k) => (
-                <div key={k} className="rounded-lg border border-slate-200 bg-white p-3">
+                <div key={k} className="rounded-card border border-plaster bg-white p-3">
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
                     <Input placeholder="آدرس تصویر" dir="ltr" value={p.imageUrl} onChange={(e) => patchPromo(path, k, { imageUrl: e.target.value })} />
                     <Input placeholder="متن جایگزین" value={p.alt} onChange={(e) => patchPromo(path, k, { alt: e.target.value })} />

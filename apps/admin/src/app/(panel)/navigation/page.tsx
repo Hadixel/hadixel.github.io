@@ -61,9 +61,9 @@ export default async function NavigationPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">مدیریت منوها</h1>
-      <p className="text-sm text-slate-500">هر منو به‌صورت کامل ذخیره می‌شود؛ تغییرات بلافاصله در فروشگاه اعمال می‌شود.</p>
-      {seeds.length === 0 && <p className="text-sm text-slate-500">منویی یافت نشد.</p>}
+      <h1 className="text-xl font-bold text-ink">مدیریت منوها</h1>
+      <p className="text-sm text-ash">هر منو به‌صورت کامل ذخیره می‌شود؛ تغییرات بلافاصله در فروشگاه اعمال می‌شود.</p>
+      {seeds.length === 0 && <p className="text-sm text-ash">منویی یافت نشد.</p>}
       {seeds.map((s) => (
         <NavEditor key={s.location} seed={s} />
       ))}

@@ -14,7 +14,7 @@ export default async function NewOrderPage() {
   ]);
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-xl font-bold text-slate-900">ثبت سفارش دستی</h1>
+      <h1 className="mb-4 text-xl font-bold text-ink">ثبت سفارش دستی</h1>
       <ManualOrderForm customers={customers} variants={variants} />
     </div>
   );

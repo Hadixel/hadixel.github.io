@@ -9,22 +9,32 @@ const ACTION_LABELS: Record<string, string> = {
   LOGIN_FAILED: "ورود ناموفق",
   LOGIN_LOCKED: "قفل ورود",
   LOGOUT: "خروج",
-  PASSWORD_CHANGED: "تغییر رمز",
-  SESSION_REVOKED: "ابطال نشست",
+  ADMIN_PASSWORD_CHANGED: "تغییر رمز مدیریت",
+  ADMIN_SESSION_REVOKED: "ابطال نشست مدیریت",
   PRODUCT_CREATED: "ایجاد محصول",
   PRODUCT_UPDATED: "ویرایش محصول",
-  PRODUCT_DELETED: "حذف محصول",
   CATEGORY_CREATED: "ایجاد دسته",
   CATEGORY_UPDATED: "ویرایش دسته",
   CATEGORY_DELETED: "حذف دسته",
   COLLECTION_CREATED: "ایجاد مجموعه",
   COLLECTION_UPDATED: "ویرایش مجموعه",
   COLLECTION_DELETED: "حذف مجموعه",
-  ORDER_CREATED: "ایجاد سفارش",
-  ORDER_STATUS_CHANGED: "تغییر وضعیت سفارش",
+  ORDER_CREATED_MANUAL: "ثبت سفارش دستی",
+  // setOrderStatus records `ORDER_${to}` for both dimensions
+  ORDER_PENDING: "ثبت سفارش",
+  ORDER_CONFIRMED: "تایید سفارش",
+  ORDER_PROCESSING: "در حال پردازش",
+  ORDER_SHIPPED: "ارسال شد",
+  ORDER_DELIVERED: "تحویل شد",
+  ORDER_CANCELLED: "لغو سفارش",
+  ORDER_RETURNED: "مرجوع شد",
+  ORDER_AWAITING: "در انتظار پرداخت",
+  ORDER_PAID: "پرداخت شد",
+  ORDER_FAILED: "پرداخت ناموفق",
+  ORDER_REFUNDED: "بازپرداخت شد",
   STOCK_ADJUSTED: "اصلاح موجودی",
-  PAGE_CREATED: "ایجاد صفحه",
-  PAGE_UPDATED: "ویرایش صفحه",
+  PAGE_PUBLISHED: "انتشار صفحه",
+  PAGE_SAVED_DRAFT: "ذخیره پیش‌نویس صفحه",
   PAGE_DELETED: "حذف صفحه",
   POST_CREATED: "ایجاد نوشته",
   POST_UPDATED: "ویرایش نوشته",
@@ -70,10 +80,10 @@ export default async function AuditPage({
     <div className="space-y-4">
       <Card>
         <CardHeader title="گزارش رویدادها" subtitle={`${faDigits(total)} رویداد`} />
-        <div className="border-b border-slate-100 px-5 py-3">
+        <div className="border-b border-plaster px-5 py-3">
           <form action="/audit" method="get" className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs text-slate-500">رویداد</label>
+              <label className="mb-1 block text-xs text-ash">رویداد</label>
               <Select name="action" defaultValue={action ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {Object.keys(ACTION_LABELS).map((a) => (
@@ -82,7 +92,7 @@ export default async function AuditPage({
               </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-500">مدیر</label>
+              <label className="mb-1 block text-xs text-ash">مدیر</label>
               <Select name="admin" defaultValue={adminId ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {admins.map((a) => (
@@ -90,7 +100,7 @@ export default async function AuditPage({
                 ))}
               </Select>
             </div>
-            <button type="submit" className="rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-700 hover:bg-slate-200">اعمال</button>
+            <button type="submit" className="rounded-card bg-plaster px-4 py-2 text-sm text-ink hover:bg-fog/60">اعمال</button>
           </form>
         </div>
 
@@ -114,22 +124,22 @@ export default async function AuditPage({
                     <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(l.at)}</TD>
                     <TD><Badge>{ACTION_LABELS[l.action] ?? l.action}</Badge></TD>
                     <TD>{l.adminUser ? (l.adminUser.name || l.adminUser.email) : faDigits("—")}</TD>
-                    <TD className="text-xs text-slate-500" dir="ltr">
+                    <TD className="text-xs text-ash" dir="ltr">
                       {l.entityType ? `${l.entityType}${l.entityId ? ` / ${l.entityId.slice(0, 8)}` : ""}` : "—"}
                     </TD>
-                    <TD dir="ltr" className="text-xs text-slate-400">{l.ip ?? "—"}</TD>
+                    <TD dir="ltr" className="text-xs text-ash">{l.ip ?? "—"}</TD>
                   </TR>
                 ))}
               </TBody>
             </Table>
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-sm">
-              <span className="text-slate-500">صفحه {faDigits(page)} از {faDigits(totalPages)}</span>
+            <div className="flex items-center justify-between border-t border-plaster px-5 py-3 text-sm">
+              <span className="text-ash">صفحه {faDigits(page)} از {faDigits(totalPages)}</span>
               <div className="flex gap-2">
                 {page > 1 && (
-                  <a href={`/audit?page=${page - 1}${action ? `&action=${action}` : ""}${adminId ? `&admin=${adminId}` : ""}`} className="rounded-lg bg-slate-100 px-3 py-1.5 hover:bg-slate-200">قبلی</a>
+                  <a href={`/audit?page=${page - 1}${action ? `&action=${action}` : ""}${adminId ? `&admin=${adminId}` : ""}`} className="rounded-card bg-plaster px-3 py-1.5 hover:bg-fog/60">قبلی</a>
                 )}
                 {page < totalPages && (
-                  <a href={`/audit?page=${page + 1}${action ? `&action=${action}` : ""}${adminId ? `&admin=${adminId}` : ""}`} className="rounded-lg bg-slate-100 px-3 py-1.5 hover:bg-slate-200">بعدی</a>
+                  <a href={`/audit?page=${page + 1}${action ? `&action=${action}` : ""}${adminId ? `&admin=${adminId}` : ""}`} className="rounded-card bg-plaster px-3 py-1.5 hover:bg-fog/60">بعدی</a>
                 )}
               </div>
             </div>

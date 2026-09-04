@@ -44,9 +44,9 @@ async function NodeRenderer({ node }: { node: Node }) {
         </ol>
       );
     case "quote":
-      return <blockquote className="border-r-4 border-amber-400 pr-4 text-gray-600 italic">{node.content?.map((n, i) => <Inline key={i} node={n} />)}</blockquote>;
+      return <blockquote className="border-r-4 border-flame-300 pr-4 text-ash italic">{node.content?.map((n, i) => <Inline key={i} node={n} />)}</blockquote>;
     case "codeBlock":
-      return <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-green-200" dir="ltr"><code>{node.content?.map((n) => n.text ?? "").join("")}</code></pre>;
+      return <pre className="overflow-x-auto rounded-lg bg-ink p-4 text-sm text-green-200" dir="ltr"><code>{node.content?.map((n) => n.text ?? "").join("")}</code></pre>;
     case "image":
       return <Image src={node.attrs?.src as string} alt={(node.attrs?.alt as string) ?? ""} width={800} height={500} className="my-6 w-full rounded-xl object-cover" />;
     case "horizontalRule":
@@ -59,10 +59,10 @@ async function NodeRenderer({ node }: { node: Node }) {
       if (!p) return null;
       return (
         <Link href={`/product/${p.slug}`} className="my-6 flex items-center gap-4 rounded-xl border p-4 transition hover:shadow">
-          {p.variants[0]?.images?.[0] && <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-50"><Image src={p.variants[0].images[0]} alt={p.name} fill sizes="64px" className="object-contain" /></div>}
+          {p.variants[0]?.images?.[0] && <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-plaster"><Image src={p.variants[0].images[0]} alt={p.name} fill sizes="64px" className="object-contain" /></div>}
           <div>
             <div className="font-semibold">{p.name}</div>
-            <div className="text-sm text-amber-600">مشاهده محصول</div>
+            <div className="text-sm text-flame-700">مشاهده محصول</div>
           </div>
         </Link>
       );
@@ -101,9 +101,9 @@ function Inline({ node }: { node: Node }) {
     let el: React.ReactNode = text;
     if (node.marks?.some((m) => m.type === "bold")) el = <strong>{el}</strong>;
     if (node.marks?.some((m) => m.type === "italic")) el = <em>{el}</em>;
-    if (node.marks?.some((m) => m.type === "code")) el = <code className="rounded bg-gray-100 px-1 text-sm">{el}</code>;
+    if (node.marks?.some((m) => m.type === "code")) el = <code className="rounded bg-plaster px-1 text-sm">{el}</code>;
     const link = node.marks?.find((m) => m.type === "link");
-    if (link?.attrs?.href) el = <a href={link.attrs.href as string} className="text-amber-600 underline">{el}</a>;
+    if (link?.attrs?.href) el = <a href={link.attrs.href as string} className="text-flame-700 underline">{el}</a>;
     return <>{el}</>;
   }
   return null;

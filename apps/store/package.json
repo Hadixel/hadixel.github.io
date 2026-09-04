@@ -13,6 +13,7 @@
     "@kmodern/adapters": "workspace:*",
     "@kmodern/db": "workspace:*",
     "@kmodern/schema": "workspace:*",
+    "@kmodern/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "next": "^16.3.0",
     "react": "^19.2.6",

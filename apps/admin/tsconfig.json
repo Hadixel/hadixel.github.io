@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@kmodern/ui": [
+        "../../packages/ui/src"
       ]
     }
   },

@@ -23,9 +23,9 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center gap-3">
-        <Link href="/products" className="text-sm text-slate-500 hover:underline">محصولات</Link>
-        <h1 className="text-xl font-bold text-slate-900">{product.name}</h1>
-        <span className="text-xs text-slate-400" dir="ltr">{product.slug}</span>
+        <Link href="/products" className="text-sm text-ash hover:underline">محصولات</Link>
+        <h1 className="text-xl font-bold text-ink">{product.name}</h1>
+        <span className="text-xs text-ash" dir="ltr">{product.slug}</span>
       </div>
       <ProductForm
         product={{

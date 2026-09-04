@@ -8,7 +8,7 @@ export default async function NewProductPage() {
   });
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-xl font-bold text-slate-900">محصول جدید</h1>
+      <h1 className="mb-4 text-xl font-bold text-ink">محصول جدید</h1>
       <ProductForm
         categories={categories.map((c) => ({
           id: c.id,

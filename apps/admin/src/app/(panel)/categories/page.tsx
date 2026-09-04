@@ -12,7 +12,7 @@ export default async function CategoriesPage() {
   });
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="mb-4 text-xl font-bold text-slate-900">دسته‌بندی‌ها</h1>
+      <h1 className="mb-4 text-xl font-bold text-ink">دسته‌بندی‌ها</h1>
       <CategoriesManager
         categories={categories.map((c) => ({
           id: c.id,

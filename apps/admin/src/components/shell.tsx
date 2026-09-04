@@ -26,13 +26,13 @@ function NavLink({ item }: { item: NavItem }) {
   return (
     <Link
       href={item.href}
-      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-        active ? "bg-rose-50 text-rose-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+      className={`flex items-center justify-between rounded-card px-3 py-2 text-sm font-semibold transition-colors ${
+        active ? "bg-flame-50 text-flame-800" : "text-ink hover:bg-plaster hover:text-ink"
       }`}
     >
       <span>{item.label}</span>
       {item.badge ? (
-        <span className="rounded-full bg-rose-600 px-2 py-0.5 text-xs font-bold text-white">{faDigits(item.badge)}</span>
+        <span className="rounded-[30px] bg-flame-700 px-2 py-0.5 text-xs font-bold text-white">{faDigits(item.badge)}</span>
       ) : null}
     </Link>
   );
@@ -46,13 +46,13 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
     <div className="mb-1">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        className="flex w-full items-center justify-between rounded-card px-3 py-2 text-sm font-medium text-ink hover:bg-plaster hover:text-ink"
       >
         <span>{label}</span>
-        <span className="text-xs text-slate-400">{expanded ? "▾" : "▴"}</span>
+        <span className="text-xs text-ash">{expanded ? "▾" : "▴"}</span>
       </button>
       {expanded && (
-        <div className="mr-3 mt-1 space-y-0.5 border-r border-slate-200 pr-2">
+        <div className="mr-3 mt-1 space-y-0.5 border-r border-plaster pr-2">
           {items.map((i) => (
             <NavLink key={i.href} item={i} />
           ))}
@@ -70,10 +70,10 @@ export function Sidebar({
   lowStock: number;
 }) {
   return (
-    <aside className="fixed inset-y-0 right-0 z-20 flex w-64 flex-col border-l border-slate-200 bg-white">
-      <Link href="/" className="flex h-16 items-center gap-2 border-b border-slate-100 px-5">
-        <span className="text-lg font-bold text-rose-600">کمدرن</span>
-        <span className="text-sm text-slate-400">پنل مدیریت</span>
+    <aside className="fixed inset-y-0 right-0 z-20 flex w-64 flex-col border-l border-plaster bg-white">
+      <Link href="/" className="flex h-16 items-center gap-2 border-b border-plaster px-5">
+        <span className="text-lg font-black text-ink">کمدرن</span>
+        <span className="text-sm text-ash">پنل مدیریت</span>
       </Link>
       <nav className="flex-1 overflow-y-auto p-3">
         <NavLink item={{ href: "/", label: "داشبورد" }} />
@@ -101,7 +101,7 @@ export function Sidebar({
         <NavLink item={{ href: "/settings", label: "تنظیمات" }} />
         <NavLink item={{ href: "/audit", label: "ممیزی" }} />
       </nav>
-      <div className="border-t border-slate-100 p-3 text-xs text-slate-400">کمدرن © ۱۴۰۴</div>
+      <div className="border-t border-plaster p-3 text-xs text-ash">کمدرن © ۱۴۰۴</div>
     </aside>
   );
 }
@@ -124,15 +124,20 @@ export function Topbar({ name, email }: { name: string; email: string }) {
     ["/audit", "ممیزی"],
     ["/login", "ورود"],
   ];
-  const title = titles.find(([p]) => pathname === p)?.[1] ?? (pathname === "/" ? "داشبورد" : "");
+  // longest-prefix match so detail routes (/products/[id]) inherit the section title
+  const title =
+    [...titles]
+      .sort((a, b) => b[0].length - a[0].length)
+      .find(([p]) => pathname === p || pathname.startsWith(p + "/"))?.[1]
+    ?? (pathname === "/" ? "داشبورد" : "");
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-6 backdrop-blur">
-      <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-plaster bg-white/95 px-6 backdrop-blur">
+      <h1 className="text-lg font-semibold text-ink">{title}</h1>
       <div className="flex items-center gap-3">
-        <span className="text-sm text-slate-500">{name}</span>
-        <span className="text-xs text-slate-400" dir="ltr">{email}</span>
+        <span className="text-sm text-ash">{name}</span>
+        <span className="text-xs text-ash" dir="ltr">{email}</span>
         <form action="/logout" method="post">
-          <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
+          <button className="rounded-card border border-fog px-3 py-1.5 text-sm text-ink hover:bg-plaster">
             خروج
           </button>
         </form>

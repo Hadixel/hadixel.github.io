@@ -48,13 +48,13 @@ export default async function InventoryPage({
           title="موجودی"
           subtitle={`${faDigits(lowStockCount)} تنوع کم‌موجودی (آستانه: ${faDigits(threshold)})`}
         />
-        <div className="border-b border-slate-100 px-5 py-3">
+        <div className="border-b border-plaster px-5 py-3">
           <form action="/inventory" method="get" className="flex items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs text-slate-500">جستجو (SKU یا نام محصول)</label>
+              <label className="mb-1 block text-xs text-ash">جستجو (SKU یا نام محصول)</label>
               <Input name="q" defaultValue={q} className="w-64" />
             </div>
-            <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">جستجو</button>
+            <button className="rounded-card border border-fog px-4 py-2 text-sm hover:bg-plaster">جستجو</button>
           </form>
         </div>
 
@@ -78,9 +78,9 @@ export default async function InventoryPage({
                 {variants.map((v) => {
                   const low = v.stock <= threshold;
                   return (
-                    <TR key={v.id} className={low ? "bg-amber-50/60" : undefined}>
+                    <TR key={v.id} className={low ? "/60" : undefined}>
                       <TD>
-                        <Link href={`/products/${v.productId}`} className="text-rose-600 hover:underline">{v.product.name}</Link>
+                        <Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.product.name}</Link>
                       </TD>
                       <TD>{v.colorName || "—"}{low && <Badge color="amber" className="mr-2">کم</Badge>}</TD>
                       <TD className="text-xs"><span dir="ltr">{v.sku}</span></TD>
@@ -105,7 +105,7 @@ export default async function InventoryPage({
               href={`/inventory?${q ? `q=${encodeURIComponent(q)}&` : ""}page=${p}`}
               className={
                 "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm " +
-                (p === page ? "border-rose-600 bg-rose-600 text-white" : "border-slate-300 text-slate-600 hover:bg-slate-50")
+                (p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster")
               }
             >
               {faDigits(p)}

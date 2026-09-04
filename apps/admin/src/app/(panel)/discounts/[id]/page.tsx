@@ -12,8 +12,8 @@ export default async function EditDiscount({ params }: { params: Promise<{ id: s
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Link href="/discounts" className="text-sm text-slate-500 hover:underline">تخفیف‌ها</Link>
-        <h1 className="text-xl font-bold text-slate-900">ویرایش تخفیف</h1>
+        <Link href="/discounts" className="text-sm text-ash hover:underline">تخفیف‌ها</Link>
+        <h1 className="text-xl font-bold text-ink">ویرایش تخفیف</h1>
       </div>
       <DiscountForm
         seed={{

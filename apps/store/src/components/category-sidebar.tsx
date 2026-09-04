@@ -1,30 +1,52 @@
 import Link from "next/link";
 import type { Category } from "@kmodern/db";
+import { cn } from "@kmodern/ui";
 
-export function CategorySidebar({ categories }: { categories: Array<Pick<Category, "id" | "name" | "slug" | "parentId">> }) {
+/* Hairline category list — active section ink, the rest ash (Zellerfeld nav idiom). */
+export function CategorySidebar({
+  categories,
+  activeSlug,
+}: {
+  categories: Array<Pick<Category, "id" | "name" | "slug" | "parentId">>;
+  activeSlug?: string;
+}) {
   const roots = categories.filter((c) => !c.parentId);
   return (
-    <aside className="hidden lg:block">
-      <div className="rounded-xl border bg-white p-4">
-        <div className="mb-3 font-bold">دستهبندیها</div>
-        <nav className="space-y-2">
-          {roots.map((r) => {
-            const kids = categories.filter((c) => c.parentId === r.id);
-            return (
-              <div key={r.id}>
-                <Link href={`/category/${r.slug}`} className="block rounded px-2 py-1.5 font-medium text-slate-700 hover:bg-gray-50 hover:text-amber-600">
-                  {r.name}
+    <aside className="sticky top-40 hidden h-fit lg:block">
+      <div className="text-sm font-black text-ink">دسته‌بندی‌ها</div>
+      <nav className="mt-4 space-y-4 border-r border-plaster pr-4">
+        {roots.map((r) => {
+          const kids = categories.filter((c) => c.parentId === r.id);
+          const rootActive = r.slug === activeSlug;
+          return (
+            <div key={r.id}>
+              <Link
+                href={`/category/${r.slug}`}
+                className={cn(
+                  "block py-1 font-semibold transition-colors",
+                  rootActive ? "text-flame-700" : "text-ink hover:text-flame-700",
+                )}
+              >
+                {r.name}
+              </Link>
+              {kids.map((k) => (
+                <Link
+                  key={k.id}
+                  href={`/category/${k.slug}`}
+                  className={cn(
+                    "block py-0.5 text-sm transition-colors",
+                    k.slug === activeSlug
+                      ? "font-semibold text-flame-700"
+                      : "text-ash hover:text-ink",
+                  )}
+                >
+                  {k.name}
                 </Link>
-                {kids.map((k) => (
-                  <Link key={k.id} href={`/category/${k.slug}`} className="mr-4 block rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-50 hover:text-amber-600">
-                    {k.name}
-                  </Link>
-                ))}
-              </div>
-            );
-          })}
-        </nav>
-      </div>
+              ))}
+            </div>
+          );
+        })}
+      </nav>
     </aside>
   );
 }

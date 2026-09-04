@@ -11,11 +11,11 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(loginAction, {});
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardBody>
+    <div className="w-full max-w-sm rounded-xl bg-canvas p-8 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      
         <div className="mb-6 text-center">
-          <h1 className="text-xl font-bold text-slate-900">کمدرن — پنل مدیریت</h1>
-          <p className="mt-1 text-sm text-slate-500">ورود به سامانه</p>
+          <h1 className="text-xl font-extrabold text-ink">کمدرن — <span className="text-flame-700">پنل مدیریت</span></h1>
+          <p className="mt-1 text-sm text-ash">ورود به سامانه</p>
         </div>
         <form action={formAction} className="space-y-4">
           <Field label="ایمیل" required>
@@ -25,13 +25,13 @@ export function LoginForm() {
             <Input type="password" name="password" autoComplete="current-password" dir="ltr" required />
           </Field>
           {state.error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+            <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
           )}
           <Button type="submit" disabled={pending} className="w-full">
             {pending ? "در حال ورود…" : "ورود"}
           </Button>
         </form>
-      </CardBody>
-    </Card>
+      
+    </div>
   );
 }

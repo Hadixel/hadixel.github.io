@@ -10,6 +10,7 @@ import { useActionState, useEffect, useState } from "react";
 import { savePost } from "@/lib/actions/content";
 import type { ActionState } from "@/lib/actions/auth";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { MediaPickerButton } from "./media-picker-button";
 
 type EmbedKind = "productCard" | "productGrid" | "imageGallery" | "video" | "callout";
 
@@ -243,7 +244,12 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
             <Field label="عنوان" required><Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required /></Field>
             <Field label="اسلاگ" required><Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required /></Field>
             <Field label="خلاصه (اکسرپت)"><Textarea name="excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} /></Field>
-            <Field label="تصویر کاور"><Input name="coverImage" value={coverImage} dir="ltr" onChange={(e) => setCoverImage(e.target.value)} /></Field>
+            <Field label="تصویر کاور">
+              <div className="flex items-center gap-2">
+                <Input name="coverImage" value={coverImage} dir="ltr" onChange={(e) => setCoverImage(e.target.value)} />
+                <MediaPickerButton onPick={setCoverImage} />
+              </div>
+            </Field>
             <Field label="نویسنده/امضا"><Input name="byline" value={byline} onChange={(e) => setByline(e.target.value)} /></Field>
             <Field label="وضعیت">
               <Select name="status" value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -285,7 +291,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
                 onMove={(dir) => moveNode(i, dir)} />
             ))}
             {nodes.length === 0 && (
-              <p className="rounded-lg border border-dashed border-slate-300 py-8 text-center text-sm text-slate-400">
+              <p className="rounded-card border border-dashed border-fog py-8 text-center text-sm text-ash">
                 هنوز بندی اضافه نشده است
               </p>
             )}
@@ -308,7 +314,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
         </CardBody>
       </Card>
 
-      {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره پست"}</Button>
       </div>
@@ -336,12 +342,12 @@ function NodeCard({
   onMove: (dir: -1 | 1) => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+    <div className="rounded-card border border-plaster bg-plaster/50 p-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded bg-slate-800 px-2 py-0.5 text-xs font-medium text-white">{NODE_LABELS[node.kind]}</span>
+        <span className="rounded bg-ink px-2 py-0.5 text-xs font-medium text-white">{NODE_LABELS[node.kind]}</span>
         <span className="flex-1" />
-        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30">↑</button>
-        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30">↓</button>
+        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↑</button>
+        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↓</button>
         <button type="button" onClick={onRemove} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
       </div>
 
@@ -372,7 +378,7 @@ function NodeCard({
           <Input placeholder="متن جایگزین" value={node.alt} onChange={(e) => onChange({ alt: e.target.value })} />
         </div>
       )}
-      {node.kind === "horizontalRule" && <p className="text-xs text-slate-400">خط افقی — پیش‌نمایشی ندارد</p>}
+      {node.kind === "horizontalRule" && <p className="text-xs text-ash">خط افقی — پیش‌نمایشی ندارد</p>}
       {node.kind === "productCard" && (
         <Select value={node.productId} onChange={(e) => onChange({ productId: e.target.value })}>
           <option value="" disabled>انتخاب محصول…</option>

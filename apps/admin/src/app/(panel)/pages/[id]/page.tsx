@@ -12,8 +12,8 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-4 flex items-center gap-3">
-        <Link href="/pages" className="text-sm text-slate-500 hover:underline">صفحات</Link>
-        <h1 className="text-xl font-bold text-slate-900">ویرایش صفحه: {page.title}</h1>
+        <Link href="/pages" className="text-sm text-ash hover:underline">صفحات</Link>
+        <h1 className="text-xl font-bold text-ink">ویرایش صفحه: {page.title}</h1>
       </div>
       <PageBuilder
         page={{

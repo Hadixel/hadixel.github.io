@@ -120,7 +120,7 @@ export default function CheckoutPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
         <h1 className="text-2xl font-bold">تسویه حساب</h1>
-        <p className="mt-4 text-gray-500">سبد شما خالی است.</p>
+        <p className="mt-4 text-ash">سبد شما خالی است.</p>
       </div>
     );
   }
@@ -133,8 +133,8 @@ export default function CheckoutPage() {
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           {/* address */}
-          <section className="rounded-xl border p-5">
-            <h2 className="mb-4 font-bold">آدرس گیرنده</h2>
+          <section className="rounded-2xl border border-plaster bg-white p-5">
+            <h2 className="mb-4 font-extrabold text-ink"><span className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-[30px] bg-flame-700 text-sm text-white">۱</span>آدرس گیرنده</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="نام گیرنده"><input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className={inputCls} placeholder="نام و نام خانوادگی" /></Field>
               <Field label="موبایل"><input value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} className={inputCls} placeholder="09xxxxxxxxx" dir="ltr" /></Field>
@@ -158,25 +158,25 @@ export default function CheckoutPage() {
           </section>
 
           {/* coupon */}
-          <section className="flex gap-2 rounded-xl border p-4">
+          <section className="flex gap-2 rounded-2xl border border-plaster bg-white p-4">
             <input value={coupon} onChange={(e) => setCoupon(e.target.value)} className={inputCls} placeholder="کد تخفیف" />
-            <button onClick={previewTotals} disabled={busy} className="shrink-0 rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+            <button onClick={previewTotals} disabled={busy} className="shrink-0 rounded-card bg-ink px-6 py-2 text-sm font-bold text-white transition hover:bg-graphite disabled:opacity-50">
               اعمال
             </button>
           </section>
 
           {/* payment method */}
-          <section className="rounded-xl border p-5">
-            <h2 className="mb-4 font-bold">روش پرداخت</h2>
+          <section className="rounded-2xl border border-plaster bg-white p-5">
+            <h2 className="mb-4 font-extrabold text-ink"><span className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-[30px] bg-flame-700 text-sm text-white">۲</span>روش پرداخت</h2>
             <div className="grid gap-3 md:grid-cols-3">
               {[
                 { id: "ONLINE" as const, label: "پرداخت آنلاین", desc: "درگاه زرینپال" },
                 { id: "CARD_TO_CARD" as const, label: "کارت به کارت", desc: "واریز + ارسال رسید" },
                 { id: "COD" as const, label: "پرداخت هنگام تحویل", desc: "فقط ارسال درونشهری" },
               ].map((m) => (
-                <button key={m.id} onClick={() => setPaymentMethod(m.id)} className={`rounded-xl border p-4 text-right transition ${paymentMethod === m.id ? "border-amber-500 bg-amber-50" : "hover:border-gray-300"}`}>
-                  <div className="font-semibold">{m.label}</div>
-                  <div className="mt-1 text-xs text-gray-500">{m.desc}</div>
+                <button key={m.id} onClick={() => setPaymentMethod(m.id)} className={`rounded-xl border p-4 text-right transition ${paymentMethod === m.id ? "border-flame-700 bg-flame-50 ring-1 ring-flame-300" : "border-plaster hover:border-flame-300"}`}>
+                  <div className="font-semibold text-ink">{m.label}</div>
+                  <div className="mt-1 text-xs text-ash">{m.desc}</div>
                 </button>
               ))}
             </div>
@@ -184,13 +184,13 @@ export default function CheckoutPage() {
         </div>
 
         {/* summary */}
-        <aside className="h-fit space-y-4 rounded-xl border p-6">
-          <h2 className="font-bold">خلاصه سفارش</h2>
+        <aside className="h-fit space-y-4 self-start rounded-xl border border-plaster bg-canvas p-6">
+          <h2 className="font-extrabold text-ink"><span className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-[30px] bg-flame-700 text-sm text-white">۳</span>خلاصه سفارش</h2>
           <div className="space-y-2 text-sm">
             {cartData.lines.map((l) => (
               <div key={l.variantId} className="flex justify-between gap-2">
                 <span className="truncate">{l.productName} × {toFaDigits(l.qty)}</span>
-                <span>{formatToman(l.lineTotal)}</span>
+                <span className="whitespace-nowrap">{formatToman(l.lineTotal)}</span>
               </div>
             ))}
           </div>
@@ -206,12 +206,12 @@ export default function CheckoutPage() {
             </div>
           )}
           {!totals && (
-            <button onClick={previewTotals} disabled={!canPreview || busy} className="w-full rounded-full bg-slate-100 py-2.5 text-sm font-semibold hover:bg-slate-200 disabled:opacity-50">
+            <button onClick={previewTotals} disabled={!canPreview || busy} className="w-full rounded-card bg-plaster py-2.5 text-sm font-bold text-ink ring-1 ring-plaster transition hover:bg-plaster disabled:opacity-50">
               محاسبه هزینه ارسال
             </button>
           )}
           <hr />
-          <div className="flex justify-between text-lg font-bold">
+          <div className="flex justify-between text-lg font-extrabold text-ink">
             <span>مبلغ قابل پرداخت</span>
             <span>{totals ? formatToman(totals.total) : "—"}</span>
           </div>
@@ -219,7 +219,7 @@ export default function CheckoutPage() {
           <button
             onClick={placeOrder}
             disabled={!totals || busy}
-            className="w-full rounded-full bg-amber-500 py-3.5 font-bold text-slate-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+            className="w-full whitespace-nowrap rounded-card bg-flame-700 py-3.5 font-extrabold text-white transition hover:bg-flame-600 disabled:cursor-not-allowed disabled:bg-fog disabled:text-ash"
           >
             {busy ? "در حال ثبت…" : "ثبت نهایی سفارش"}
           </button>
@@ -266,12 +266,12 @@ export default function CheckoutPage() {
   );
 }
 
-const inputCls = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-amber-500";
+const inputCls = "w-full rounded-xl border border-fog px-3 py-2 text-sm outline-none transition focus:border-flame-700 focus:ring-2 focus:ring-flame-200";
 
 function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
     <label className={wide ? "col-span-full block" : "block"}>
-      <span className="mb-1 block text-sm text-gray-600">{label}</span>
+      <span className="mb-1 block text-sm text-ash">{label}</span>
       {children}
     </label>
   );

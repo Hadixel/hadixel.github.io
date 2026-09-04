@@ -11,6 +11,7 @@ import { componentSchemas } from "@kmodern/schema";
 import { savePage } from "@/lib/actions/content";
 import type { ActionState } from "@/lib/actions/auth";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
+import { MediaPickerButton } from "./media-picker-button";
 
 const BLOCK_TYPES = Object.keys(componentSchemas) as Array<keyof typeof componentSchemas>;
 
@@ -41,7 +42,7 @@ const TYPE_LABELS: Record<string, string> = {
   customHtml: "HTML سفارشی",
 };
 
-type FieldKind = "text" | "textarea" | "number" | "checkbox" | "select" | "json";
+type FieldKind = "text" | "textarea" | "number" | "checkbox" | "select" | "json" | "media";
 interface FieldDef {
   key: string;
   label: string;
@@ -53,6 +54,7 @@ const BLOCK_FIELDS: Record<string, FieldDef[]> = {
   hero: [
     { key: "title", label: "عنوان", kind: "text" },
     { key: "subtitle", label: "زیرعنوان", kind: "text" },
+    { key: "image", label: "تصویر", kind: "media" },
   ],
   productGrid: [
     { key: "title", label: "عنوان", kind: "text" },
@@ -68,6 +70,7 @@ const BLOCK_FIELDS: Record<string, FieldDef[]> = {
   banner: [
     { key: "title", label: "عنوان", kind: "text" },
     { key: "subtitle", label: "زیرعنوان", kind: "text" },
+    { key: "image", label: "تصویر", kind: "media" },
   ],
   bannerPair: [{ key: "banners", label: "بنرها (آرایه JSON)", kind: "json" }],
   bannerTrio: [{ key: "banners", label: "بنرها (آرایه JSON)", kind: "json" }],
@@ -98,7 +101,7 @@ const BLOCK_FIELDS: Record<string, FieldDef[]> = {
     { key: "provider", label: "پلتفرم", kind: "select", options: ["APARAT", "YOUTUBE"] },
     { key: "url", label: "آدرس ویدیو", kind: "text" },
     { key: "title", label: "عنوان", kind: "text" },
-    { key: "thumbnail", label: "تصویر بندانگشتی", kind: "text" },
+    { key: "thumbnail", label: "تصویر بندانگشتی", kind: "media" },
   ],
   countdown: [
     { key: "title", label: "عنوان", kind: "text" },
@@ -227,7 +230,7 @@ export function PageBuilder({ page }: { page: PageSeed }) {
                 />
               ))}
               {blocks.length === 0 && (
-                <p className="rounded-lg border border-dashed border-slate-300 py-8 text-center text-sm text-slate-400">
+                <p className="rounded-card border border-dashed border-fog py-8 text-center text-sm text-ash">
                   هنوز بلوکی اضافه نشده است
                 </p>
               )}
@@ -236,8 +239,8 @@ export function PageBuilder({ page }: { page: PageSeed }) {
           </CardBody>
         </Card>
 
-        {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-        {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+        {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
 
         <div className="sticky bottom-4 flex justify-end gap-3">
           <Button type="submit" name="action" value="draft" disabled={pending}>ذخیره پیش‌نویس</Button>
@@ -303,19 +306,19 @@ function BlockCard({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/50">
+    <div className="rounded-card border border-plaster bg-plaster/50">
       <div className="flex items-center gap-2 px-4 py-3">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="text-slate-400">{open ? "▾" : "▴"}</button>
-        <span className="rounded bg-slate-800 px-2 py-0.5 text-xs font-medium text-white">{TYPE_LABELS[block.type] ?? block.type}</span>
-        {summary && <span className="text-sm text-slate-500">{summary}</span>}
+        <button type="button" onClick={() => setOpen((v) => !v)} className="text-ash">{open ? "▾" : "▴"}</button>
+        <span className="rounded bg-ink px-2 py-0.5 text-xs font-medium text-white">{TYPE_LABELS[block.type] ?? block.type}</span>
+        {summary && <span className="text-sm text-ash">{summary}</span>}
         <span className="flex-1" />
-        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30">↑</button>
-        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30">↓</button>
+        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↑</button>
+        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↓</button>
         <button type="button" onClick={onRemove} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
       </div>
       {open && (
-        <div className="border-t border-slate-200 p-4">
-          <div className="mb-3 text-xs font-semibold text-slate-500">مشترک</div>
+        <div className="border-t border-plaster p-4">
+          <div className="mb-3 text-xs font-semibold text-ash">مشترک</div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Field label="anchorId"><Input value={(props.anchorId as string) ?? ""} onChange={(e) => setField("anchorId", e.target.value)} /></Field>
             <Field label="padding">
@@ -333,11 +336,23 @@ function BlockCard({
             </div>
           </div>
 
-          <div className="mb-3 mt-4 text-xs font-semibold text-slate-500">ویژهٔ بلوک</div>
+          <div className="mb-3 mt-4 text-xs font-semibold text-ash">ویژهٔ بلوک</div>
           <div className="grid grid-cols-2 gap-3">
             {fields.map((f) => (
               <Field key={f.key} label={f.label} className={f.kind === "json" || f.kind === "textarea" ? "col-span-2" : undefined}>
                 {f.kind === "text" && <Input value={(props[f.key] as string) ?? ""} dir="ltr" onChange={(e) => setField(f.key, e.target.value)} />}
+                {f.kind === "media" && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={((props[f.key] as { src?: string } | undefined)?.src) ?? ""}
+                      dir="ltr"
+                      onChange={(e) => setField(f.key, { ...(props[f.key] as object), src: e.target.value })}
+                    />
+                    <MediaPickerButton
+                      onPick={(url) => setField(f.key, { ...(props[f.key] as object), src: url })}
+                    />
+                  </div>
+                )}
                 {f.kind === "number" && <Input type="number" value={(props[f.key] as number) ?? 0} dir="ltr" onChange={(e) => setField(f.key, Number(e.target.value) || 0)} />}
                 {f.kind === "textarea" && <Textarea value={(props[f.key] as string) ?? ""} onChange={(e) => setField(f.key, e.target.value)} />}
                 {f.kind === "checkbox" && <Checkbox label={f.label} checked={props[f.key] !== false} onChange={(e) => setField(f.key, e.target.checked)} />}
@@ -359,7 +374,7 @@ function BlockCard({
           </div>
 
           <div className="mt-3">
-            <p className="mb-1 text-xs font-semibold text-slate-500">props کامل (JSON — برای فیلدهای پیشرفته: لینک، تصویر، منبع)</p>
+            <p className="mb-1 text-xs font-semibold text-ash">props کامل (JSON — برای فیلدهای پیشرفته: لینک، تصویر، منبع)</p>
             <Textarea className="min-h-[120px] font-mono text-xs" dir="ltr" value={jsonDraft} onChange={(e) => setWholeJson(e.target.value)} />
             {jsonError && <p className="mt-1 text-xs text-red-600">{jsonError}</p>}
           </div>
