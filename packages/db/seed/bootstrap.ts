@@ -162,8 +162,8 @@ async function main() {
       const aboutPage = await prisma.page.findUnique({ where: { slug: "about" } });
       const contactPage = await prisma.page.findUnique({ where: { slug: "contact" } });
       const links: Array<{ label: string; target: unknown }> = [];
-      if (aboutPage) links.push({ label: "درباره ما", target: { type: "PAGE", targetId: aboutPage.id } });
-      if (contactPage) links.push({ label: "تماس با ما", target: { type: "PAGE", targetId: contactPage.id } });
+      if (aboutPage && aboutPage.publishedBlocks.length > 0) links.push({ label: "درباره ما", target: { type: "PAGE", targetId: aboutPage.id } });
+      if (contactPage && contactPage.publishedBlocks.length > 0) links.push({ label: "تماس با ما", target: { type: "PAGE", targetId: contactPage.id } });
       links.push({ label: "وبلاگ", target: { type: "BLOG_INDEX" } });
       links.push({ label: "محصولات", target: { type: "EXTERNAL", url: "/products", newTab: false } });
       for (const [i, l] of links.entries()) {

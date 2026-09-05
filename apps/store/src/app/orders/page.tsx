@@ -29,7 +29,7 @@ export default async function OrdersPage() {
       {orders.length === 0 && <p className="text-ash">هنوز سفارشی ثبت نکردهاید.</p>}
       <div className="space-y-4">
         {orders.map((o) => (
-          <Link key={o.id} href={`/order/${o.orderNumber}`} className="block rounded-xl border p-5 transition hover:shadow">
+          <Link key={o.id} href={`/order/${o.orderNumber}`} className="block rounded-card border border-plaster p-5 transition-colors hover:border-fog">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="font-bold">{toFaDigits(o.orderNumber)}</div>

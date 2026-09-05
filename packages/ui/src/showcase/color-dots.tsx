@@ -45,7 +45,8 @@ export function ColorDotSwatches({
               if (v && canSwap) onSwap?.(v);
             }}
             className={cn(
-                isActive
+              "size-6 rounded-full border",
+              isActive
                 ? "border-2 border-flame-700 ring-2 ring-flame-100"
                 : "border-fog hover:border-slate-line",
               !canSwap && "opacity-40",

@@ -1,7 +1,7 @@
 # 09 — Order, account, blog, static pages, footer
 
 Type: task
-Status: open
+Status: resolved
 Phase: Store
 
 Rebuild remaining store surfaces (spec task 9).
@@ -14,3 +14,7 @@ Rebuild remaining store surfaces (spec task 9).
 - [ ] `/about`, `/contact`, `/[slug]` CMS pages: prose restyled to tokens.
 - [ ] Footer: ink full-bleed, hairline columns, دیتیس credit, flame blue only on one inline link state.
 - [ ] sitemap/robots untouched; all routes still 200.
+
+## Comments
+
+2026-09-05 (audit): Order status page, account, blog, static pages restyled; footer rebuilt (ink, FOOTER menu from DB, live categories, enamad placeholder). All routes 200 including sitemap/robots.

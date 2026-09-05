@@ -43,7 +43,7 @@ export function CountdownTimer({
   const inner = (
     <div className="flex items-center justify-center gap-4">
       {cells.map((c) => (
-        <div key={c.label} className="min-w-20 rounded-2xl bg-ink px-4 py-3 text-center text-white">
+        <div key={c.label} className="min-w-20 rounded-card bg-ink px-4 py-3 text-center text-white">
           <div className="text-2xl font-extrabold tabular-nums">{toFaDigits(String(c.value))}</div>
           <div className="mt-1 text-xs text-slate-line">{c.label}</div>
         </div>

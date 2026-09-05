@@ -21,9 +21,10 @@ interface Line {
 }
 
 export default function CartPage() {
-  const { lines, setQty, remove } = useCart();
+  const { lines, setQty, remove, add } = useCart();
   const [data, setData] = useState<{ lines: Line[]; subtotal: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastRemoved, setLastRemoved] = useState<{ line: Line; qty: number } | null>(null);
 
   useEffect(() => {
     if (lines.length === 0) {
@@ -55,8 +56,8 @@ export default function CartPage() {
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           {data.lines.map((l) => (
-            <div key={l.variantId} className="flex gap-4 rounded-2xl border border-plaster bg-white p-4 transition hover:border-flame-200">
-              <Link href={`/product/${l.productSlug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-plaster">
+            <div key={l.variantId} className="flex gap-4 rounded-card border border-plaster bg-white p-4 transition-colors hover:border-flame-200">
+              <Link href={`/product/${l.productSlug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-card bg-plaster">
                 {l.image ? <Image src={l.image} alt={l.productName} fill sizes="96px" className="object-contain" /> : <div className="flex h-full items-center justify-center text-slate-line">img</div>}
               </Link>
               <div className="flex flex-1 flex-col">
@@ -65,19 +66,18 @@ export default function CartPage() {
                 {!l.available && <div className="mt-1 text-sm text-red-500">موجودی کافی نیست</div>}
                 <div className="mt-auto flex items-center justify-between pt-3">
                   <div className="flex items-center rounded-card border border-plaster">
-                    <button className="px-3 py-1 hover:bg-plaster" onClick={() => setQty(l.variantId, l.qty - 1)}>−</button>
+                    <button className="px-3.5 py-1.5 hover:bg-plaster" onClick={() => setQty(l.variantId, l.qty - 1)}>−</button>
                     <span className="min-w-8 text-center">{toFaDigits(l.qty)}</span>
-                    <button className="px-3 py-1 hover:bg-plaster" onClick={() => setQty(l.variantId, l.qty + 1)}>+</button>
+                    <button className="px-3.5 py-1.5 hover:bg-plaster" onClick={() => setQty(l.variantId, l.qty + 1)}>+</button>
                   </div>
-                  <div className="whitespace-nowrap text-sm font-extrabold text-flame-800">{formatToman(l.lineTotal)}</div>
-                  <button onClick={() => remove(l.variantId)} className="text-sm text-red-400 hover:text-red-600">حذف</button>
+                  <button onClick={() => { setLastRemoved({ line: l, qty: l.qty }); remove(l.variantId); }} className="text-sm text-red-400 hover:text-red-600">حذف</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        <aside className="h-fit rounded-xl border border-plaster bg-canvas p-6">
+        <aside className="h-fit rounded-card border border-plaster bg-canvas p-6">
           <div className="flex justify-between text-lg">
             <span>جمع کل</span>
             <span className="font-bold">{formatToman(data.subtotal)}</span>
@@ -89,6 +89,22 @@ export default function CartPage() {
           <Link href="/products" className="mt-3 block text-center text-sm text-ash transition hover:text-flame-800">ادامه خرید</Link>
         </aside>
       </div>
+
+      {lastRemoved && (
+        <div className="fixed inset-x-0 bottom-6 z-40 mx-auto flex w-fit items-center gap-4 rounded-card border border-plaster bg-ink px-5 py-3 text-sm text-white shadow-lg">
+          <span>«{lastRemoved.line.productName}» از سبد حذف شد</span>
+          <button
+            onClick={() => {
+              add(lastRemoved.line.variantId, lastRemoved.qty);
+              setLastRemoved(null);
+            }}
+            className="font-bold text-flame-300 hover:text-flame-200"
+          >
+            بازگرداندن
+          </button>
+          <button onClick={() => setLastRemoved(null)} aria-label="بستن" className="text-white/60 hover:text-white">✕</button>
+        </div>
+      )}
     </div>
   );
 }

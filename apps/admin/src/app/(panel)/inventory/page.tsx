@@ -3,7 +3,7 @@ import { db } from "@kmodern/db";
 import { getSettingOrDefault } from "@/lib/settings";
 import { settingKeys } from "@kmodern/schema";
 import { faDigits } from "@/lib/date";
-import { Badge, Card, CardHeader, EmptyState, Input, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Card, CardHeader, EmptyState, Input, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { AdjustStockRow } from "./adjust-form";
 
 export default async function InventoryPage({
@@ -96,23 +96,8 @@ export default async function InventoryPage({
           </>
         )}
       </Card>
+      <Pagination page={page} totalPages={totalPages} basePath={`/inventory${q ? `?q=${encodeURIComponent(q)}` : ""}`} />
 
-      {totalPages > 1 && (
-        <footer className="flex items-center justify-center gap-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={`/inventory?${q ? `q=${encodeURIComponent(q)}&` : ""}page=${p}`}
-              className={
-                "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm " +
-                (p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster")
-              }
-            >
-              {faDigits(p)}
-            </Link>
-          ))}
-        </footer>
-      )}
     </div>
   );
 }

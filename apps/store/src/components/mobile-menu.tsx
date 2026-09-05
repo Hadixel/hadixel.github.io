@@ -43,6 +43,9 @@ export default function MobileMenu({ tree }: { tree: NavNode[] }) {
               <Link href="/products" onClick={() => setOpen(false)} className="block rounded-card px-3 py-2.5 font-semibold text-flame-700 hover:bg-flame-50">
                 همه محصولات
               </Link>
+              <Link href="/blog" onClick={() => setOpen(false)} className="block rounded-card px-3 py-2.5 font-semibold text-ink hover:bg-plaster">
+                وبلاگ
+              </Link>
               <Link href="/account" onClick={() => setOpen(false)} className="block rounded-card px-3 py-2.5 font-semibold text-ink hover:bg-plaster">
                 حساب من
               </Link>

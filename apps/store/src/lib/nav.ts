@@ -52,7 +52,7 @@ export interface NavNode {
   newTab: boolean;
   display: $Enums.MenuDisplay;
   children: NavNode[];
-  promos: Array<{ imageUrl: string; alt: string; heading?: string; subtext?: string }>;
+  promos: Array<{ imageUrl: string; alt: string; href: string; newTab: boolean; heading?: string; subtext?: string }>;
 }
 
 export interface NavMenu {
@@ -76,6 +76,18 @@ export async function getNavMenu(location: $Enums.MenuLocation): Promise<NavMenu
 
   type Top = (typeof menu.items)[number];
 
+  async function promo(p: Top["promos"][number]) {
+    const { href, newTab } = await hrefFor(p.link as LinkRef | undefined);
+    return {
+      imageUrl: p.imageUrl,
+      alt: p.alt,
+      href,
+      newTab,
+      heading: p.heading ?? undefined,
+      subtext: p.subtext ?? undefined,
+    };
+  }
+
   async function leaf(i: Top["children"][number]): Promise<NavNode> {
     const { href, newTab } = await hrefFor(i.target as LinkRef | undefined);
     return {
@@ -98,12 +110,7 @@ export async function getNavMenu(location: $Enums.MenuLocation): Promise<NavMenu
       newTab,
       display: i.display,
       children: await Promise.all(i.children.map(leaf)),
-      promos: i.promos.map((p) => ({
-        imageUrl: p.imageUrl,
-        alt: p.alt,
-        heading: p.heading ?? undefined,
-        subtext: p.subtext ?? undefined,
-      })),
+      promos: await Promise.all(i.promos.map(promo)),
     };
   }
   return {

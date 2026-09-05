@@ -48,8 +48,8 @@ export default function OtpModal({ phone, onSuccess }: { phone: string; onSucces
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded-card bg-canvas p-6 shadow-[0_8px_24px_rgba(0,0,0,0.15)]">
-        <h3 className="text-lg font-bold">ورود به حساب</h3>
-        <p className="mt-1 text-sm text-ash">برای ثبت سفارش باید شماره موبایلتان را تأیید کنید ({phone})</p>
+        <h3 className="text-lg font-bold">تأیید شماره موبایل</h3>
+        <p className="mt-1 text-sm text-ash">برای ادامه، کد پیامک‌شده به {phone} را وارد کنید</p>
 
         {!sent ? (
           <button onClick={send} disabled={busy} className="mt-5 w-full rounded-card bg-flame-700 py-3 font-semibold text-white hover:bg-flame-600 disabled:opacity-50">

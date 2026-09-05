@@ -1,7 +1,7 @@
 # 05 — Homepage rebuild
 
 Type: task
-Status: open
+Status: resolved
 Phase: Store
 
 Rebuild `/` in Showcase language (spec task 5). Block-renderer blocks restyled in place; React Bits accents live here.
@@ -16,3 +16,7 @@ Rebuild `/` in Showcase language (spec task 5). Block-renderer blocks restyled i
 - [ ] ≥1 React Bits accent (word-level reveal on hero headline); no per-char splitting.
 - [ ] Flame blue ≤3% of viewport; no shadows on any card; radii 10/30 only.
 - [ ] Mobile 390px pass; desktop 1440 rail pass.
+
+## Comments
+
+2026-09-05 (audit): Verified in browser at 1440 and 390. Announcement strip, sticky single-row nav with working search, full-bleed hero + floating buy-card, plinth category tiles, ranked row with numeral watermarks, ink trust bar, FadeWords hero reveal. Flame accent within budget; no card shadows. Screenshots in .scratch/ui-rebuild/screenshots/.

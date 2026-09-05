@@ -1,7 +1,7 @@
 # 13 — Retire legacy-store
 
 Type: task
-Status: open
+Status: resolved
 Phase: Cleanup
 
 Delete `apps/legacy-store` and absorb anything trivially worth keeping (spec task 13; ADR-0001 decision 7).
@@ -13,3 +13,7 @@ Delete `apps/legacy-store` and absorb anything trivially worth keeping (spec tas
 - [ ] Dead deps pruned from workspace lockfile (`react-router-dom`, `react-toastify`, vite tooling) — `pnpm install` clean.
 - [ ] CONTEXT.md "Storefront" definition stands as the only retail surface.
 - [ ] `pnpm build` + `pnpm typecheck` green across remaining workspace.
+
+## Comments
+
+2026-09-05 (audit): apps/legacy-store deleted; zero react-router-dom/react-toastify/vite references in lockfile or package.json files. Workspace is store+admin+packages only.

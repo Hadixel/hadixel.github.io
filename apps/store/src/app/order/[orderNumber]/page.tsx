@@ -9,7 +9,7 @@ import { getSetting } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ orderNumber: string }>; searchParams: Promise<{ payment?: string }> }) {
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ orderNumber: string }>; searchParams: Promise<{ payment?: string; payError?: string }> }) {
   const { orderNumber } = await params;
   const sp = await searchParams;
   const me = await currentCustomer();
@@ -37,15 +37,20 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
+      {sp.payError && (
+        <div className="mb-4 rounded-card border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+          {sp.payError} — می‌توانید دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.
+        </div>
+      )}
       {statusBanner && (
-        <div className={`mb-6 rounded-xl border px-5 py-4 font-semibold ${statusBanner.cls}`}>{statusBanner.text}</div>
+        <div className={`mb-6 rounded-card border px-5 py-4 font-semibold ${statusBanner.cls}`}>{statusBanner.text}</div>
       )}
       <h1 className="text-2xl font-bold">سفارش {toFaDigits(order.orderNumber)}</h1>
       <p className="mt-1 text-sm text-ash">ثبت شده در {new Date(order.placedAt).toLocaleDateString("fa-IR")}</p>
 
       {/* C2C instructions */}
       {order.paymentMethod === "CARD_TO_CARD" && order.paymentStatus === "AWAITING" && (
-        <div className="mt-6 rounded-xl border border-flame-100 bg-flame-50 p-5">
+        <div className="mt-6 rounded-card border border-flame-100 bg-flame-50 p-5">
           <h2 className="font-bold">پرداخت کارت به کارت</h2>
           <p className="mt-2 text-sm text-ink">
             مبلغ {formatToman(order.total)} را به شماره کارت زیر واریز و تصویر رسید را برای پشتیبانی ارسال کنید:
@@ -77,7 +82,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border">
+      <div className="mt-6 rounded-card border">
         <div className="border-b px-5 py-3 font-bold">اقلام سفارش</div>
         <div className="divide-y">
           {order.items.map((it) => (

@@ -39,7 +39,7 @@ export function MediaPickerButton({
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={() => setOpen(false)}>
-          <div className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-canvas p-5 shadow-[0_8px_24px_rgba(0,0,0,0.15)]" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-card bg-canvas p-5 shadow-[0_8px_24px_rgba(0,0,0,0.15)]" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-semibold text-ink">انتخاب فایل رسانه</h3>
               <button type="button" onClick={() => setOpen(false)} className="rounded p-1.5 text-sm hover:bg-plaster">✕</button>

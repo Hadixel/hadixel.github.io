@@ -198,7 +198,7 @@ export function Pagination({
         key={p}
         href={`${basePath}${sep}page=${p}`}
         className={cn(
-          "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm",
+          "inline-flex h-8 min-w-8 items-center justify-center rounded-card border px-2 text-sm",
           p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster",
         )}
       >

@@ -86,6 +86,8 @@ export interface OrderTotals {
   shippingMethod: $Enums.ShippingMethod;
   deliveryFeeMode: $Enums.DeliveryFeeMode;
   shippingNote?: string;
+  /** set when a coupon code was entered but rejected — surfaced to checkout UI */
+  couponError?: string;
 }
 
 export async function computeOrderTotals(
@@ -126,8 +128,10 @@ export async function computeOrderTotals(
     shippingMethod: shipping.method,
     deliveryFeeMode: shipping.deliveryFeeMode,
     shippingNote: shipping.note,
+    couponError: discount.couponError,
   };
 }
+
 
 /** reserve stock on place (009/011); COD commits at place */
 export async function reserveStock(

@@ -1,7 +1,7 @@
 # 03 — Signature shared components
 
 Type: task
-Status: open
+Status: resolved
 Phase: Foundation
 
 Build the Showcase-specific components both apps reuse (per CONTEXT.md terms).
@@ -16,3 +16,7 @@ Build the Showcase-specific components both apps reuse (per CONTEXT.md terms).
 - [ ] **Credit mark** — دیتیس 40x40 white thumbnail on product cards (plaster surface, 4px inner radius).
 - [ ] Each component exported from `@kmodern/ui` with a one-paragraph usage note.
 - [ ] Visual check page (temporary route or story) shows all components side by side in RTL.
+
+## Comments
+
+2026-09-05 (audit): Price (Persian digits, tabular, nowrap), ColorDotSwatches/ColorDots with live image swap, ProductGallery (plinth + hairline tabs), SectionHeader, CreditMark, Badges, RankNumeral shipped and consumed by store surfaces. Card dots sized 24px this session for touch-target compliance (Lighthouse target-size).

@@ -22,7 +22,8 @@ export function FadeWords({
   const { ref, inView } = useInView<HTMLSpanElement>();
   const words = text.split(" ");
   return (
-    <span ref={ref} className={cn("inline-block", className)} aria-label={text}>
+    <span ref={ref} className={cn("inline-block", className)}>
+      <span className="sr-only">{text}</span>
       {words.map((word, i) => (
         <span
           key={`${word}-${i}`}

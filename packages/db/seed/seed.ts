@@ -64,8 +64,25 @@ const FA_SUBS: Record<string, string> = {
   "dual-basket": "دوسبد",
 };
 
-// color token -> image partition (013: split by filename color token)
+// Persian display names + finish hex for Color dots (CONTEXT.md: Color is
+// the named finish — استیل، مشکی); tokens stay Latin for image paths/SKUs.
 const COLOR_TOKENS = ["black", "white", "gray", "beige", "silver", "steel"];
+const FA_COLORS: Record<string, string> = {
+  black: "مشکی",
+  white: "سفید",
+  gray: "طوسی",
+  beige: "کرم",
+  silver: "نقره‌ای",
+  steel: "استیل",
+};
+const COLOR_HEX: Record<string, string> = {
+  black: "#1C1917",
+  white: "#FFFFFF",
+  gray: "#6B7280",
+  beige: "#D6C3A1",
+  silver: "#C0C0C0",
+  steel: "#A8AEB7",
+};
 
 const IMAGS_BASE = join(HERE, "../../../apps/legacy-store/src/assets");
 
@@ -185,10 +202,11 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
       const sku = `${(prod.brand ?? "BRAND").toUpperCase()}-${prod._id}-${key.toUpperCase()}`;
       await prisma.variant.upsert({
         where: { sku },
-        update: { price: prod.price, images, allowBackorder: true, colorName: color },
+        update: { price: prod.price, images, allowBackorder: true, colorName: FA_COLORS[key] ?? color, colorCode: COLOR_HEX[key] ?? null },
         create: {
           productId,
-          colorName: color,
+          colorName: FA_COLORS[key] ?? color,
+          colorCode: COLOR_HEX[key] ?? null,
           sku,
           price: prod.price,
           stock: 0,

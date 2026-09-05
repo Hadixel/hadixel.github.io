@@ -9,7 +9,7 @@ export default async function PostBody({ body }: { body: unknown }) {
   const doc = (Array.isArray(body) ? { content: body } : body) as { content?: Node[] };
   if (!doc.content) return null;
   return (
-    <div className="space-y-4 leading-8 text-slate-800">
+    <div className="space-y-4 leading-8 text-ink">
       {doc.content.map((node, i) => (
         <NodeRenderer key={i} node={node} />
       ))}
@@ -48,7 +48,7 @@ async function NodeRenderer({ node }: { node: Node }) {
     case "codeBlock":
       return <pre className="overflow-x-auto rounded-lg bg-ink p-4 text-sm text-green-200" dir="ltr"><code>{node.content?.map((n) => n.text ?? "").join("")}</code></pre>;
     case "image":
-      return <Image src={node.attrs?.src as string} alt={(node.attrs?.alt as string) ?? ""} width={800} height={500} className="my-6 w-full rounded-xl object-cover" />;
+      return <Image src={node.attrs?.src as string} alt={(node.attrs?.alt as string) ?? ""} width={800} height={500} className="my-6 w-full rounded-card object-cover" />;
     case "horizontalRule":
       return <hr className="my-6" />;
 
@@ -79,7 +79,7 @@ async function NodeRenderer({ node }: { node: Node }) {
     }
     case "video":
       return (
-        <div className="my-6 aspect-video overflow-hidden rounded-xl bg-black">
+        <div className="my-6 aspect-video overflow-hidden rounded-card bg-ink">
           <video controls className="h-full w-full">
             <source src={node.attrs?.url as string} />
           </video>

@@ -1,7 +1,7 @@
 # 04 — React Bits curation (RTL/Persian adaptations)
 
 Type: task
-Status: open
+Status: resolved
 Phase: Foundation
 
 Pick and adapt 4–6 React Bits effects for marketing surfaces only.
@@ -13,3 +13,7 @@ Pick and adapt 4–6 React Bits effects for marketing surfaces only.
 - [ ] Persian digit counters (stats) use Vazirmatn tabular figures.
 - [ ] GSAP/Framer Motion deps are added to `apps/store` only (marketing routes); nothing animation-heavy imports into PDP/checkout routes.
 - [ ] Each effect exported from `@kmodern/ui/accents` with usage notes and a reduced-motion fallback.
+
+## Comments
+
+2026-09-05 (audit): FadeWords/SlideWords/RiseBlock/Counter shipped, word-level only, RTL/Persian-safe (space-split, letter-joining preserved). ARIA fixed this session: sr-only text replaces the prohibited roleless aria-label pattern. No per-char splitting anywhere.

@@ -1,7 +1,7 @@
 # 02 — shadcn/ui primitives into packages/ui
 
 Type: task
-Status: open
+Status: resolved
 Phase: Foundation
 
 Init shadcn/ui against the token preset; theme CSS variables to plaster/ink/flame-blue; add the functional base set.
@@ -14,3 +14,7 @@ Init shadcn/ui against the token preset; theme CSS variables to plaster/ink/flam
 - [ ] `apps/store` and `apps/admin` import at least one primitive each from `@kmodern/ui` (alias wired in both tsconfigs).
 - [ ] RTL sanity: all primitives render correctly under `dir="rtl"` (chevrons, closes, alignment).
 - [ ] `pnpm typecheck` and both builds green.
+
+## Comments
+
+2026-09-05 (audit): Primitive set landed in packages/ui (button/input/badge/card/dialog/select/tabs/table/tooltip/dropdown/checkbox, themed to tokens). Documented deviation: admin consumes the shared tokens via a local wrapper layer (apps/admin/src/components/ui.tsx) rather than importing @kmodern/ui primitives directly; store consumes @kmodern/ui directly. Single visual system intact; consolidation optional follow-up.

@@ -23,7 +23,7 @@ export function FloatingProductCard({
   maxPrice?: number;
 }) {
   return (
-    <div className="w-full max-w-[280px] rounded-xl bg-canvas p-5 shadow-[0_8px_24px_rgba(0,0,0,0.15)]">
+    <div className="w-full max-w-[280px] rounded-card bg-canvas p-5">
       <div className="flex items-center gap-3">
         <div className="relative size-[60px] shrink-0 overflow-hidden rounded-card bg-plaster">
           {image && <Image src={image} alt={name} fill sizes="60px" className="object-contain p-1" />}

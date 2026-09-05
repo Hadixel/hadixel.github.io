@@ -1,7 +1,7 @@
 # 07 — PDP rebuild
 
 Type: task
-Status: open
+Status: resolved
 Phase: Store
 
 Rebuild `/product/[slug]` (spec task 7). buy-box/gallery state flow preserved.
@@ -14,3 +14,7 @@ Rebuild `/product/[slug]` (spec task 7). buy-box/gallery state flow preserved.
 - [ ] Specs: hairline-divided definition list (spec name ash, value ink); features as minimal list with 1.5px ink bullets.
 - [ ] Persian digits for capacity/power; model codes in mono; prices tabular.
 - [ ] Add-to-cart, OTP-free flows untouched: E2E add→cart still passes.
+
+## Comments
+
+2026-09-05 (audit): Gallery plinth + hairline thumbnail tabs (verified switching), Color dots swap gallery+price (verified on 4-variant oven), mono model code, tabular Persian price, hairline specs. Persian color names + finish hexes seeded this session (was: English colorName, blank dots). Add-to-cart E2E passes.

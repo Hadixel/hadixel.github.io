@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CreditMark, Button, ProductGallery, cn } from "@kmodern/ui";
 import { useCart } from "./cart-provider";
 import { toFaDigits } from "@kmodern/schema";
@@ -94,7 +95,7 @@ export function ProductBuyBox({
           <span className="text-xs text-ash">تومان / هر واحد</span>
         </div>
 
-        {selected?.available ? (
+        {selected?.available && (
           <div className="mt-6 flex items-center gap-3">
             <div className="flex items-center rounded-card border border-fog">
               <button className="px-3 py-2 text-ash hover:text-ink" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
@@ -107,13 +108,18 @@ export function ProductBuyBox({
                 if (!selected) return;
                 add(selected.id, qty);
                 setAdded(true);
-                setTimeout(() => setAdded(false), 2000);
               }}
             >
               {added ? "به سبد اضافه شد ✓" : "افزودن به سبد خرید"}
             </Button>
           </div>
-        ) : (
+        )}
+        {added && (
+          <Link href="/cart" className="mt-3 block rounded-card border border-flame-200 bg-flame-50 py-2.5 text-center text-sm font-semibold text-flame-800 transition-colors hover:bg-flame-100">
+            مشاهده سبد خرید
+          </Link>
+        )}
+        {!selected?.available && (
           <div className="mt-6">
             <Button variant="ink" disabled className="w-full">ناموجود</Button>
             <p className="mt-2 text-xs text-ash">برای اطلاع از موجودی با ما تماس بگیرید.</p>

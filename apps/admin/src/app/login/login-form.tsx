@@ -11,7 +11,7 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(loginAction, {});
 
   return (
-    <div className="w-full max-w-sm rounded-xl bg-canvas p-8 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+    <div className="w-full max-w-sm rounded-card border border-plaster bg-canvas p-8">
       
         <div className="mb-6 text-center">
           <h1 className="text-xl font-extrabold text-ink">کمدرن — <span className="text-flame-700">پنل مدیریت</span></h1>
