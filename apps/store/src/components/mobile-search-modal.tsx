@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { submitListing } from "@/lib/search-nav";
 import SearchSuggestions from "./search-suggestions";
 
 /*
@@ -38,8 +39,8 @@ export default function MobileSearchModal({ open, onClose }: { open: boolean; on
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && q.trim()) {
+                submitListing(router, q);
                 onClose();
-                router.push(`/products?q=${encodeURIComponent(q.trim())}`);
               }
             }}
             type="search"

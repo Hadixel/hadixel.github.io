@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { submitListing } from "@/lib/search-nav";
 import SearchSuggestions from "./search-suggestions";
 
 function SearchIcon() {
@@ -36,7 +37,7 @@ export default function SearchBar() {
   }, [open]);
 
   return (
-    <div ref={wrapRef} className="relative hidden md:block">
+    <div ref={wrapRef} className="relative hidden md:block" onMouseDown={() => setOpen(true)}>
       <div className={`flex h-11 w-[420px] lg:w-[480px] items-center gap-2 rounded-card border bg-plaster px-3 transition-colors ${open ? "border-fog bg-canvas" : "border-transparent"}`}>
         <input
           value={q}
@@ -44,8 +45,8 @@ export default function SearchBar() {
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && q.trim()) {
+              submitListing(router, q);
               setOpen(false);
-              router.push(`/products?q=${encodeURIComponent(q.trim())}`);
             }
           }}
           type="search"
@@ -56,7 +57,7 @@ export default function SearchBar() {
         <button
           type="button"
           aria-label="جستجو"
-          onClick={() => { if (q.trim()) { setOpen(false); router.push(`/products?q=${encodeURIComponent(q.trim())}`); } }}
+          onClick={() => { if (q.trim()) { submitListing(router, q); setOpen(false); } }}
           className="flex size-8 items-center justify-center rounded-card text-ink hover:bg-plaster"
         >
           <SearchIcon />

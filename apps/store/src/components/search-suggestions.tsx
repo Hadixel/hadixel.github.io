@@ -1,5 +1,7 @@
 "use client";
 
+import { clearRecent, readRecent, rememberRecent } from "@/lib/recent-searches";
+import { submitListing } from "@/lib/search-nav";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -14,29 +16,7 @@ interface Hit {
 }
 
 const fa = (n: number) => toFaDigits(new Intl.NumberFormat("fa-IR").format(n));
-const RECENT_KEY = "kmodern_recent_searches";
 const chipClass = "rounded-card border border-fog px-3 py-1.5 text-xs text-ink transition-colors hover:border-slate-line hover:bg-plaster";
-
-function readRecent(): string[] {
-  try {
-    const raw = localStorage.getItem(RECENT_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string").slice(0, 5) : [];
-  } catch {
-    return [];
-  }
-}
-
-function remember(term: string) {
-  const t = term.trim();
-  if (t.length < 2) return;
-  const next = [t, ...readRecent().filter((x) => x !== t)].slice(0, 5);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-}
-
-function clearRecent() {
-  localStorage.removeItem(RECENT_KEY);
-}
 
 function TrendIcon() {
   return (
@@ -91,13 +71,12 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
   }, [term]);
 
   function goListing(t: string) {
-    remember(t);
+    submitListing(router, t);
     onNavigate();
-    router.push(`/products?q=${encodeURIComponent(t)}`);
   }
 
   function goProduct(slug: string) {
-    remember(term);
+    rememberRecent(term);
     onNavigate();
     router.push(`/product/${slug}`);
   }
