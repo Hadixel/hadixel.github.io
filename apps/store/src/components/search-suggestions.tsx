@@ -15,6 +15,7 @@ interface Hit {
 
 const fa = (n: number) => toFaDigits(new Intl.NumberFormat("fa-IR").format(n));
 const RECENT_KEY = "kmodern_recent_searches";
+const chipClass = "rounded-card border border-fog px-3 py-1.5 text-xs text-ink transition-colors hover:border-slate-line hover:bg-plaster";
 
 function readRecent(): string[] {
   try {
@@ -31,6 +32,10 @@ function remember(term: string) {
   if (t.length < 2) return;
   const next = [t, ...readRecent().filter((x) => x !== t)].slice(0, 5);
   localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+}
+
+function clearRecent() {
+  localStorage.removeItem(RECENT_KEY);
 }
 
 function TrendIcon() {
@@ -131,10 +136,15 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
         <div className="space-y-5">
           {recent.length > 0 && (
             <div>
-              <div className="mb-2 text-xs font-bold text-ink">جستجوهای اخیر</div>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-ink">جستجوهای اخیر</span>
+                <button type="button" onClick={() => { clearRecent(); setRecent(readRecent()); }} className="text-xs text-ash transition-colors hover:text-flame-700">
+                  پاک کردن
+                </button>
+              </div>
               <div className="flex flex-row-reverse flex-wrap gap-2">
                 {recent.map((t) => (
-                  <button key={t} type="button" onClick={() => goListing(t)} className="rounded-card border border-fog px-3 py-1.5 text-xs text-ink transition-colors hover:border-slate-line hover:bg-plaster">
+                  <button key={t} type="button" onClick={() => goListing(t)} className={chipClass}>
                     {t}
                   </button>
                 ))}
@@ -142,22 +152,24 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
             </div>
           )}
 
-          <div>
-            <div className="mb-2 text-xs font-bold text-ink">جستجوهای پرطرفدار</div>
-            <div className="flex flex-row-reverse flex-wrap gap-2">
-              {hot.map((h) => (
-                <button
-                  key={h.slug}
-                  type="button"
-                  onClick={() => goListing(h.name)}
-                  className="flex items-center gap-1.5 rounded-card border border-fog px-3 py-1.5 text-xs text-ink transition-colors hover:border-slate-line hover:bg-plaster"
-                >
-                  <TrendIcon />
-                  <span className="max-w-28 truncate">{h.name}</span>
-                </button>
-              ))}
+          {hot.length > 0 && (
+            <div>
+              <div className="mb-2 text-xs font-bold text-ink">جستجوهای پرطرفدار</div>
+              <div className="flex flex-row-reverse flex-wrap gap-2">
+                {hot.map((h) => (
+                  <button
+                    key={h.slug}
+                    type="button"
+                    onClick={() => goListing(h.name)}
+                    className={`flex items-center gap-1.5 ${chipClass}`}
+                  >
+                    <TrendIcon />
+                    <span className="max-w-28 truncate">{h.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <a href="/products" onClick={onNavigate} className="block overflow-hidden rounded-card bg-ink">
             <div className="relative flex h-24 items-center justify-between px-5">

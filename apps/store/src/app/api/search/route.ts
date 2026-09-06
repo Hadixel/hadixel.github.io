@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 // Public search for the header suggestion panel. Thin wrapper over the
 // listing query — no new search logic, no auth. Short queries return an
 // empty result set (200). hot=1 returns the newest published products for
-// the «پرفروش‌های پرادار» row shown before the user types.
+// the «جستجوهای پرطرفدار» row shown before the user types.
 export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   const hot = req.nextUrl.searchParams.get("hot") === "1";

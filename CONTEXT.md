@@ -31,6 +31,10 @@ _Avoid_: badge-driven UI, retail tags, generic e-commerce look
 The single chromatic accent (#1d4ed8 family, pale sibling #dbeafe) — product-native (a working gas flame), reserved for activation moments: status badges, active navigation, primary CTA, current-state indicators. No more than ~3% of any screen.
 _Avoid_: copper, gold, warm metallics (retired — read traditional, not modern kitchen)
 
+**Popular searches (جستجوهای پرطرفدار)**:
+The header search panel's discovery row: chips of the newest published Products, served by the public search endpoint's hot mode before the shopper types.
+_Avoid_: hand-typed suggestion lists, bestseller claims
+
 **Design tokens**:
 Cool monochrome surfaces (white canvas, plaster #ecedee cards, ink #111 text) + Vazirmatn typography sculpted by weight (400 body → 800/900 display; Persian script takes no negative tracking) + Flame blue as the only chromatic signal. Shared vocabulary across store and admin.
 
