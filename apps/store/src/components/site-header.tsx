@@ -8,23 +8,13 @@ import AccountButton from "./account-button";
 import { CartButton } from "./cart-button";
 import MobileMenu from "./mobile-menu";
 import MobileSearchButton from "./mobile-search-button";
+import SearchBar from "./search-bar";
 
 /*
- * Main navigation — Showcase anatomy, RTL-mirrored:
- * menu trigger (mobile only) / [logo, absolutely centered] / search
- * (icon→modal on mobile, inline input on desktop) / account icon / cart
- * icon. White surface, 52px row, hairline bottom border. No shadows.
+ * Main navigation — Digikala-style anatomy, RTL: menu trigger (mobile) and
+ * logo at the start (right edge); search field + account/cart icons at the
+ * far end (left edge). White surface, 52px row, hairline bottom border.
  */
-
-
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
 
 export async function SiteHeader() {
   const [mobile, storeName, me] = await Promise.all([
@@ -44,37 +34,21 @@ export async function SiteHeader() {
         </div>
       </div>
 
-      {/* Single-row nav — menu(mobile) / [logo, absolutely centered] / actions */}
+      {/* Single-row nav — menu(mobile) + logo at the start (right, RTL),
+          search field + account/cart icons at the far end (Digikala anatomy) */}
       <div className="border-b border-plaster">
-        <div className="relative mx-auto flex h-[52px] max-w-[1440px] items-center gap-1 px-4">
+        <div className="relative mx-auto flex h-[52px] max-w-[1440px] items-center gap-2 px-4">
           <div className="lg:hidden">
             <MobileMenu tree={mobile?.tree ?? []} />
           </div>
 
-          {/* Brand — absolute-centered so it stays put however wide the control groups are */}
-          <Link
-            href="/"
-            aria-label={storeName}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          >
+          <Link href="/" aria-label={storeName} className="shrink-0">
             <Image src="/icons/logo.png" alt={storeName} width={40} height={40} priority className="size-10" />
           </Link>
 
           <div className="ms-auto flex items-center gap-1">
             <MobileSearchButton />
-            <form action="/products" method="GET" className="hidden md:block">
-              <label className="relative block w-[220px] lg:w-[280px]">
-                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-ash">
-                  <SearchIcon />
-                </span>
-                <input
-                  type="search"
-                  name="q"
-                  placeholder="جستجوی محصول…"
-                  className="h-9 w-full rounded-card border border-transparent bg-plaster pr-10 pl-3 text-sm text-ink outline-none transition-colors placeholder:text-ash focus:border-fog focus:bg-canvas"
-                />
-              </label>
-            </form>
+            <SearchBar />
             <AccountButton loggedIn={!!me} />
             <CartButton />
           </div>

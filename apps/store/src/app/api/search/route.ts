@@ -3,14 +3,18 @@ import { getPublishedProducts } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-// Public search for the header search modal. Thin wrapper over the listing
-// query — no new search logic, no auth. Short queries return an empty result
-// set (200) rather than an error so the debounced client stays calm.
+// Public search for the header suggestion panel. Thin wrapper over the
+// listing query — no new search logic, no auth. Short queries return an
+// empty result set (200). hot=1 returns the newest published products for
+// the «پرفروش‌های پرادار» row shown before the user types.
 export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
-  if (q.length < 2) return NextResponse.json({ results: [] });
+  const hot = req.nextUrl.searchParams.get("hot") === "1";
+  if (!hot && q.length < 2) return NextResponse.json({ results: [] });
 
-  const products = await getPublishedProducts({ search: q, limit: 6 });
+  const products = hot
+    ? await getPublishedProducts({ limit: 5 })
+    : await getPublishedProducts({ search: q, limit: 6 });
   return NextResponse.json({
     results: products.map((p) => ({
       slug: p.slug,
