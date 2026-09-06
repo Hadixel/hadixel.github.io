@@ -6,10 +6,14 @@
 
 **Status:** ready-for-agent
 
-- [ ] Typing a query of 2+ characters shows live product rows with image, name, and Persian-digit price; tapping a row navigates to that product's page
-- [ ] Results are debounced (≈280 ms) and stale-response guarded — fast typing never renders an older query's rows
-- [ ] Queries shorter than 2 characters show the idle panel (recents, popular, banner), never partial or empty-looking rows
-- [ ] Pressing Enter navigates to the full results listing for the query, and the term is recorded as a recent search
-- [ ] The «دنبال تخفیف هستی؟» banner is present in the panel and links to the all-products listing
-- [ ] A network failure while typing shows the no-results state — never an error message
-- [ ] The panel closes on Escape and on outside click
+- [x] Typing a query of 2+ characters shows live product rows with image, name, and Persian-digit price; tapping a row navigates to that product's page
+- [x] Results are debounced (≈280 ms) and stale-response guarded — fast typing never renders an older query's rows
+- [x] Queries shorter than 2 characters show the idle panel (recents, popular, banner), never partial or empty-looking rows
+- [x] Pressing Enter navigates to the full results listing for the query, and the term is recorded as a recent search
+- [x] The «دنبال تخفیف هستی؟» banner is present in the panel and links to the all-products listing
+- [x] A network failure while typing shows the no-results state — never an error message
+- [x] The panel closes on Escape and on outside click
+
+## Comments
+
+- 2026-09-06: Verified in browser (desktop 1440): «فر» → 5 live rows with Persian-digit prices; row tap → PDP with the term recorded; Enter → `/products?q=فر` («نتایج «فر»»); Escape closes the panel. Short-query and failure fallbacks pinned by the endpoint seam suite (6 cases). Commit c5bbd5d.

@@ -6,9 +6,13 @@
 
 **Status:** ready-for-agent
 
-- [ ] At phone width the header actions group shows a search icon trigger and the inline search field is desktop-only; the header stays one compact 52px row with no separate search row
-- [ ] Tapping the trigger opens the overlay search card with the input autofocused — typing starts immediately
-- [ ] The card hosts the same suggestion panel as desktop: recent chips, popular chips, promo banner, live product rows
-- [ ] Recent searches recorded on desktop appear in the mobile card and vice versa (one shared device-local store)
-- [ ] Escape and tapping the backdrop close the card; navigating from a result or the banner closes it too
-- [ ] Desktop layout is unchanged by this ticket: inline field, no mobile trigger visible at desktop width
+- [x] At phone width the header actions group shows a search icon trigger and the inline search field is desktop-only; the header stays one compact 52px row with no separate search row
+- [x] Tapping the trigger opens the overlay search card with the input autofocused — typing starts immediately
+- [x] The card hosts the same suggestion panel as desktop: recent chips, popular chips, promo banner, live product rows
+- [x] Recent searches recorded on desktop appear in the mobile card and vice versa (one shared device-local store)
+- [x] Escape and tapping the backdrop close the card; navigating from a result or the banner closes it too
+- [x] Desktop layout is unchanged by this ticket: inline field, no mobile trigger visible at desktop width
+
+## Comments
+
+- 2026-09-06: Verified in browser at 390px: icon trigger opens the card, input autofocused, hot + banner + recents («فر») render from the shared store, live rows navigate to the PDP and close the card; Escape and backdrop both dismiss. Desktop surface re-checked unchanged at 1440. Commit c5bbd5d.
