@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button, Input, Popover } from "@heroui/react";
 import { submitListing } from "@/lib/search-nav";
 import SearchSuggestions from "./search-suggestions";
 
@@ -15,60 +16,77 @@ function SearchIcon() {
 }
 
 /*
- * SearchBar — Digikala-style prominent search field (desktop ≥ md): opens a
- * suggestion panel below the input (live results / recent / hot / banner).
- * Panel closes on outside click and Escape; Enter submits to the listing.
+ * SearchBar — Digikala-style prominent search field (desktop ≥ md): a HeroUI
+ * Input whose suggestion panel is hosted in a controlled HeroUI Popover
+ * anchored to the field wrapper (live results / recent / hot / banner).
+ *
+ * The Popover runs non-modal (HeroUI's own ComboBox does the same): no veil,
+ * no focus move, no scroll lock — typing keeps working and the already-focused
+ * field reopens the panel on press (d3d640f). React Aria disables interact-
+ * outside dismissal for non-modal popovers, so outside press and Escape are
+ * wired here: mousedown outside the field and the portalled panel closes it;
+ * Escape closes from the input (its keydown never reaches the popover).
  */
 export default function SearchBar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      const el = e.target as Node;
+      if (wrapRef.current?.contains(el) || panelRef.current?.contains(el)) return;
+      setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+    return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
   return (
-    <div ref={wrapRef} className="relative hidden md:block" onMouseDown={() => setOpen(true)}>
-      <div className={`flex h-11 w-[420px] lg:w-[480px] items-center gap-2 rounded-card border bg-plaster px-3 transition-colors ${open ? "border-fog bg-canvas" : "border-transparent"}`}>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onFocus={() => setOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && q.trim()) {
-              submitListing(router, q);
-              setOpen(false);
-            }
-          }}
-          type="search"
-          placeholder="جستجو در همه کالاها"
-          aria-label="جستجو در همه کالاها"
-          className="h-full flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ash"
-        />
-        <button
-          type="button"
-          aria-label="جستجو"
-          onClick={() => { if (q.trim()) { submitListing(router, q); setOpen(false); } }}
-          className="flex size-8 items-center justify-center rounded-card text-ink hover:bg-plaster"
-        >
-          <SearchIcon />
-        </button>
-      </div>
+    <div className="relative hidden md:block" ref={wrapRef}>
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onFocus={() => setOpen(true)}
+        onMouseDown={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+          if (e.key === "Enter" && q.trim()) {
+            submitListing(router, q);
+            setOpen(false);
+          }
+        }}
+        type="search"
+        placeholder="جستجو در همه کالاها"
+        aria-label="جستجو در همه کالاها"
+        className="h-11 w-[420px] rounded-card border border-transparent bg-plaster pr-4 pl-12 text-sm text-ink shadow-none outline-none placeholder:text-ash focus:border-fog focus:bg-canvas focus:shadow-none lg:w-[480px]"
+      />
+      <Button
+        isIconOnly
+        variant="ghost"
+        size="sm"
+        aria-label="جستجو"
+        onPress={() => { if (q.trim()) { submitListing(router, q); setOpen(false); } }}
+        className="absolute inset-y-0 left-2 my-auto"
+      >
+        <SearchIcon />
+      </Button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-40 mt-2 w-[460px] lg:w-[520px] rounded-card border border-plaster bg-canvas p-4 shadow-[0_8px_24px_rgba(0,0,0,0.15)]">
+      <Popover isOpen={open} onOpenChange={setOpen}>
+        <Popover.Content
+          ref={panelRef}
+          triggerRef={wrapRef}
+          isNonModal
+          placement="bottom end"
+          offset={8}
+          className="w-[460px] rounded-card p-4 lg:w-[520px]"
+        >
           <SearchSuggestions query={q} onNavigate={() => setOpen(false)} />
-        </div>
-      )}
+        </Popover.Content>
+      </Popover>
     </div>
   );
 }

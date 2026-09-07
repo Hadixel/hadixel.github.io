@@ -5,6 +5,7 @@ import { submitListing } from "@/lib/search-nav";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Button, Skeleton } from "@heroui/react";
 import { toFaDigits } from "@kmodern/schema";
 
 interface Hit {
@@ -16,7 +17,6 @@ interface Hit {
 }
 
 const fa = (n: number) => toFaDigits(new Intl.NumberFormat("fa-IR").format(n));
-const chipClass = "rounded-card border border-fog px-3 py-1.5 text-xs text-ink transition-colors hover:border-slate-line hover:bg-plaster";
 
 function TrendIcon() {
   return (
@@ -83,7 +83,13 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
 
   return (
     <div>
-      {loading && <p className="py-6 text-center text-sm text-ash">در حال جستجو…</p>}
+      {loading && (
+        <div className="space-y-2 py-1">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-12 rounded-card bg-plaster" />
+          ))}
+        </div>
+      )}
       {!loading && hits && hits.length === 0 && (
         <p className="py-6 text-center text-sm text-ash">نتیجه‌ای یافت نشد</p>
       )}
@@ -117,15 +123,20 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-bold text-ink">جستجوهای اخیر</span>
-                <button type="button" onClick={() => { clearRecent(); setRecent(readRecent()); }} className="text-xs text-ash transition-colors hover:text-flame-700">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => { clearRecent(); setRecent(readRecent()); }}
+                  className="h-auto px-1 py-0 text-xs text-ash hover:text-flame-700"
+                >
                   پاک کردن
-                </button>
+                </Button>
               </div>
               <div className="flex flex-row-reverse flex-wrap gap-2">
                 {recent.map((t) => (
-                  <button key={t} type="button" onClick={() => goListing(t)} className={chipClass}>
+                  <Button key={t} size="sm" variant="outline" onPress={() => goListing(t)}>
                     {t}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -136,15 +147,16 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
               <div className="mb-2 text-xs font-bold text-ink">جستجوهای پرطرفدار</div>
               <div className="flex flex-row-reverse flex-wrap gap-2">
                 {hot.map((h) => (
-                  <button
+                  <Button
                     key={h.slug}
-                    type="button"
-                    onClick={() => goListing(h.name)}
-                    className={`flex items-center gap-1.5 ${chipClass}`}
+                    size="sm"
+                    variant="outline"
+                    onPress={() => goListing(h.name)}
+                    className="gap-1.5"
                   >
                     <TrendIcon />
                     <span className="max-w-28 truncate">{h.name}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

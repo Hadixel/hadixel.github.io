@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@heroui/react";
 import MobileSearchModal from "./mobile-search-modal";
 
 function SearchIcon() {
@@ -18,14 +19,15 @@ export default function MobileSearchButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
+      <Button
+        isIconOnly
+        variant="ghost"
         aria-label="جستجو"
-        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster md:hidden"
+        onPress={() => setOpen(true)}
+        className="md:hidden"
       >
         <SearchIcon />
-      </button>
+      </Button>
       <MobileSearchModal open={open} onClose={() => setOpen(false)} />
     </>
   );

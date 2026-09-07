@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import { HeroProbe } from "@/components/heroui-probe";
 import { getSettingOrDefault } from "@/lib/settings";
 import { settingKeys } from "@kmodern/schema";
 import { CartProvider } from "@/components/cart-provider";
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <SiteFooter />
           </CartProvider>
         </Providers>
-        {process.env.NODE_ENV === "development" && <HeroProbe />}
       </body>
     </html>
   );
