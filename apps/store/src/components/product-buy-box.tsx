@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CreditMark, Button, ProductGallery, cn } from "@kmodern/ui";
+import { Button } from "@heroui/react";
+import { CreditMark, ProductGallery, cn } from "@kmodern/ui";
 import { useCart } from "./cart-provider";
 import { toFaDigits } from "@kmodern/schema";
 
@@ -98,13 +99,14 @@ export function ProductBuyBox({
         {selected?.available && (
           <div className="mt-6 flex items-center gap-3">
             <div className="flex items-center rounded-card border border-fog">
-              <button className="px-3 py-2 text-ash hover:text-ink" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+              <Button isIconOnly variant="ghost" size="sm" onPress={() => setQty(Math.max(1, qty - 1))}>−</Button>
               <span className="min-w-8 text-center text-sm font-semibold">{toFaDigits(qty)}</span>
-              <button className="px-3 py-2 text-ash hover:text-ink" onClick={() => setQty(qty + 1)}>+</button>
+              <Button isIconOnly variant="ghost" size="sm" onPress={() => setQty(qty + 1)}>+</Button>
             </div>
             <Button
-              className={cn("flex-1", added && "bg-green-700 hover:bg-green-800")}
-              onClick={() => {
+              className="flex-1"
+              variant={added ? "secondary" : "primary"}
+              onPress={() => {
                 if (!selected) return;
                 add(selected.id, qty);
                 setAdded(true);
@@ -121,7 +123,7 @@ export function ProductBuyBox({
         )}
         {!selected?.available && (
           <div className="mt-6">
-            <Button variant="ink" disabled className="w-full">ناموجود</Button>
+            <Button variant="outline" isDisabled className="w-full">ناموجود</Button>
             <p className="mt-2 text-xs text-ash">برای اطلاع از موجودی با ما تماس بگیرید.</p>
           </div>
         )}
