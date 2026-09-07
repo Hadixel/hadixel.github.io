@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "./providers";
+import { HeroProbe } from "@/components/heroui-probe";
 import { getSettingOrDefault } from "@/lib/settings";
 import { settingKeys } from "@kmodern/schema";
 import { CartProvider } from "@/components/cart-provider";
@@ -18,13 +20,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   // html attrs are static; browser extensions (dark-reader/translate) mutate
   // them before React loads — suppress that known false-positive diff
   return (
-    <html lang="fa" dir="rtl" suppressHydrationWarning>
+    <html lang="fa" dir="rtl" data-theme="light" className="light" suppressHydrationWarning>
       <body className="flex min-h-screen flex-col bg-white text-ink">
-        <CartProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-        </CartProvider>
+        <Providers>
+          <CartProvider>
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </CartProvider>
+        </Providers>
+        {process.env.NODE_ENV === "development" && <HeroProbe />}
       </body>
     </html>
   );

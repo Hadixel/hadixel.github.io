@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@heroui/styles/css";
+@import "./showcase-theme.css";
 @import "@kmodern/ui/tailwind.css";
 
 /* Scan the shared UI package for class usage (workspace symlink is outside auto-detection) */

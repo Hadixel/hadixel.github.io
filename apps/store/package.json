@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@heroui/react": "^3.2.4",
+    "@heroui/styles": "^3.2.4",
     "@kmodern/adapters": "workspace:*",
     "@kmodern/db": "workspace:*",
     "@kmodern/schema": "workspace:*",
