@@ -56,7 +56,7 @@ export function ShowcaseCard({
     <Link
       href={href}
       className={cn(
-        "group block rounded-card bg-plaster shadow-[var(--surface-shadow)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--overlay-shadow)]",
+        "group card-lift block rounded-card bg-plaster",
         className,
       )}
     >

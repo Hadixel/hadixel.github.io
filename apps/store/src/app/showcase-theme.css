@@ -63,3 +63,16 @@
     border-radius: 10px;
   }
 }
+
+/* Shared elevation recipe (ADR-0002): resting surface shadow, hover lift
+   to the overlay shadow. Used by every product card surface. */
+@layer components {
+  .card-lift {
+    box-shadow: var(--surface-shadow);
+    transition: box-shadow 200ms var(--ease-out, ease-out), transform 200ms var(--ease-smooth, ease-out);
+  }
+  .card-lift:hover {
+    box-shadow: var(--overlay-shadow);
+    transform: translateY(-2px);
+  }
+}

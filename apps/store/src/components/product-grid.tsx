@@ -25,7 +25,7 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="group block rounded-card bg-plaster shadow-[var(--surface-shadow)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--overlay-shadow)]"
+      className="group card-lift block rounded-card bg-plaster"
     >
       <div className="relative aspect-square overflow-hidden rounded-card">
         {!product.available && (
