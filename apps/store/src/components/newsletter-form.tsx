@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, Input } from "@heroui/react";
 
 // Newsletter block: local confirmation only — no backend endpoint exists.
 export function NewsletterForm({ title }: { title?: string }) {
@@ -24,21 +25,18 @@ export function NewsletterForm({ title }: { title?: string }) {
       }}
     >
       <label className="sr-only" htmlFor="newsletter-email">{title ?? "خبرنامه"}</label>
-      <input
+      <Input
         id="newsletter-email"
         type="email"
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="ایمیل خود را وارد کنید"
-        className="flex-1 rounded-card border border-fog bg-canvas px-5 py-3 text-sm outline-none focus:border-flame-700 focus:ring-2 focus:ring-flame-200"
+        className="flex-1"
       />
-      <button
-        type="submit"
-        className="rounded-card bg-flame-700 px-8 py-3 text-sm font-bold text-white transition hover:bg-flame-600"
-      >
+      <Button type="submit" variant="primary">
         عضویت در خبرنامه
-      </button>
+      </Button>
     </form>
   );
 }
