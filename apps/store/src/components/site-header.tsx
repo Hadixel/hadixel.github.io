@@ -34,8 +34,8 @@ export async function SiteHeader() {
         </div>
       </div>
 
-      {/* Single-row nav — menu(mobile) + logo at the start (right, RTL),
-          search field + account/cart icons at the far end (Digikala anatomy) */}
+      {/* Single-row nav — menu(mobile) + logo + search field at the start
+          (right, RTL), account/cart icons at the far end (Digikala anatomy) */}
       <div className="border-b border-plaster">
         <div className="relative mx-auto flex h-[52px] max-w-[1440px] items-center gap-2 px-4">
           <div className="lg:hidden">
@@ -46,9 +46,10 @@ export async function SiteHeader() {
             <Image src="/icons/logo.png" alt={storeName} width={40} height={40} priority className="size-10" />
           </Link>
 
+          <SearchBar />
+
           <div className="ms-auto flex items-center gap-1">
             <MobileSearchButton />
-            <SearchBar />
             <AccountButton loggedIn={!!me} />
             <CartButton />
           </div>
