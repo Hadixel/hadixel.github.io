@@ -59,8 +59,19 @@
   .button,
   .popover,
   .dropdown__popover,
-  .modal__dialog {
+  .modal__dialog,
+  .close-button {
     border-radius: 10px;
+  }
+
+  /* RTL drawer motion: placement="left" rests the panel on the physical
+     right (start edge in RTL) via justify-start, but the library's
+     enter/exit translate is physical (-100% = toward screen left), so the
+     slide sweeps across the viewport. Mirror it: the panel must slide
+     out from behind the start edge (+100% = from the right). */
+  [dir="rtl"] .drawer__content--left[data-entering="true"] .drawer__dialog,
+  [dir="rtl"] .drawer__content--left[data-exiting="true"] .drawer__dialog {
+    translate: 100% 0;
   }
 }
 

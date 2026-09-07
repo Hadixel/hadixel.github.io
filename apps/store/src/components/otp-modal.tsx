@@ -33,6 +33,7 @@ export default function OtpModal({ phone, onSuccess }: { phone: string; onSucces
   }
 
   async function verify() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const r = await fetch("/api/otp", {

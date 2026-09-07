@@ -42,7 +42,14 @@ export default function SearchBar() {
       setOpen(false);
     };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    // Escape closes the panel from anywhere on the page (story 12) — RAC's
+    // non-modal popover only handles Escape that bubbles through the panel.
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (
