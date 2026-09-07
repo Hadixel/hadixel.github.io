@@ -3,18 +3,28 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Badge } from "@kmodern/ui";
+import { Badge } from "@heroui/react";
 import { CreditMark, Price } from "@kmodern/ui";
 import { cn } from "@kmodern/ui";
 import type { DotVariant } from "@kmodern/ui";
 import { ColorDotSwatches } from "@kmodern/ui";
 
 /*
+ * Showcase badge variants → HeroUI Badge props. Flame = solid accent pill,
+ * pale = soft accent, slate = monochrome plaster pill (no invented chroma).
+ */
+const badgeProps = {
+  flame: { color: "accent", variant: "primary" },
+  pale: { color: "accent", variant: "soft" },
+  slate: { color: "default", variant: "primary" },
+} as const;
+/*
  * Standard product card — exact Zellerfeld anatomy: plaster surface, no
- * border, no shadow. Status badge top-LEFT (12px offset; Zellerfeld's
- * badge corner, kept left as the mirror of RTL metadata anchoring right).
- * Centered product image fills ~60% height. Below: credit mark → name →
- * mono credit → price. Color dots swap imagery live (no navigation).
+ * border; soft elevation + hover lift per ADR-0002. Status badge top-LEFT
+ * (12px offset; Zellerfeld's badge corner, kept left as the mirror of RTL
+ * metadata anchoring right). Centered product image fills ~60% height.
+ * Below: credit mark → name → mono credit → price. Color dots swap imagery
+ * live (no navigation).
  */
 export function ShowcaseCard({
   href,
@@ -43,17 +53,25 @@ export function ShowcaseCard({
   const imgB = activeImages[1] ?? activeImages[0];
 
   return (
-    <Link href={href} className={cn("group block rounded-card bg-plaster", className)}>
+    <Link
+      href={href}
+      className={cn(
+        "group block rounded-card bg-plaster shadow-[var(--surface-shadow)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--overlay-shadow)]",
+        className,
+      )}
+    >
       <div className="relative aspect-square overflow-hidden rounded-card">
         {/* status badge — pill, 12px offset, identical anatomy across variants */}
         {badge && (
           <span className="absolute left-3 top-3 z-10">
-            <Badge variant={badge.variant}>{badge.label}</Badge>
+            <Badge color={badgeProps[badge.variant].color} variant={badgeProps[badge.variant].variant}>
+              {badge.label}
+            </Badge>
           </span>
         )}
         {!available && !badge && (
           <span className="absolute left-3 top-3 z-10">
-            <Badge variant="slate">ناموجود</Badge>
+            <Badge color="default" variant="primary">ناموجود</Badge>
           </span>
         )}
         {imgA ? (

@@ -7,7 +7,8 @@ import { CreditMark, Price } from "@kmodern/ui";
 /*
  * Floating product info card — exact Zellerfeld anatomy: white surface,
  * 16-20px padding, 60x60 thumbnail (10px radius), product name semibold,
- * "توسط دیتیس" mono credit, price tabular, ink CTA. Floats over the hero.
+ * "توسط دیتیس" mono credit, price tabular, ink CTA. Floats over the hero
+ * with soft surface elevation + hover lift (ADR-0002 depth doctrine).
  */
 export function FloatingProductCard({
   href,
@@ -23,7 +24,7 @@ export function FloatingProductCard({
   maxPrice?: number;
 }) {
   return (
-    <div className="w-full max-w-[280px] rounded-card bg-canvas p-5">
+    <div className="w-full max-w-[280px] rounded-card bg-canvas p-5 shadow-[var(--surface-shadow)] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--overlay-shadow)]">
       <div className="flex items-center gap-3">
         <div className="relative size-[60px] shrink-0 overflow-hidden rounded-card bg-plaster">
           {image && <Image src={image} alt={name} fill sizes="60px" className="object-contain p-1" />}
