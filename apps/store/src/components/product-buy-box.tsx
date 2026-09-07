@@ -106,6 +106,7 @@ export function ProductBuyBox({
             <Button
               className="flex-1"
               variant={added ? "secondary" : "primary"}
+              isDisabled={added}
               onPress={() => {
                 if (!selected) return;
                 add(selected.id, qty);
