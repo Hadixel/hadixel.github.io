@@ -15,7 +15,7 @@ export default function AccountLogin() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-20 text-center">
-      <h1 className="text-2xl font-bold">حساب من</h1>
+      <h1 className="font-display text-3xl font-extrabold">حساب من</h1>
       <p className="mt-4 text-ash">برای ورود یا پیگیری سفارشها، وارد حساب شوید.</p>
       <button
         onClick={() => setOpen(true)}

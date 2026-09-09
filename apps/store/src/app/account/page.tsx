@@ -1,8 +1,8 @@
 import { currentCustomer } from "@/lib/auth";
-import Link from "next/link";
 import { db } from "@kmodern/db";
-import { toFaDigits } from "@kmodern/schema";
+import { orderStatusKey, type OrderRowData } from "@/components/order-row";
 import AccountLogin from "./account-login";
+import { AccountArea } from "./account-area";
 
 export const dynamic = "force-dynamic";
 
@@ -11,17 +11,18 @@ export default async function AccountPage() {
   if (!me) {
     return <AccountLogin />;
   }
-  const orderCount = await db().order.count({ where: { customerId: me.customer.id } });
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold">حساب من</h1>
-      <div className="mt-6 rounded-card border border-plaster p-5">
-        <div className="font-semibold">{toFaDigits(me.customer.phone)}</div>
-        <div className="mt-1 text-sm text-ash">{toFaDigits(orderCount)} سفارش ثبت شده</div>
-        <div className="mt-4 flex gap-3">
-          <Link href="/orders" className="rounded-card bg-ink px-6 py-2.5 text-sm font-semibold text-white hover:bg-charcoal">سفارشهای من</Link>
-        </div>
-      </div>
-    </div>
-  );
+  const orders = await db().order.findMany({
+    where: { customerId: me.customer.id },
+    orderBy: { placedAt: "desc" },
+    include: { items: true },
+    take: 50,
+  });
+  const recent: OrderRowData[] = orders.slice(0, 4).map((o) => ({
+    orderNumber: o.orderNumber,
+    placedAt: o.placedAt.toISOString(),
+    itemCount: o.items.reduce((s, i) => s + i.quantity, 0),
+    total: o.total,
+    statusKey: orderStatusKey({ fulfillmentStatus: o.fulfillmentStatus, paymentStatus: o.paymentStatus }),
+  }));
+  return <AccountArea phone={me.customer.phone} orderCount={orders.length} recentOrders={recent} />;
 }
