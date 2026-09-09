@@ -1,6 +1,6 @@
 # کمدرن — Persian RTL Home-Appliance Commerce
 
-کمدرن (Kmodern) sells Datees home appliances (کمدرن is the storefront brand; Datees is the manufacturer) online in Iran. The domain covers a customer-facing storefront and an internal admin panel over one Persian-language, RTL catalog.
+خانه مدرن (Modern Home) is a multi-brand Persian RTL home-appliance retailer; کمدرن is the internal project codename and never customer-facing. Carried brands include Datees (داتیس) and Schuffle. The domain covers a customer-facing storefront and an internal admin panel over one Persian-language, RTL catalog.
 
 ### Architecture
 
@@ -11,7 +11,7 @@ _Avoid_: legacy store (retired Vite SPA — its role is absorbed here)
 ### Catalog
 
 **Product**:
-A purchasable Datees appliance (e.g. built-in oven, sink, hood). Displayed in Persian; identified by a stable Latin URL slug.
+A purchasable home appliance (e.g. built-in oven, sink, hood). Displayed in Persian; identified by a stable Latin URL slug.
 _Avoid_: item, goods
 
 **Variant**:
@@ -21,6 +21,9 @@ _Avoid_: color option, model (the model code belongs to the Product)
 **Color**:
 The named finish of a Variant (e.g. استیل, مشکی). Every Variant has exactly one. Colors are a *presentation* attribute of a Variant, not an independent purchasable entity.
 
+**Brand (برند)**:
+An appliance brand the store carries (e.g. Datees داتیس, Schuffle) — attribution appears only in a Product's specs table.
+_Avoid_: supplier credits in chrome, per-card brand stamps, "Powered by …", bylines like "توسط …"
 ### Presentation
 
 **Showcase (نمای ویژه)**:
@@ -36,7 +39,7 @@ The header search panel's discovery row: chips of the newest published Products,
 _Avoid_: hand-typed suggestion lists, bestseller claims
 
 **Design tokens**:
-Cool monochrome surfaces (white canvas, plaster #ecedee cards, ink #111 text) + Vazirmatn typography sculpted by weight (400 body → 800/900 display; Persian script takes no negative tracking) + Flame blue as the only chromatic signal. Shared vocabulary across store and admin.
+Cool monochrome surfaces (white canvas, plaster #ecedee cards, ink #111 text) + Doran for display (titles, slogans) and Yekan Bakh for body, sculpted by weight (Persian script takes no negative tracking) + Flame blue as the only chromatic signal. Shared vocabulary across store and admin.
 
 **Color dots**:
 The baseline Showcase treatment for variation on a Product Card: interactive swatches of each Color's finish; tapping one live-swaps the card's imagery to that Variant without navigating. Variation is shown and made tangible — never counted in a badge.

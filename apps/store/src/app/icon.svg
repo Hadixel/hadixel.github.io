@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- خانه مدرن favicon: house silhouette on ink tile -->
+  <rect width="32" height="32" rx="7" fill="#111111"/>
+  <path d="M16 6.5 5.5 15h3v9.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15h3L16 6.5z" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round"/>
+  <rect x="13.6" y="18" width="4.8" height="8" rx="1" fill="#ffffff"/>
+</svg>

@@ -2,19 +2,6 @@ import { cn } from "../cn";
 import { Badge } from "../components/badge";
 import { toFaDigits } from "@kmodern/schema";
 
-/*
- * Credit mark — the 40x40 white دیتیس chip anchoring product-card metadata.
- * Carries the real Datees logo; multiply blend keeps it matte on plaster.
- */
-export function CreditMark({ className }: { className?: string }) {
-  return (
-    <span className={cn("relative block size-10 shrink-0 overflow-hidden rounded-[6px] border border-plaster bg-canvas", className)}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- tiny third-party mark, blend needs raw img */}
-      <img src="/icons/logo.png" alt="دیتیس" className="absolute inset-0 size-full object-contain p-1 mix-blend-multiply" />
-    </span>
-  );
-}
-
 /* Section header — title right (RTL), optional hairline arrow controls left. */
 export function SectionHeader({
   title,

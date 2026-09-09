@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
-import { CreditMark, ProductGallery, cn } from "@kmodern/ui";
+import { ProductGallery, cn } from "@kmodern/ui";
 import { useCart } from "./cart-provider";
 import { toFaDigits } from "@kmodern/schema";
 
@@ -47,12 +47,9 @@ export function ProductBuyBox({
       <ProductGallery images={selected?.images ?? []} alt={productName} />
 
       <div>
-        <div className="flex items-start gap-3">
-          <CreditMark />
-          <div>
-            {model && <div className="text-code text-xs text-ash">{model}</div>}
-            <h1 className="mt-0.5 text-2xl font-black leading-snug text-ink">{productName}</h1>
-          </div>
+        <div>
+          {model && <div className="text-code text-xs text-ash">{model}</div>}
+          <h1 className="mt-0.5 text-2xl font-black leading-snug text-ink">{productName}</h1>
         </div>
         {description && <p className="mt-4 text-sm leading-7 text-ash">{description}</p>}
 
@@ -85,15 +82,15 @@ export function ProductBuyBox({
           </div>
         )}
 
-        <div className="mt-8 flex items-baseline justify-between border-t border-plaster pt-6">
+        <div className="mt-8 border-t border-plaster pt-6">
           {selected ? (
             <div className="text-price text-3xl text-ink">
               {toFaDigits(new Intl.NumberFormat("fa-IR").format(selected.price))}
+              <span className="mr-2 text-sm font-normal text-ash">تومان</span>
             </div>
           ) : (
             <div className="text-ash">ناموجود</div>
           )}
-          <span className="text-xs text-ash">تومان / هر واحد</span>
         </div>
 
         {selected?.available && (

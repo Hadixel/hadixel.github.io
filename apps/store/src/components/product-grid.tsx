@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Badge } from "@heroui/react";
 
-import { CreditMark, Price, ColorDotSwatches, cn } from "@kmodern/ui";
+import { Price, ColorDotSwatches, cn } from "@kmodern/ui";
 import type { DotVariant } from "@kmodern/ui";
 import type { PublishedProduct } from "@/lib/queries";
 
@@ -58,12 +58,9 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
       </div>
 
       <div className="p-5 pt-4">
-        <div className="flex items-start gap-2">
-          <CreditMark />
-          <div className="min-w-0">
-            <div className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.name}</div>
-            {product.model && <div className="text-code mt-1 text-xs text-ash">توسط دیتیس · {product.model}</div>}
-          </div>
+        <div className="min-w-0">
+          <div className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.name}</div>
+          {product.model && <div className="text-code mt-1 text-xs text-ash">{product.model}</div>}
         </div>
         <div className="mt-2">
           <Price amount={selected?.price ?? product.price} maxAmount={selected ? undefined : product.maxPrice} className="text-sm" />

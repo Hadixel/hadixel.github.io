@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Persian RTL e-commerce monorepo (کمدرن / Datees home appliances). pnpm + Turbobuild workspaces: `apps/store` (Next.js storefront), `apps/admin` (Next.js panel), `apps/legacy-store` (Vite legacy), `packages/db` (Prisma/Postgres), `packages/schema` (zod contracts), `packages/adapters`, `packages/ui`.
+Persian RTL e-commerce monorepo (خانه مدرن — multi-brand home-appliance retailer; Datees and Schuffle are carried brands). pnpm + Turbobuild workspaces: `apps/store` (Next.js storefront), `apps/admin` (Next.js panel), `apps/legacy-store` (Vite legacy), `packages/db` (Prisma/Postgres), `packages/schema` (zod contracts), `packages/adapters`, `packages/ui`.
 
 ## Agent skills
 

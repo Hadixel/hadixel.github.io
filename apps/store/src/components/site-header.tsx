@@ -19,7 +19,7 @@ import SearchBar from "./search-bar";
 export async function SiteHeader() {
   const [mobile, storeName, me] = await Promise.all([
     getNavMenu("MOBILE"),
-    getSettingOrDefault<string>(settingKeys.storeName, "کمدرن"),
+    getSettingOrDefault<string>(settingKeys.storeName, "خانه مدرن"),
     currentCustomer(),
   ]);
 

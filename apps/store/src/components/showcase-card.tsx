@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@heroui/react";
-import { CreditMark, Price } from "@kmodern/ui";
+import { Price } from "@kmodern/ui";
 import { cn } from "@kmodern/ui";
 import type { DotVariant } from "@kmodern/ui";
 import { ColorDotSwatches } from "@kmodern/ui";
@@ -99,12 +99,9 @@ export function ShowcaseCard({
       </div>
 
       <div className="p-5 pt-4">
-        <div className="flex items-start gap-2">
-          <CreditMark />
-          <div className="min-w-0">
-            <div className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{name}</div>
-            {model && <div className="text-code mt-1 text-xs text-ash">توسط دیتیس · {model}</div>}
-          </div>
+        <div className="min-w-0">
+          <div className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{name}</div>
+          {model && <div className="text-code mt-1 text-xs text-ash">{model}</div>}
         </div>
         <div className="mt-2 flex items-end justify-between">
           <Price amount={selected?.price ?? price} maxAmount={selected ? undefined : maxPrice} className="text-sm" />

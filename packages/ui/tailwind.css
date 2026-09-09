@@ -2,34 +2,54 @@
    Consumed via `@import "@kmodern/ui/tailwind.css";` in each app's globals.css. */
 
 /* ---------- Typography ---------- */
+/* Yekan Bakh: body + UI text (readable at small sizes) */
 @font-face {
-  font-family: "Vazirmatn";
-  src: url("/fonts/Vazirmatn-Regular.woff2") format("woff2");
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: "Vazirmatn";
-  src: url("/fonts/Vazirmatn-Medium.woff2") format("woff2");
-  font-weight: 500;
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-SemiBold.woff2") format("woff2");
+  font-weight: 600;
   font-display: swap;
 }
 @font-face {
-  font-family: "Vazirmatn";
-  src: url("/fonts/Vazirmatn-Bold.woff2") format("woff2");
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-Bold.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }
 @font-face {
-  font-family: "Vazirmatn";
-  src: url("/fonts/Vazirmatn-ExtraBold.woff2") format("woff2");
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-ExtraBold.woff2") format("woff2");
   font-weight: 800;
   font-display: swap;
 }
 @font-face {
-  font-family: "Vazirmatn";
-  src: url("/fonts/Vazirmatn-Black.woff2") format("woff2");
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-Black.woff2") format("woff2");
   font-weight: 900;
+  font-display: swap;
+}
+/* Doran: display only — page titles, section headings, slogans */
+@font-face {
+  font-family: "Doran";
+  src: url("/fonts/Doran-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Doran";
+  src: url("/fonts/Doran-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Doran";
+  src: url("/fonts/Doran-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
   font-display: swap;
 }
 /* Space Mono: Latin technical strings only (model codes, SKUs) */
@@ -75,7 +95,8 @@
   --color-brand-700: var(--color-flame-800);
 
   /* Fonts */
-  --font-sans: Vazirmatn, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Yekan Bakh", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Doran", "Yekan Bakh", system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Radii — 10px everywhere, 30px pills only for badges */

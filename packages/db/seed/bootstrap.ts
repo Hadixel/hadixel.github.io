@@ -10,13 +10,13 @@ import { db } from "../src/client.js";
 import { settingKeys } from "@kmodern/schema";
 
 const DEFAULTS: Record<string, unknown> = {
-  [settingKeys.storeName]: "کمدرن",
+  [settingKeys.storeName]: "خانه مدرن",
   [settingKeys.storeTagline]: "فروشگاه لوازم خانگی",
   [settingKeys.storeContact]: "",
   [settingKeys.storeLogo]: "",
-  [settingKeys.blogDefaultByline]: "کمدرن",
-  [settingKeys.seoDefaultTitle]: "کمدرن | فروشگاه لوازم خانگی",
-  [settingKeys.seoDefaultDescription]: "فروشگاه لوازم خانگی کمدرن — اجاق‌گاز، فر، هود و سینک",
+  [settingKeys.blogDefaultByline]: "خانه مدرن",
+  [settingKeys.seoDefaultTitle]: "خانه مدرن | فروشگاه لوازم خانگی",
+  [settingKeys.seoDefaultDescription]: "فروشگاه لوازم خانگی خانه مدرن — اجاق‌گاز، فر، هود و سینک",
   [settingKeys.shippingLocalFeeMode]: "FLAT",
   [settingKeys.shippingLocalFlatFee]: 200000,
   [settingKeys.shippingPostWeightCap]: 0, // post off until raised (011)
@@ -59,7 +59,7 @@ async function main() {
         title: "خانه",
         kind: "SYSTEM",
         blocks: [
-          { id: "b-hero", type: "hero", props: { title: "کمدرن", subtitle: "لوازم خانگی باکیفیت", visible: true, mobileVisible: true } },
+          { id: "b-hero", type: "hero", props: { title: "خانه مدرن", subtitle: "لوازم خانگی باکیفیت", visible: true, mobileVisible: true } },
         ],
       },
       { slug: "about", title: "درباره ما", kind: "SYSTEM", blocks: [] },
@@ -202,8 +202,8 @@ async function main() {
           id: "home-hero",
           type: "hero",
           props: {
-            title: "کمدرن",
-            subtitle: "فروشگاه لوازم خانگی دیتیس — فر، اجاق گاز، هود و سینک",
+            title: "خانه مدرن",
+            subtitle: "فروشگاه لوازم خانگی — فر، اجاق گاز، هود و سینک",
             cta: { label: "مشاهده محصولات", link: { type: "EXTERNAL", url: "/products", newTab: false } },
             image: { src: img("datees-built-in-electric-oven-666", "variant-black"), alt: "فر توکار برقی دیتیس" },
             overlay: true,

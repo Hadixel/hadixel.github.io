@@ -108,7 +108,7 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
                   <span className="mt-0.5 block text-xs text-ash">
-                    {fa(h.price)} تومان{h.maxPrice ? ` تا ${fa(h.maxPrice)} تومان` : ""}
+                    {h.maxPrice && h.maxPrice !== h.price ? `${fa(h.price)} تا ${fa(h.maxPrice)}` : fa(h.price)} تومان
                   </span>
                 </span>
               </button>

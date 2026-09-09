@@ -27,7 +27,6 @@ export { ColorDots } from "./showcase/color-dots";
 export { deriveColorDots, type DotVariant } from "./showcase/color-dots-logic";
 export { Price } from "./showcase/price";
 export {
-  CreditMark,
   SectionHeader,
   NewBadge,
   SoldOutBadge,

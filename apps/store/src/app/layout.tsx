@@ -8,10 +8,10 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const storeName = await getSettingOrDefault<string>(settingKeys.storeName, "کمدرن");
+  const storeName = await getSettingOrDefault<string>(settingKeys.storeName, "خانه مدرن");
   return {
-    title: `${storeName} | فروشگاه آنلاین لوازم خانگی دیتیس`,
-    description: "خرید آنلاین فر توکار، اجاق گاز، هود، سینک و سرخ‌کن دیتیس با ارسال سراسری، ضمانت اصالت کالا و پرداخت امن از فروشگاه کمدرن",
+    title: `${storeName} | فروشگاه آنلاین لوازم خانگی`,
+    description: "خرید آنلاین فر توکار، اجاق گاز، هود، سینک و سرخ‌کن از برندهای اصل با ارسال سراسری، ضمانت اصالت کالا و پرداخت امن از فروشگاه خانه مدرن",
   };
 }
 

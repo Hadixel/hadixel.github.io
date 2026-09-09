@@ -63,7 +63,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       )}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border p-5">
+        <div className="rounded-card border border-plaster p-5">
           <h3 className="mb-3 font-bold">آدرس تحویل</h3>
           <p className="text-sm leading-6 text-ink">
             {address?.recipientName}<br />
@@ -72,7 +72,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             کد پستی: {address?.postalCode}
           </p>
         </div>
-        <div className="rounded-xl border p-5">
+        <div className="rounded-card border border-plaster p-5">
           <h3 className="mb-3 font-bold">وضعیت</h3>
           <div className="space-y-2 text-sm text-ink">
             <div className="flex justify-between"><span>تحویل</span><span>{fulfillmentLabel[order.fulfillmentStatus]}</span></div>
@@ -87,7 +87,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <div className="divide-y">
           {order.items.map((it) => (
             <div key={it.id} className="flex items-center gap-4 px-5 py-3">
-              {it.image && <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-plaster"><Image src={it.image} alt={it.productName} fill sizes="56px" className="object-contain" /></div>}
+              {it.image && <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-card bg-plaster"><Image src={it.image} alt={it.productName} fill sizes="56px" className="object-contain" /></div>}
               <div className="flex-1">
                 <div className="text-sm font-semibold">{it.productName}</div>
                 <div className="text-xs text-ash">{it.colorName} · {toFaDigits(it.quantity)} عدد</div>

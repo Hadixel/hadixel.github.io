@@ -11,7 +11,7 @@ import { getNavMenu } from "@/lib/nav";
  */
 export async function SiteFooter() {
   const [storeName, tagline, contact, footerMenu, categories, emptyPages] = await Promise.all([
-    getSettingOrDefault<string>(settingKeys.storeName, "کمدرن"),
+    getSettingOrDefault<string>(settingKeys.storeName, "خانه مدرن"),
     getSettingOrDefault<string>(settingKeys.storeTagline, ""),
     getSettingOrDefault<string>(settingKeys.storeContact, ""),
     getNavMenu("FOOTER"),
@@ -86,7 +86,6 @@ export async function SiteFooter() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 text-xs text-white/55">
           <span>© ۱۴۰۴ {storeName}</span>
-          <span className="text-code">Powered by Datees</span>
         </div>
       </div>
     </footer>

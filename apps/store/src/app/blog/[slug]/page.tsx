@@ -19,7 +19,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       )}
       <h1 className="text-3xl font-bold">{post.title}</h1>
       <div className="mt-3 flex items-center gap-3 text-sm text-ash">
-        <span>{post.byline ?? "کمدرن"}</span>
+        <span>{post.byline ?? "خانه مدرن"}</span>
         {post.publishAt && <span>· {new Date(post.publishAt).toLocaleDateString("fa-IR")}</span>}
       </div>
       <div className="mt-8">
