@@ -85,7 +85,7 @@ export function ShowcaseCard({
               sizes="(max-width:768px) 50vw, 25vw"
               className={cn(
                 "object-contain p-4 mix-blend-multiply transition duration-300",
-                hasB ? "group-hover:opacity-0" : "group-hover:scale-[1.04]",
+                hasB ? "group-hover:opacity-0" : "group-hover:[transform:scale(1.04)]",
               )}
             />
             {hasB && (
@@ -94,7 +94,7 @@ export function ShowcaseCard({
                 alt=""
                 fill
                 sizes="(max-width:768px) 50vw, 25vw"
-                className="scale-[1.04] object-contain p-4 opacity-0 mix-blend-multiply transition duration-300 group-hover:opacity-100"
+                className="[transform:scale(1.04)] object-contain p-4 opacity-0 mix-blend-multiply transition duration-300 group-hover:opacity-100"
               />
             )}
           </>

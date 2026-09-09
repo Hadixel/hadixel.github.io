@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 
 import { cn } from "../cn";
@@ -92,24 +93,24 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-contain p-6 transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-contain p-6 transition-transform duration-300 group-hover:[transform:scale(1.03)]"
           />
         ) : (
           <span className="flex aspect-square items-center justify-center text-sm text-slate-line">بدون تصویر</span>
         )}
       </button>
 
-      {open && count > 0 && (
+      {open && count > 0 && createPortal(
         <div
           role="dialog"
           aria-modal="true"
           aria-label={`گالری تصاویر ${alt}`}
           onClick={close}
-          className="fixed inset-0 z-[100] flex flex-col bg-ink/95 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex flex-col bg-canvas"
         >
           {/* header: counter + close */}
-          <div className="flex items-center justify-between px-5 py-4 text-white">
-            <span className="text-sm text-white/70">
+          <div className="flex items-center justify-between px-5 py-4 text-ink">
+            <span className="text-sm text-ash">
               {toFaDigits(safeIndex + 1)} / {toFaDigits(count)}
             </span>
             <button
@@ -117,7 +118,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
               onClick={close}
               aria-label="بستن"
               autoFocus
-              className="flex size-10 items-center justify-center rounded-[30px] bg-white/10 transition hover:bg-white/20"
+              className="flex size-10 items-center justify-center rounded-[30px] bg-plaster text-ink transition hover:bg-fog"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
                 <path d="M2 2l14 14M16 2L2 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -132,7 +133,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(-1); }}
                 aria-label="تصویر قبلی"
-                className="flex size-11 shrink-0 items-center justify-center rounded-[30px] bg-white/10 text-white transition hover:bg-white/20"
+                className="flex size-11 shrink-0 items-center justify-center rounded-[30px] bg-plaster text-ink transition hover:bg-fog"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
                   <path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -150,7 +151,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
                 sizes="100vw"
                 className={cn(
                   "object-contain p-2 transition-transform duration-300",
-                  zoomed ? "scale-[1.7]" : "scale-100",
+                  zoomed ? "[transform:scale(1.7)]" : "[transform:scale(1)]",
                 )}
               />
             </div>
@@ -159,7 +160,7 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(1); }}
                 aria-label="تصویر بعدی"
-                className="flex size-11 shrink-0 items-center justify-center rounded-[30px] bg-white/10 text-white transition hover:bg-white/20"
+                className="flex size-11 shrink-0 items-center justify-center rounded-[30px] bg-plaster text-ink transition hover:bg-fog"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
                   <path d="M8 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -167,7 +168,8 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
