@@ -71,7 +71,7 @@ export default function OtpModal({ phone, onSuccess }: { phone: string; onSucces
                 محیط توسعه: کد تأیید «{toFaDigits(devCode)}»
               </div>
             )}
-            <div className="mt-4" dir="ltr">
+            <div className="mt-4 flex flex-col items-center" dir="ltr">
               <InputOTP
                 maxLength={6}
                 pattern={REGEXP_ONLY_DIGITS}
@@ -79,8 +79,10 @@ export default function OtpModal({ phone, onSuccess }: { phone: string; onSucces
                 onChange={setCode}
                 onComplete={verify}
                 placeholder="کد ۶ رقمی"
+                className="justify-center"
               >
-                <InputOTP.Group>
+                {/* InputOTP root stretches to container width; center the slot row inside it */}
+                <InputOTP.Group className="justify-center">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
                     <InputOTP.Slot key={i} index={i} className="h-12 [&_[data-slot=input-otp-slot-value]]:text-2xl" />
                   ))}
@@ -89,8 +91,7 @@ export default function OtpModal({ phone, onSuccess }: { phone: string; onSucces
               <Button
                 onPress={verify}
                 variant="primary"
-                fullWidth
-                className="mt-3"
+                className="mt-3 w-72"
                 isDisabled={code.length !== 6 || busy}
               >
                 {busy ? "در حال بررسی…" : "ورود"}

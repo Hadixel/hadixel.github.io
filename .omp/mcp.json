@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
   "mcpServers": {
     "shadcn": {
-      "command": "npx",
-      "args": ["--prefer-offline", "shadcn@4.21.0", "mcp"],
+      "command": "/home/asd/.local/share/shadcn-mcp/node_modules/.bin/shadcn",
+      "args": ["mcp"],
       "cwd": "apps/store"
     }
   }

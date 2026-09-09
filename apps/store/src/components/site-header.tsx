@@ -37,7 +37,7 @@ export async function SiteHeader() {
       {/* Single-row nav — menu(mobile) + logo + search field at the start
           (right, RTL), account/cart icons at the far end (Digikala anatomy) */}
       <div className="border-b border-plaster">
-        <div className="relative mx-auto flex h-[52px] max-w-[1440px] items-center gap-2 px-4">
+        <div className="relative mx-auto flex h-[60px] max-w-[1440px] items-center gap-2 px-4">
           <div className="lg:hidden">
             <MobileMenu tree={mobile?.tree ?? []} />
           </div>
