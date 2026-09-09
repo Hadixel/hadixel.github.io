@@ -10,9 +10,10 @@ import { toFaDigits } from "@kmodern/schema";
 
 /*
  * ProductBuyBox — the Zellerfeld floating buy-card anatomy, RTL-mirrored:
- * gallery on a plaster plinth, info column with credit mark leading, model
- * code in mono, price tabular, flame-blue CTA. Gallery and price react to
- * Color dots together. Add-to-cart behavior preserved from the VariantPicker.
+ * sticky gallery on a plaster plinth, info column with model code in mono,
+ * Doran display title, price tabular, flame-blue CTA. Gallery and price
+ * react to Color dots together. Add-to-cart behavior preserved from the
+ * VariantPicker.
  */
 export function ProductBuyBox({
   variants,
@@ -44,12 +45,14 @@ export function ProductBuyBox({
 
   return (
     <div className="grid gap-10 lg:grid-cols-2">
-      <ProductGallery images={selected?.images ?? []} alt={productName} />
+      <div className="self-start lg:sticky lg:top-24">
+        <ProductGallery images={selected?.images ?? []} alt={productName} />
+      </div>
 
       <div>
         <div>
           {model && <div className="text-code text-xs text-ash">{model}</div>}
-          <h1 className="mt-0.5 text-2xl font-black leading-snug text-ink">{productName}</h1>
+          <h1 className="mt-0.5 font-display text-3xl font-extrabold leading-snug text-ink">{productName}</h1>
         </div>
         {description && <p className="mt-4 text-sm leading-7 text-ash">{description}</p>}
 

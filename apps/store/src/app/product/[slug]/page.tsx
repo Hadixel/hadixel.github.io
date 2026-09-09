@@ -40,7 +40,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <>
             {product.specValues.length > 0 && (
               <div className="mt-8 border-t border-plaster">
-                <div className="border-b border-plaster py-3 text-sm font-black text-ink">مشخصات فنی</div>
+                <div className="border-b border-plaster py-3 font-display text-lg font-extrabold text-ink">مشخصات فنی</div>
                 <dl className="divide-y divide-plaster">
                   {product.specValues.map((sv) => (
                     <div key={sv.specFieldId} className="grid grid-cols-2 gap-4 py-2.5 text-sm">
@@ -68,7 +68,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {related.length > 0 && (
         <div className="mt-20">
-          <h2 className="mb-8 text-2xl font-black text-ink">محصولات مشابه</h2>
+          <h2 className="mb-8 font-display text-2xl font-extrabold text-ink">محصولات مشابه</h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">{related.map((p) => <ProductCard key={p.id} product={p} />)}</div>
         </div>
       )}
