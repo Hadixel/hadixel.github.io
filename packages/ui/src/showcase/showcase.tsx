@@ -13,12 +13,20 @@ export function SectionHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("mb-6 flex items-center justify-between", className)}>
-      <h2 className="font-display text-xl font-extrabold text-ink">{title}</h2>
+    <div className={cn("relative mb-8 text-center", className)}>
+      <h2 className="inline-flex flex-col items-center gap-3 font-display text-2xl font-extrabold text-ink">
+        {title}
+        {/* flame-dot flourish — the section-title signature */}
+        <span aria-hidden className="flex items-center gap-1.5">
+          <span className="h-px w-7 bg-fog" />
+          <span className="size-1.5 rounded-[30px] bg-flame-700" />
+          <span className="h-px w-7 bg-fog" />
+        </span>
+      </h2>
       {seeAllHref && (
         <a
           href={seeAllHref}
-          className="rounded-card border border-plaster bg-canvas px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-plaster"
+          className="absolute left-0 top-0 hidden rounded-card border border-plaster bg-canvas px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-plaster sm:block"
         >
           مشاهده همه
         </a>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProductBySlug, getPublishedProducts } from "@/lib/queries";
+import { SectionHeader } from "@kmodern/ui";
 import { ProductBuyBox } from "@/components/product-buy-box";
 import { ProductCard } from "@/components/product-grid";
 import Breadcrumbs from "@/components/breadcrumbs";
@@ -68,7 +69,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       {related.length > 0 && (
         <div className="mt-20">
-          <h2 className="mb-8 font-display text-2xl font-extrabold text-ink">محصولات مشابه</h2>
+          <SectionHeader title="محصولات مشابه" />
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">{related.map((p) => <ProductCard key={p.id} product={p} />)}</div>
         </div>
       )}

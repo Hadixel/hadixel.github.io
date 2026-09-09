@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@heroui/react";
 import AuthModal from "./auth-modal";
 
 function UserIcon() {
@@ -36,14 +35,14 @@ export default function AccountButton({ loggedIn }: { loggedIn: boolean }) {
 
   return (
     <>
-      <Button
-        isIconOnly
-        variant="ghost"
+      <button
+        type="button"
         aria-label="ورود / ثبت‌نام"
-        onPress={() => setOpen(true)}
+        onClick={() => setOpen(true)}
+        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster"
       >
         <UserIcon />
-      </Button>
+      </button>
       <AuthModal open={open} onClose={() => setOpen(false)} />
     </>
   );

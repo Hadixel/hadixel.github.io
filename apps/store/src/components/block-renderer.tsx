@@ -330,8 +330,8 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["newsletter"];
       return (
         <Section>
-          {p.title && <h2 className="mb-2 text-center font-display text-2xl font-extrabold text-ink">{p.title}</h2>}
-          {p.subtitle && <p className="mb-6 text-center text-sm text-ash">{p.subtitle}</p>}
+          {p.title && <SectionHeader title={p.title} />}
+          {p.subtitle && <p className="mb-6 -mt-4 text-center text-sm text-ash">{p.subtitle}</p>}
           <NewsletterForm />
         </Section>
       );
@@ -342,7 +342,6 @@ async function BlockNode({ block }: { block: Block }) {
       const link = p.link ? await hrefFor(p.link) : null;
       return (
         <Section>
-          {p.title && <h2 className="mb-6 text-center font-display text-2xl font-extrabold text-ink">{p.title}</h2>}
           <CountdownTimer endsAt={p.endsAt} linkHref={link?.href} />
         </Section>
       );
