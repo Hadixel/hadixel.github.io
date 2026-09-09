@@ -7,9 +7,9 @@ import AuthModal from "./auth-modal";
 
 function UserIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="7.25" r="4.35" />
+      <path d="M20.6 21.4v-2.15a4.35 4.35 0 0 0-4.35-4.35H7.75a4.35 4.35 0 0 0-4.35 4.35v2.15" />
     </svg>
   );
 }

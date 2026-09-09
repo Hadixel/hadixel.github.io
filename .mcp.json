@@ -2,10 +2,7 @@
   "mcpServers": {
     "shadcn": {
       "command": "npx",
-      "args": [
-        "shadcn@latest",
-        "mcp"
-      ]
+      "args": ["--prefer-offline", "shadcn@4.21.0", "mcp"]
     }
   }
 }

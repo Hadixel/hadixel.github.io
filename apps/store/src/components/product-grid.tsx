@@ -8,6 +8,7 @@ import { Badge } from "@heroui/react";
 import { Price, ColorDotSwatches, cn } from "@kmodern/ui";
 import type { DotVariant } from "@kmodern/ui";
 import type { PublishedProduct } from "@/lib/queries";
+import { AnimatedContent } from "./reactbits";
 
 /*
  * Product card — exact Zellerfeld standard-card anatomy: plaster surface,
@@ -85,8 +86,10 @@ export function ProductGrid({ products, title }: { products: PublishedProduct[];
     <section className="mx-auto max-w-[1440px] px-4 py-10">
       {title && <h1 className="mb-8 text-3xl font-black text-ink">{title}</h1>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
+        {products.map((p, i) => (
+          <AnimatedContent key={p.id} delay={Math.min(i, 8) * 60} distance={26}>
+            <ProductCard product={p} />
+          </AnimatedContent>
         ))}
       </div>
     </section>

@@ -9,6 +9,7 @@ import { ShowcaseCard } from "./showcase-card";
 import { FloatingProductCard } from "./floating-product-card";
 import { NewsletterForm } from "./newsletter-form";
 import { CountdownTimer } from "./countdown-timer";
+import { AnimatedContent, BlurText, CountUp, GlareHover, LogoLoop, Magnet } from "./reactbits";
 
 // Page-builder renderer. Block list from DB Page.publishedBlocks; each type
 // renders server-side. Sections follow the reference anatomy exactly.
@@ -111,24 +112,30 @@ async function BlockNode({ block }: { block: Block }) {
                 {p.cta!.label}
               </Link>
             )}
-              <FadeWords
+              <BlurText
                 text={p.title}
                 className="block font-display text-white [font-size:clamp(48px,8vw,112px)] font-black leading-[1.02]"
+                delay={90}
               />
               {p.subtitle && <p className="mt-4 max-w-md text-[15px] leading-7 text-white/80">{p.subtitle}</p>}
             </div>
 
-            {/* floating buy-card — opposite side */}
             {hero && (
-              <div className="w-full max-w-[280px] shrink-0 md:mb-2">
-                <FloatingProductCard
-                  href={`/product/${hero.slug}`}
-                  name={hero.name}
-                  image={hero.image}
-                  price={hero.price}
-                  maxPrice={hero.maxPrice}
-                />
-              </div>
+              <Magnet padding={70} magnetStrength={5}>
+                <AnimatedContent delay={250} distance={36}>
+                  <div className="w-full max-w-[280px] shrink-0 md:mb-2">
+                    <GlareHover borderRadius="16px" glareColor="rgba(255,255,255,0.35)">
+                      <FloatingProductCard
+                        href={`/product/${hero.slug}`}
+                        name={hero.name}
+                        image={hero.image}
+                        price={hero.price}
+                        maxPrice={hero.maxPrice}
+                      />
+                    </GlareHover>
+                  </div>
+                </AnimatedContent>
+              </Magnet>
             )}
           </div>
         </section>
@@ -202,15 +209,19 @@ async function BlockNode({ block }: { block: Block }) {
         <Section>
           {p.title && <SectionHeader title={p.title} />}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {tiles.map((t) => (
-              <Link key={t.href} href={t.href} className="group overflow-hidden rounded-card bg-plaster">
-                <div className="relative aspect-[4/3]">
-                  {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04]" />}
-                </div>
-                <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-bold text-ink">
-                  {t.name}
-                </div>
-              </Link>
+            {tiles.map((t, i) => (
+              <AnimatedContent key={t.href} delay={i * 70} distance={24}>
+                <GlareHover className="group h-full" glareColor="rgba(255,255,255,0.7)">
+                  <Link href={t.href} className="block overflow-hidden rounded-[10px] bg-plaster">
+                    <div className="relative aspect-[4/3]">
+                      {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04]" />}
+                    </div>
+                    <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-bold text-ink">
+                      {t.name}
+                    </div>
+                  </Link>
+                </GlareHover>
+              </AnimatedContent>
             ))}
           </div>
         </Section>
@@ -254,12 +265,17 @@ async function BlockNode({ block }: { block: Block }) {
     case "uspRow": {
       const p = props as ComponentProps["uspRow"];
       return (
-        <div className="w-full bg-ink">
-          <div className="mx-auto flex h-[88px] max-w-[1440px] flex-wrap items-center justify-evenly gap-4 px-4">
-            {p.items.map((it, i) => (
-              <span key={i} className="text-sm font-bold text-white/60">{it.title}</span>
+        <div className="w-full bg-ink py-6" dir="rtl">
+          <LogoLoop
+            className="max-w-full"
+            speed={40}
+            items={p.items.map((it, i) => (
+              <span key={i} className="flex items-center gap-3 text-sm font-bold text-white/60">
+                <span aria-hidden className="h-1 w-1 rounded-[30px] bg-flame-500" />
+                {it.title}
+              </span>
             ))}
-          </div>
+          />
         </div>
       );
     }
@@ -271,10 +287,12 @@ async function BlockNode({ block }: { block: Block }) {
           {p.title && <SectionHeader title={p.title} />}
           <div className="grid gap-4 md:grid-cols-3">
             {p.items.map((t, i) => (
-              <div key={i} className="rounded-card bg-plaster p-6">
-                <p className="text-sm leading-7 text-ink">«{t.quote}»</p>
-                <div className="mt-4 text-xs font-semibold text-ash">{t.author}{t.role ? ` · ${t.role}` : ""}</div>
-              </div>
+              <AnimatedContent key={i} delay={i * 120} distance={28}>
+                <div className="h-full rounded-card bg-plaster p-6">
+                  <p className="text-sm leading-7 text-ink">«{t.quote}»</p>
+                  <div className="mt-4 text-xs font-semibold text-ash">{t.author}{t.role ? ` · ${t.role}` : ""}</div>
+                </div>
+              </AnimatedContent>
             ))}
           </div>
         </Section>
@@ -422,6 +440,34 @@ async function BlockNode({ block }: { block: Block }) {
             <iframe src={src} title={p.title ?? "ویدیو"} loading="lazy" allowFullScreen className="h-full w-full" />
           </div>
         </Section>
+      );
+    }
+    /* ---------- Trust badges: icon + Persian label strip on plaster ---------- */
+    case "trustBadges": {
+      const p = props as ComponentProps["trustBadges"];
+      const icons: Record<string, React.ReactNode> = {
+        truck: <path d="M13 16V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10h2m8 0h4m-4 0h-4m9 0h2v-4l-3-4h-3m1 8a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M6 16.5a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0" />,
+        shield: <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />,
+        "credit-card": <><rect x="2.5" y="5.5" width="19" height="13" rx="2" /><path d="M2.5 10h19M6 15h4" /></>,
+        headset: <path d="M4 13a8 8 0 0 1 16 0m-16 0v3a2 2 0 0 0 2 2h1v-5H5a1 1 0 0 0-1 1zm16 0v3a2 2 0 0 1-2 2h-1v-5h2a1 1 0 0 1 1 1z" />,
+      };
+      return (
+        <div className="w-full border-y border-plaster bg-canvas">
+          <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-6 px-4 py-10 md:grid-cols-4">
+            {p.items.map((it, i) => (
+              <AnimatedContent key={i} delay={i * 90} distance={20}>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-[30px] bg-plaster text-ink">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      {icons[it.icon ?? ""] ?? icons.shield}
+                    </svg>
+                  </span>
+                  <span className="text-sm font-bold text-ink">{it.label}</span>
+                </div>
+              </AnimatedContent>
+            ))}
+          </div>
+        </div>
       );
     }
 

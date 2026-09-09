@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@heroui/react";
 import { ProductGallery, cn } from "@kmodern/ui";
 import { useCart } from "./cart-provider";
+import { CountUp } from "./reactbits";
 import { toFaDigits } from "@kmodern/schema";
 
 
@@ -87,8 +88,8 @@ export function ProductBuyBox({
 
         <div className="mt-8 border-t border-plaster pt-6">
           {selected ? (
-            <div className="text-price font-display text-3xl text-ink">
-              {toFaDigits(new Intl.NumberFormat("fa-IR").format(selected.price))}
+            <div key={selected.id} className="text-price font-display text-3xl text-ink">
+              <CountUp to={selected.price} duration={0.8} />
               <span className="mr-2 text-sm font-normal text-ash">تومان</span>
             </div>
           ) : (
