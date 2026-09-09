@@ -2,25 +2,38 @@
    Consumed via `@import "@kmodern/ui/tailwind.css";` in each app's globals.css. */
 
 /* ---------- Typography ---------- */
-/* Farhang: body + UI text (readable at small sizes) */
+/* Yekan Bakh: body text, product names, placeholders */
 @font-face {
-  font-family: "Farhang";
-  src: url("/fonts/Farhang-Regular.woff2") format("woff2");
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: "Farhang";
-  src: url("/fonts/Farhang-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Farhang";
-  src: url("/fonts/Farhang-DemiBold.woff2") format("woff2");
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-SemiBold.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
 }
+@font-face {
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Yekan Bakh";
+  src: url("/fonts/YekanBakh-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+/* Farhang: display only — titles and bold emphasis */
 @font-face {
   font-family: "Farhang";
   src: url("/fonts/Farhang-Bold.woff2") format("woff2");
@@ -39,25 +52,6 @@
   font-weight: 900;
   font-display: swap;
 }
-/* Doran: display only — page titles, section headings, slogans */
-@font-face {
-  font-family: "Doran";
-  src: url("/fonts/Doran-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Doran";
-  src: url("/fonts/Doran-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Doran";
-  src: url("/fonts/Doran-ExtraBold.woff2") format("woff2");
-  font-weight: 800;
-  font-display: swap;
-}
 /* Space Mono: Latin technical strings only (model codes, SKUs) */
 @font-face {
   font-family: "Space Mono";
@@ -71,14 +65,7 @@
   font-weight: 700;
   font-display: swap;
 }
-
-/* ---------- Theme ---------- */
 @theme {
-  /* Flame blue — the single chromatic accent (activation moments only, ≤3%) */
-  --color-flame-50: #eff6ff;
-  --color-flame-100: #dbeafe;
-  --color-flame-200: #bfdbfe;
-  --color-flame-500: #3b82f6;
   --color-flame-600: #2563eb;
   --color-flame-700: #1d4ed8;
   --color-flame-800: #1e40af;
@@ -101,8 +88,8 @@
   --color-brand-700: var(--color-flame-800);
 
   /* Fonts */
-  --font-sans: "Farhang", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Doran", "Farhang", system-ui, sans-serif;
+  --font-sans: "Yekan Bakh", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Farhang", "Yekan Bakh", system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Radii — 10px everywhere, 30px pills only for badges */

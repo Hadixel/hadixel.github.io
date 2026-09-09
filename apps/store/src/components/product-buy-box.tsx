@@ -11,7 +11,7 @@ import { toFaDigits } from "@kmodern/schema";
 /*
  * ProductBuyBox — the Zellerfeld floating buy-card anatomy, RTL-mirrored:
  * sticky gallery on a plaster plinth, info column with model code in mono,
- * Doran display title, price tabular, flame-blue CTA. Gallery and price
+ * Farhang display title, price tabular, flame-blue CTA. Gallery and price
  * react to Color dots together. Add-to-cart behavior preserved from the
  * VariantPicker.
  */
@@ -87,7 +87,7 @@ export function ProductBuyBox({
 
         <div className="mt-8 border-t border-plaster pt-6">
           {selected ? (
-            <div className="text-price text-3xl text-ink">
+            <div className="text-price font-display text-3xl text-ink">
               {toFaDigits(new Intl.NumberFormat("fa-IR").format(selected.price))}
               <span className="mr-2 text-sm font-normal text-ash">تومان</span>
             </div>
