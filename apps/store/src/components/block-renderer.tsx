@@ -39,7 +39,7 @@ function cnSection(pad: string, className?: string) {
 
 async function ProductCards({ products }: { products: Awaited<ReturnType<typeof getPublishedProducts>> }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {products.map((pr) => (
         <ShowcaseCard
           key={pr.id}
@@ -152,9 +152,9 @@ async function BlockNode({ block }: { block: Block }) {
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((pr, i) => (
-              <div key={pr.id} className="relative">
+              <div key={pr.id} className="relative h-full">
                 <RankNumeral rank={i + 1} />
                 <ShowcaseCard
                   href={`/product/${pr.slug}`}

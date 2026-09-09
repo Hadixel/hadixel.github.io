@@ -205,7 +205,7 @@ async function main() {
             title: "خانه مدرن",
             subtitle: "فروشگاه لوازم خانگی — فر، اجاق گاز، هود و سینک",
             cta: { label: "مشاهده محصولات", link: { type: "EXTERNAL", url: "/products", newTab: false } },
-            image: { src: img("datees-built-in-electric-oven-666", "variant-black"), alt: "فر توکار برقی دیتیس" },
+            image: { src: img("datees-built-in-electric-oven-666", "variant-black"), alt: "فر توکار برقی داتیس" },
             overlay: true,
             padding: "md",
             visible: true,
@@ -261,10 +261,10 @@ async function main() {
           type: "banner",
           props: {
             title: "آشپزخانه‌ای متفاوت بسازید",
-            subtitle: "هودهای مخفی دیتیس با طراحی مدرن",
+            subtitle: "هودهای مخفی داتیس با طراحی مدرن",
             image: {
               src: img("datees-volira-built-in-hood", "variant-black"),
-              alt: "هود توکار دیتیس",
+              alt: "هود توکار داتیس",
               link: catIds.hood ? { type: "CATEGORY", targetId: catIds.hood } : undefined,
             },
             padding: "md",

@@ -115,7 +115,7 @@ export function AnimatedContent({
   return (
     <div
       ref={ref}
-      className={className}
+      className={`h-full ${className ?? ""}`}
       style={{
         ...style,
         opacity: hidden ? 0 : 1,

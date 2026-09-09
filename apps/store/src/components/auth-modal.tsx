@@ -21,8 +21,51 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
   const [phone, setPhone] = useState("");
   const [showOtp, setShowOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // password path: "check" asks the API which flows this phone has
+  const [pwMode, setPwMode] = useState<"none" | "check" | "login" | "set">("none");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const valid = PHONE_RE.test(phone.trim());
+
+  async function checkPasswordFlow() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/otp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "hasPassword", phone: phone.trim() }),
+      });
+      const j = await r.json();
+      setPwMode(j.has ? "login" : "set");
+    } catch {
+      setError("خطای شبکه");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitPassword() {
+    if (password.length < 8) { setError("گذرواژه باید حداقل ۸ نویسه باشد"); return; }
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/otp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: pwMode === "login" ? "loginPassword" : "setPassword", phone: phone.trim(), password }),
+      });
+      const j = await r.json();
+      if (!r.ok) { setError(j.error ?? "خطا"); return; }
+      onClose();
+      router.refresh();
+    } catch {
+      setError("خطای شبکه");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Modal
@@ -44,7 +87,7 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
                 }}
               />
             </Modal.Body>
-          ) : (
+          ) : pwMode === "none" ? (
             <>
               <Modal.Header className="flex-row items-center justify-between">
                 <Modal.Heading className="text-lg font-bold text-ink">ورود / ثبت‌نام</Modal.Heading>
@@ -77,6 +120,56 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
                   </Button>
                 </div>
                 {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+                <button
+                  type="button"
+                  disabled={!valid || busy}
+                  onClick={() => { setError(null); void checkPasswordFlow(); }}
+                  className="mt-5 text-sm text-ash transition-colors hover:text-flame-800 disabled:opacity-50"
+                >
+                  ورود با گذرواژه
+                </button>
+              </Modal.Body>
+            </>
+          ) : (
+            <>
+              <Modal.Header className="flex-row items-center justify-between">
+                <Modal.Heading className="text-lg font-bold text-ink">
+                  {pwMode === "login" ? "ورود با گذرواژه" : "تنظیم گذرواژه"}
+                </Modal.Heading>
+                <Modal.CloseTrigger aria-label="بستن" />
+              </Modal.Header>
+              <Modal.Body>
+                <p className="text-sm leading-6 text-ash" dir="ltr">
+                  {phone}
+                </p>
+                <Input
+                  autoFocus
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                  dir="ltr"
+                  placeholder="••••••••"
+                  aria-label="گذرواژه"
+                  onKeyDown={(e) => { if (e.key === "Enter") void submitPassword(); }}
+                  className="mt-4 h-11"
+                />
+                {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+                <Button
+                  type="button"
+                  variant="primary"
+                  isDisabled={busy}
+                  onPress={() => void submitPassword()}
+                  className="mt-5 h-11 w-full text-sm font-bold"
+                >
+                  {pwMode === "login" ? "ورود" : "ثبت گذرواژه"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setPwMode("none"); setPassword(""); setError(null); }}
+                  className="mt-4 text-sm text-ash transition-colors hover:text-flame-800"
+                >
+                  بازگشت به ورود با کد
+                </button>
               </Modal.Body>
             </>
           )}

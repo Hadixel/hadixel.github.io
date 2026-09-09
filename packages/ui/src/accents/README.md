@@ -19,7 +19,7 @@ so no GSAP/Framer Motion lands in the bundle. Per ADR-0001:
 ```tsx
 import { FadeWords } from "@kmodern/ui/showcase/fade-words";
 
-<FadeWords text="کمدرن — لوازم خانگی دیتیس" className="text-4xl font-black text-ink" />
+<FadeWords text="کمدرن — لوازم خانگی داتیس" className="text-4xl font-black text-ink" />
 ```
 
 A `mount` flag (IntersectionObserver) triggers the animation only when visible;

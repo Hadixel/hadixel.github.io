@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { db } from "@kmodern/db";
 import { kavenegarConfigFromEnv, sendLookup } from "@kmodern/adapters";
 
@@ -61,15 +61,19 @@ export async function verifyAndLogin(phone: string, code: string): Promise<{ ok:
     create: { phone, smsMarketingConsent: false },
   });
 
+  await openCustomerSession(customer.id);
+  return { ok: true, customerId: customer.id };
+}
+
+async function openCustomerSession(customerId: string): Promise<void> {
   const token = randomBytes(32).toString("hex");
   await db().customerSession.create({
     data: {
-      customerId: customer.id,
+      customerId,
       tokenHash: hashToken(token),
       expiresAt: new Date(Date.now() + SESSION_TTL_MS),
     },
   });
-
   const store = await cookies();
   store.set(CUSTOMER_COOKIE, token, {
     httpOnly: true,
@@ -78,7 +82,55 @@ export async function verifyAndLogin(phone: string, code: string): Promise<{ ok:
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,
   });
-  return { ok: true, customerId: customer.id };
+}
+
+/* ---------- password login (optional second factor path) ---------- */
+
+const MIN_PASSWORD = 8;
+
+function hashPassword(pw: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(pw, salt, 64).toString("hex");
+  return `scrypt$${salt}$${hash}`;
+}
+
+function verifyPassword(pw: string, stored: string): boolean {
+  const parts = stored.split("$");
+  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
+  const [, salt, expectedHex] = parts;
+  const expected = Buffer.from(expectedHex, "hex");
+  const actual = scryptSync(pw, salt, 64);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+/** has the customer set a password yet? (modal decides which flows to offer) */
+export async function hasPassword(phone: string): Promise<boolean> {
+  const c = await db().customer.findUnique({ where: { phone }, select: { passwordHash: true } });
+  return Boolean(c?.passwordHash);
+}
+
+/** login with phone + password — no OTP */
+export async function loginWithPassword(phone: string, password: string): Promise<{ ok: boolean; error?: string }> {
+  const customer = await db().customer.findUnique({ where: { phone } });
+  // uniform error — do not reveal whether the phone exists
+  const okCreds = customer?.passwordHash
+    ? verifyPassword(password, customer.passwordHash)
+    : false;
+  if (!okCreds || !customer) return { ok: false, error: "شماره موبایل یا گذرواژه اشتباه است" };
+  await openCustomerSession(customer.id);
+  return { ok: true };
+}
+
+/** set or change password; requires a verified session */
+export async function setPassword(phone: string, password: string): Promise<{ ok: boolean; error?: string }> {
+  if (password.length < MIN_PASSWORD) return { ok: false, error: `گذرواژه باید حداقل ${MIN_PASSWORD} نویسه باشد` };
+  const customer = await db().customer.findUnique({ where: { phone } });
+  if (!customer) return { ok: false, error: "حسابی با این شماره یافت نشد" };
+  await db().customer.update({
+    where: { phone },
+    data: { passwordHash: hashPassword(password) },
+  });
+  return { ok: true };
 }
 
 export async function currentCustomer() {

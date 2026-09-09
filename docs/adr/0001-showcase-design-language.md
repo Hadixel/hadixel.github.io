@@ -31,7 +31,7 @@ Rejected alternatives: MUI and Ant Design (bring their own styling engines and d
 Clarification (2026-09-04): the 10/30px radius rule governs *containers* — cards, buttons, inputs, images, panels. Sub-element glyphs inside controls (a 16px checkbox box, a switch thumb) are exempt; forcing 10px onto a 16px glyph produces a circle.
 
 Clarification (2026-09-04): "30px only for badges" means *status badges and swatch dots*. CTA buttons are containers — always 10px.
-6. **Zellerfeld component anatomy as the pattern library**: plinth product cards with دیتیس credit mark, giant translucent Persian-numeral ranked cards, floating hero buy-card, announcement strip, press-style trust bar.
+6. **Zellerfeld component anatomy as the pattern library**: plinth product cards with داتیس credit mark, giant translucent Persian-numeral ranked cards, floating hero buy-card, announcement strip, press-style trust bar.
 7. **Legacy-store is retired**; `apps/store` is the single Storefront (see `CONTEXT.md`). Anything worth keeping ports over before deletion.
 
 ## Consequences

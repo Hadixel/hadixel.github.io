@@ -23,11 +23,10 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
   const imgA = activeImages[0] ?? product.image;
   const imgB = activeImages[1] ?? activeImages[0] ?? product.image;
   const hasB = Boolean(imgB && imgB !== imgA);
-
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="group card-lift block rounded-card bg-plaster"
+      className="group card-lift flex h-full flex-col rounded-card bg-plaster"
     >
       <div className="relative aspect-square overflow-hidden rounded-card bg-plaster">
         {/* white well — frames the photo, whites blend instead of pasting */}
@@ -63,15 +62,20 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
           <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>
         )}
       </div>
-      <div className="p-5 pt-4">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col p-5 pt-4">
+        {/* reserved 2-line title — keeps every card the same height */}
+        <div className="min-h-10">
           <div className="line-clamp-2 text-[15px] font-bold leading-snug text-ink">{product.name}</div>
+        </div>
+        <div className="min-h-5">
           {product.model && <div className="text-code mt-1 text-xs text-ash">{product.model}</div>}
         </div>
         <div className="mt-2">
           <Price amount={selected?.price ?? product.price} maxAmount={selected ? undefined : product.maxPrice} className="text-sm" />
         </div>
-        <ColorDotSwatches variants={product.dots} onSwap={(v) => setSelected(v)} className="mt-2" />
+        <div className="mt-auto pt-2">
+          <ColorDotSwatches variants={product.dots} onSwap={(v) => setSelected(v)} />
+        </div>
       </div>
     </Link>
   );
@@ -85,9 +89,9 @@ export function ProductGrid({ products, title }: { products: PublishedProduct[];
   return (
     <section className="mx-auto max-w-[1440px] px-4 py-10">
       {title && <h1 className="mb-8 text-3xl font-black text-ink">{title}</h1>}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {products.map((p, i) => (
-          <AnimatedContent key={p.id} delay={Math.min(i, 8) * 60} distance={26}>
+          <AnimatedContent key={p.id} delay={Math.min(i, 8) * 60} distance={26} className="h-full">
             <ProductCard product={p} />
           </AnimatedContent>
         ))}

@@ -57,9 +57,10 @@ export function ShowcaseCard({
     <Link
       href={href}
       className={cn(
-        "group card-lift block rounded-card bg-plaster",
+        "group card-lift flex h-full flex-col rounded-card bg-plaster",
         className,
-      )}>
+      )}
+    >
       <div className="relative aspect-square overflow-hidden rounded-card bg-plaster">
         {/* white well — frames the photo, whites blend instead of pasting */}
         <div aria-hidden className="absolute inset-3 rounded-[10px] bg-canvas ring-1 ring-fog/40" />
@@ -102,19 +103,23 @@ export function ShowcaseCard({
           <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>
         )}
       </div>
-      <div className="p-5 pt-4">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col p-5 pt-4">
+        {/* reserved 2-line title — keeps every card the same height */}
+        <div className="min-h-10">
           <div className="line-clamp-2 text-[15px] font-bold leading-snug text-ink">{name}</div>
+        </div>
+        <div className="min-h-5">
           {model && <div className="text-code mt-1 text-xs text-ash">{model}</div>}
         </div>
         <div className="mt-2 flex items-end justify-between">
           <Price amount={selected?.price ?? price} maxAmount={selected ? undefined : maxPrice} className="text-sm" />
         </div>
-        <ColorDotSwatches
-          variants={variants}
-          onSwap={(v) => setSelected(v)}
-          className="mt-2"
-        />
+        <div className="mt-auto pt-2">
+          <ColorDotSwatches
+            variants={variants}
+            onSwap={(v) => setSelected(v)}
+          />
+        </div>
       </div>
     </Link>
   );
