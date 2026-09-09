@@ -21,13 +21,16 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
   const activeImages = selected?.images?.length ? selected.images : product.dots[0]?.images ?? [];
   const imgA = activeImages[0] ?? product.image;
   const imgB = activeImages[1] ?? activeImages[0] ?? product.image;
+  const hasB = Boolean(imgB && imgB !== imgA);
 
   return (
     <Link
       href={`/product/${product.slug}`}
       className="group card-lift block rounded-card bg-plaster"
     >
-      <div className="relative aspect-square overflow-hidden rounded-card">
+      <div className="relative aspect-square overflow-hidden rounded-card bg-plaster">
+        {/* white well — frames the photo, whites blend instead of pasting */}
+        <div aria-hidden className="absolute inset-3 rounded-[10px] bg-canvas ring-1 ring-fog/40" />
         {!product.available && (
           <span className="absolute left-3 top-3 z-10">
             <Badge color="default" variant="primary">ناموجود</Badge>
@@ -40,15 +43,18 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
               alt={product.name}
               fill
               sizes="(max-width:768px) 50vw, 25vw"
-              className="object-contain p-4 mix-blend-multiply transition-opacity duration-300 group-hover:opacity-0"
+              className={cn(
+                "object-contain p-4 mix-blend-multiply transition duration-300",
+                hasB ? "group-hover:opacity-0" : "group-hover:scale-[1.04]",
+              )}
             />
-            {imgB && imgB !== imgA && (
+            {hasB && (
               <Image
                 src={imgB}
                 alt=""
                 fill
                 sizes="(max-width:768px) 50vw, 25vw"
-                className="object-contain p-4 mix-blend-multiply opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                className="scale-[1.04] object-contain p-4 opacity-0 mix-blend-multiply transition duration-300 group-hover:opacity-100"
               />
             )}
           </>
@@ -56,10 +62,9 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
           <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>
         )}
       </div>
-
       <div className="p-5 pt-4">
         <div className="min-w-0">
-          <div className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.name}</div>
+          <div className="line-clamp-2 font-display text-[15px] font-bold leading-snug text-ink">{product.name}</div>
           {product.model && <div className="text-code mt-1 text-xs text-ash">{product.model}</div>}
         </div>
         <div className="mt-2">

@@ -83,6 +83,8 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         aria-label="مشاهده تصویر بزرگتر"
         className="group relative order-1 aspect-square min-w-0 flex-1 cursor-zoom-in overflow-hidden rounded-card bg-plaster lg:order-2"
       >
+        {/* white well — frames the photo, whites blend instead of pasting */}
+        <div aria-hidden className="absolute inset-4 rounded-[10px] bg-canvas ring-1 ring-fog/40" />
         {count > 0 ? (
           <Image
             src={images[safeIndex]}

@@ -14,7 +14,7 @@ export function SectionHeader({
 }) {
   return (
     <div className={cn("mb-6 flex items-center justify-between", className)}>
-      <h2 className="text-xl font-bold text-ink">{title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-ink">{title}</h2>
       {seeAllHref && (
         <a
           href={seeAllHref}

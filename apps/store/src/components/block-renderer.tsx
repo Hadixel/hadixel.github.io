@@ -113,7 +113,7 @@ async function BlockNode({ block }: { block: Block }) {
             )}
               <FadeWords
                 text={p.title}
-                className="block text-white [font-size:clamp(48px,8vw,112px)] font-black leading-[1.02]"
+                className="block font-display text-white [font-size:clamp(48px,8vw,112px)] font-black leading-[1.02]"
               />
               {p.subtitle && <p className="mt-4 max-w-md text-[15px] leading-7 text-white/80">{p.subtitle}</p>}
             </div>
@@ -207,7 +207,7 @@ async function BlockNode({ block }: { block: Block }) {
                 <div className="relative aspect-[4/3]">
                   {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04]" />}
                 </div>
-                <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-semibold text-ink">
+                <div className="border-t border-white/60 px-3 py-3 text-center font-display text-sm font-bold text-ink">
                   {t.name}
                 </div>
               </Link>
@@ -234,7 +234,7 @@ async function BlockNode({ block }: { block: Block }) {
                   {b.image?.src && <Image src={b.image.src} alt={b.image.alt ?? b.title ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />}
                   {b.title && (
                     <div className="absolute bottom-5 right-6 max-w-[70%]">
-                      <span className="text-2xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">{b.title}</span>
+                      <span className="font-display text-2xl font-extrabold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">{b.title}</span>
                     </div>
                   )}
                 </div>
@@ -291,7 +291,7 @@ async function BlockNode({ block }: { block: Block }) {
               <Image src={img.src} alt={img.alt ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
             </div>
             <div>
-              <h3 className="text-3xl font-black text-ink">{p.title}</h3>
+              <h3 className="font-display text-3xl font-extrabold text-ink">{p.title}</h3>
               {p.text && <p className="mt-4 max-w-md leading-8 text-ash">{p.text}</p>}
             </div>
           </div>
@@ -312,7 +312,7 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["newsletter"];
       return (
         <Section>
-          {p.title && <h2 className="mb-2 text-center text-2xl font-black text-ink">{p.title}</h2>}
+          {p.title && <h2 className="mb-2 text-center font-display text-2xl font-extrabold text-ink">{p.title}</h2>}
           {p.subtitle && <p className="mb-6 text-center text-sm text-ash">{p.subtitle}</p>}
           <NewsletterForm />
         </Section>
@@ -324,7 +324,7 @@ async function BlockNode({ block }: { block: Block }) {
       const link = p.link ? await hrefFor(p.link) : null;
       return (
         <Section>
-          {p.title && <h2 className="mb-6 text-center text-2xl font-black text-ink">{p.title}</h2>}
+          {p.title && <h2 className="mb-6 text-center font-display text-2xl font-extrabold text-ink">{p.title}</h2>}
           <CountdownTimer endsAt={p.endsAt} linkHref={link?.href} />
         </Section>
       );
@@ -339,7 +339,7 @@ async function BlockNode({ block }: { block: Block }) {
           <div className="grid gap-4 md:grid-cols-3">
             {posts.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} className="rounded-card bg-plaster p-6 transition-colors hover:bg-fog/60">
-                <div className="font-semibold text-ink">{post.title}</div>
+                <div className="font-display font-bold leading-7 text-ink">{post.title}</div>
                 {post.excerpt && <p className="mt-2 text-sm leading-6 text-ash">{post.excerpt}</p>}
               </Link>
             ))}
