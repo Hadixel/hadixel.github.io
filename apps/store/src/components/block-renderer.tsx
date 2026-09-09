@@ -273,7 +273,7 @@ async function BlockNode({ block }: { block: Block }) {
             {p.items.map((t, i) => (
               <div key={i} className="rounded-card bg-plaster p-6">
                 <p className="text-sm leading-7 text-ink">«{t.quote}»</p>
-                <div className="mt-4 text-code text-xs text-ash">{t.author}{t.role ? ` · ${t.role}` : ""}</div>
+                <div className="mt-4 text-xs font-semibold text-ash">{t.author}{t.role ? ` · ${t.role}` : ""}</div>
               </div>
             ))}
           </div>

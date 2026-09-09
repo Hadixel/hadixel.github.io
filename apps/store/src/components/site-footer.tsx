@@ -40,7 +40,7 @@ export async function SiteFooter() {
         </div>
         {menuItems.length > 0 && (
           <div>
-            <div className="text-code mb-4 text-xs text-white/50">{footerMenu!.name}</div>
+            <div className="mb-4 text-xs font-bold text-white/50">{footerMenu!.name}</div>
             <ul className="space-y-2.5">
               {menuItems.map((item) => (
                 <li key={item.id}>
@@ -54,7 +54,7 @@ export async function SiteFooter() {
         )}
         {categories.length > 0 && (
           <div>
-            <div className="text-code mb-4 text-xs text-white/50">دسته‌بندی‌ها</div>
+            <div className="mb-4 text-xs font-bold text-white/50">دسته‌بندی‌ها</div>
             <ul className="space-y-2.5">
               {categories.map((c) => (
                 <li key={c.slug}>
@@ -67,7 +67,7 @@ export async function SiteFooter() {
           </div>
         )}
         <div>
-          <div className="text-code mb-4 text-xs text-white/50">حساب</div>
+          <div className="mb-4 text-xs font-bold text-white/50">حساب</div>
           <ul className="space-y-2.5">
             {[
               { label: "حساب من", href: "/account" },
