@@ -64,7 +64,7 @@ export function ProductCard({ product }: { product: PublishedProduct }) {
       </div>
       <div className="p-5 pt-4">
         <div className="min-w-0">
-          <div className="line-clamp-2 font-display text-[15px] font-bold leading-snug text-ink">{product.name}</div>
+          <div className="line-clamp-2 text-[15px] font-bold leading-snug text-ink">{product.name}</div>
           {product.model && <div className="text-code mt-1 text-xs text-ash">{product.model}</div>}
         </div>
         <div className="mt-2">

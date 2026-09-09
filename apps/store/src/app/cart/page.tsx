@@ -90,7 +90,7 @@ export default function CartPage() {
                 {l.image ? <Image src={l.image} alt={l.productName} fill sizes="96px" className="object-contain p-1.5" /> : <span className="flex h-full items-center justify-center text-xs text-slate-line">بدون تصویر</span>}
               </Link>
               <div className="flex min-w-0 flex-1 flex-col">
-                <Link href={`/product/${l.productSlug}`} className="font-display font-bold leading-snug text-ink hover:text-flame-800">{l.productName}</Link>
+                <Link href={`/product/${l.productSlug}`} className="font-bold leading-snug text-ink hover:text-flame-800">{l.productName}</Link>
                 <div className="mt-1 text-xs text-ash">
                   {l.colorName}
                   <span className="mx-1.5 text-fog">·</span>

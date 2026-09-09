@@ -39,7 +39,7 @@ The header search panel's discovery row: chips of the newest published Products,
 _Avoid_: hand-typed suggestion lists, bestseller claims
 
 **Design tokens**:
-Cool monochrome surfaces (white canvas, plaster #ecedee cards, ink #111 text) + Doran for display (titles, slogans) and Yekan Bakh for body, sculpted by weight (Persian script takes no negative tracking) + Flame blue as the only chromatic signal. Shared vocabulary across store and admin.
+Cool monochrome surfaces (white canvas, plaster #ecedee cards, ink #111 text) + Doran for display (titles, slogans) and Farhang for body and product names, sculpted by weight (Persian script takes no negative tracking) + Flame blue as the only chromatic signal. Shared vocabulary across store and admin.
 
 **Color dots**:
 The baseline Showcase treatment for variation on a Product Card: interactive swatches of each Color's finish; tapping one live-swaps the card's imagery to that Variant without navigating. Variation is shown and made tangible — never counted in a badge.

@@ -2,34 +2,40 @@
    Consumed via `@import "@kmodern/ui/tailwind.css";` in each app's globals.css. */
 
 /* ---------- Typography ---------- */
-/* Yekan Bakh: body + UI text (readable at small sizes) */
+/* Farhang: body + UI text (readable at small sizes) */
 @font-face {
-  font-family: "Yekan Bakh";
-  src: url("/fonts/YekanBakh-Regular.woff2") format("woff2");
+  font-family: "Farhang";
+  src: url("/fonts/Farhang-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: "Yekan Bakh";
-  src: url("/fonts/YekanBakh-SemiBold.woff2") format("woff2");
+  font-family: "Farhang";
+  src: url("/fonts/Farhang-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Farhang";
+  src: url("/fonts/Farhang-DemiBold.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
 }
 @font-face {
-  font-family: "Yekan Bakh";
-  src: url("/fonts/YekanBakh-Bold.woff2") format("woff2");
+  font-family: "Farhang";
+  src: url("/fonts/Farhang-Bold.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }
 @font-face {
-  font-family: "Yekan Bakh";
-  src: url("/fonts/YekanBakh-ExtraBold.woff2") format("woff2");
+  font-family: "Farhang";
+  src: url("/fonts/Farhang-ExtraBold.woff2") format("woff2");
   font-weight: 800;
   font-display: swap;
 }
 @font-face {
-  font-family: "Yekan Bakh";
-  src: url("/fonts/YekanBakh-Black.woff2") format("woff2");
+  font-family: "Farhang";
+  src: url("/fonts/Farhang-Black.woff2") format("woff2");
   font-weight: 900;
   font-display: swap;
 }
@@ -95,8 +101,8 @@
   --color-brand-700: var(--color-flame-800);
 
   /* Fonts */
-  --font-sans: "Yekan Bakh", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Doran", "Yekan Bakh", system-ui, sans-serif;
+  --font-sans: "Farhang", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Doran", "Farhang", system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Radii — 10px everywhere, 30px pills only for badges */

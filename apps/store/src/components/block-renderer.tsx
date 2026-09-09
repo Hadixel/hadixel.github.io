@@ -207,7 +207,7 @@ async function BlockNode({ block }: { block: Block }) {
                 <div className="relative aspect-[4/3]">
                   {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04]" />}
                 </div>
-                <div className="border-t border-white/60 px-3 py-3 text-center font-display text-sm font-bold text-ink">
+                <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-bold text-ink">
                   {t.name}
                 </div>
               </Link>

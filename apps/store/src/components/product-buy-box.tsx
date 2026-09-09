@@ -52,7 +52,7 @@ export function ProductBuyBox({
       <div>
         <div>
           {model && <div className="text-code text-xs text-ash">{model}</div>}
-          <h1 className="mt-0.5 font-display text-3xl font-extrabold leading-snug text-ink">{productName}</h1>
+          <h1 className="mt-0.5 text-3xl font-extrabold leading-snug text-ink">{productName}</h1>
         </div>
         {description && <p className="mt-4 text-sm leading-7 text-ash">{description}</p>}
 

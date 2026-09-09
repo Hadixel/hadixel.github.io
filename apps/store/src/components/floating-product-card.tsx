@@ -30,7 +30,7 @@ export function FloatingProductCard({
           {image && <Image src={image} alt={name} fill sizes="60px" className="object-contain p-1" />}
         </div>
         <div className="min-w-0">
-          <div className="truncate font-display text-sm font-bold text-ink">{name}</div>
+          <div className="truncate text-sm font-bold text-ink">{name}</div>
           <div className="mt-1 text-sm">
             <Price amount={price} maxAmount={maxPrice} className="text-sm" />
           </div>
