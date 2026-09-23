@@ -4,7 +4,7 @@
 // copies into apps/store/public/products and rewrites variant.images to /products/...
 // Run: pnpm --filter @kmodern/db db:images
 import "dotenv/config";
-import { mkdirSync, copyFileSync, existsSync } from "node:fs";
+import { mkdirSync, copyFileSync, existsSync, writeFileSync } from "node:fs";
 import { dirname, join, extname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import slugifyPkg from "slugify";
@@ -24,6 +24,19 @@ const catalog = JSON.parse(readFileSync(join(HERE, "catalog.json"), "utf8")) as 
 
 const COLOR_TOKENS = ["black", "white", "gray", "beige", "silver", "steel"];
 const PUBLIC_DIR = join(ROOT, "apps/store/public/products");
+
+async function materializeImage(src: string, dest: string): Promise<void> {
+  if (existsSync(dest)) return;
+  if (/^https?:\/\//i.test(src)) {
+    const response = await fetch(src, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; kmodern-seed/0.1)" },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status} while downloading ${src}`);
+    writeFileSync(dest, Buffer.from(await response.arrayBuffer()));
+    return;
+  }
+  copyFileSync(src, dest);
+}
 
 async function main() {
   const prisma = db();
@@ -48,7 +61,7 @@ async function main() {
           const rel = `products/${slug}/variant-${key}/img-${i + 1}${ext}`;
           const dest = join(PUBLIC_DIR, slug, `variant-${key}`, `img-${i + 1}${ext}`);
           mkdirSync(dirname(dest), { recursive: true });
-          if (!existsSync(dest)) copyFileSync(src, dest);
+          await materializeImage(src, dest);
           copied++;
           return `/products/${slug}/variant-${key}/img-${i + 1}${ext}`;
         });

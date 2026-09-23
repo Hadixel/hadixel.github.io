@@ -11,6 +11,8 @@
     "build": "turbo build",
     "db:generate": "pnpm --filter @kmodern/db generate",
     "db:migrate": "pnpm --filter @kmodern/db db:migrate",
+    "scrape": "pnpm --filter @kmodern/scraper scrape",
+    "scrape:tui": "pnpm --filter @kmodern/scraper tui",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck"
   },
