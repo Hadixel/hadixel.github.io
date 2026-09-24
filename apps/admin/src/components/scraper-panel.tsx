@@ -70,6 +70,18 @@ const SUB_LABELS: Record<string, string> = {
   "dual-basket": "دوسبد",
 };
 
+const COLOR_LABELS: Record<string, string> = {
+  black: "مشکی",
+  white: "سفید",
+  gray: "طوسی",
+  beige: "کرم",
+  silver: "نقره‌ای",
+  steel: "استیل",
+};
+
+type PriceFilter = "all" | "priced" | "missing";
+type SortOrder = "newest" | "name" | "price-high" | "price-low";
+
 async function apiRequest<T>(path = "/api/admin/scraper", init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body) headers.set("Content-Type", "application/json");
@@ -103,6 +115,13 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<ScraperCatalogItem | null>(null);
+  const [query, setQuery] = useState("");
+  const [rootFilter, setRootFilter] = useState("all");
+  const [subFilter, setSubFilter] = useState("all");
+  const [colorFilter, setColorFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
+  const [contentFilter, setContentFilter] = useState<"all" | "with-images" | "without-images" | "with-specs">("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [source, setSource] = useState("all");
   const [limit, setLimit] = useState("");
   const [cache, setCache] = useState(true);
@@ -119,6 +138,45 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     if (!job?.total) return job && active ? 8 : 0;
     return Math.min(100, Math.round((job.current / job.total) * 100));
   }, [active, job]);
+
+  const subcategoryOptions = useMemo(() => {
+    const values = catalog
+      .filter((item) => rootFilter === "all" || item.category === rootFilter)
+      .map((item) => item.subCategory);
+    return [...new Set(values)].sort((a, b) => (SUB_LABELS[a] ?? a).localeCompare(SUB_LABELS[b] ?? b, "fa"));
+  }, [catalog, rootFilter]);
+
+  const filteredCatalog = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase("fa");
+    const filtered = catalog.filter((item) => {
+      const searchable = [item.name, item.brand, item._id, item.slug, item.description]
+        .join(" ")
+        .toLocaleLowerCase("fa");
+      if (normalizedQuery && !searchable.includes(normalizedQuery)) return false;
+      if (rootFilter !== "all" && item.category !== rootFilter) return false;
+      if (subFilter !== "all" && item.subCategory !== subFilter) return false;
+      if (colorFilter !== "all" && !item.colors.includes(colorFilter)) return false;
+      if (priceFilter === "priced" && item.price <= 0) return false;
+      if (priceFilter === "missing" && item.price > 0) return false;
+      if (contentFilter === "with-images" && item.image.length === 0) return false;
+      if (contentFilter === "without-images" && item.image.length > 0) return false;
+      if (contentFilter === "with-specs" && item.specs.length === 0) return false;
+      return true;
+    });
+
+    return filtered.sort((a, b) => {
+      if (sortOrder === "name") return a.name.localeCompare(b.name, "fa");
+      if (sortOrder === "price-high") return b.price - a.price;
+      if (sortOrder === "price-low") return a.price - b.price;
+      return b.date - a.date;
+    });
+  }, [catalog, colorFilter, contentFilter, priceFilter, query, rootFilter, sortOrder, subFilter]);
+
+  const filtersActive = Boolean(
+    query || rootFilter !== "all" || subFilter !== "all" || colorFilter !== "all" ||
+    priceFilter !== "all" || contentFilter !== "all" || sortOrder !== "newest",
+  );
+  const allFilteredSelected = filteredCatalog.length > 0 && filteredCatalog.every((item) => selected.has(item.slug));
 
   const refresh = useCallback(async () => {
     try {
@@ -170,6 +228,13 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     setImportMessage(null);
     setCatalog([]);
     setCatalogJobId("");
+    setQuery("");
+    setRootFilter("all");
+    setSubFilter("all");
+    setColorFilter("all");
+    setPriceFilter("all");
+    setContentFilter("all");
+    setSortOrder("newest");
     setJob(null);
     setSelected(new Set());
     setDetail(null);
@@ -210,7 +275,24 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   }
 
   function toggleAll() {
-    setSelected((current) => current.size === catalog.length ? new Set() : new Set(catalog.map((item) => item.slug)));
+    setSelected((current) => {
+      const next = new Set(current);
+      for (const item of filteredCatalog) {
+        if (allFilteredSelected) next.delete(item.slug);
+        else next.add(item.slug);
+      }
+      return next;
+    });
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setRootFilter("all");
+    setSubFilter("all");
+    setColorFilter("all");
+    setPriceFilter("all");
+    setContentFilter("all");
+    setSortOrder("newest");
   }
 
   async function importSelected() {
@@ -371,7 +453,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
           <Card>
             <CardHeader
               title="نتایج محصولات"
-              subtitle={catalogLoading ? "در حال خواندن خروجی…" : `${faDigits(catalog.length)} محصول برای بررسی آماده است.`}
+              subtitle={catalogLoading ? "در حال خواندن خروجی…" : `${faDigits(filteredCatalog.length)} از ${faDigits(catalog.length)} محصول برای بررسی آماده است.`}
               actions={catalog.length ? <span className="text-xs text-ash">{faDigits(selected.size)} انتخاب شده</span> : undefined}
             />
             <CardBody>
@@ -379,16 +461,66 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                 <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-ash"><Spinner /> در حال آماده‌سازی فهرست…</div>
               ) : catalog.length ? (
                 <>
+                  <div className="mb-4 grid grid-cols-1 gap-3 rounded-card bg-plaster p-3 md:grid-cols-2 xl:grid-cols-4">
+                    <Field label="جستجو" className="mb-0">
+                      <Input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="نام، مدل یا توضیح…" />
+                    </Field>
+                    <Field label="دسته اصلی" className="mb-0">
+                      <Select value={rootFilter} onChange={(event) => { setRootFilter(event.target.value); setSubFilter("all"); }}>
+                        <option value="all">همه دسته‌ها</option>
+                        {Object.entries(ROOT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </Select>
+                    </Field>
+                    <Field label="زیر‌دسته" className="mb-0">
+                      <Select value={subFilter} onChange={(event) => setSubFilter(event.target.value)}>
+                        <option value="all">همه زیر‌دسته‌ها</option>
+                        {subcategoryOptions.map((value) => <option key={value} value={value}>{SUB_LABELS[value] ?? value}</option>)}
+                      </Select>
+                    </Field>
+                    <Field label="رنگ" className="mb-0">
+                      <Select value={colorFilter} onChange={(event) => setColorFilter(event.target.value)}>
+                        <option value="all">همه رنگ‌ها</option>
+                        {Object.entries(COLOR_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </Select>
+                    </Field>
+                    <Field label="وضعیت قیمت" className="mb-0">
+                      <Select value={priceFilter} onChange={(event) => setPriceFilter(event.target.value as PriceFilter)}>
+                        <option value="all">همه</option>
+                        <option value="priced">دارای قیمت</option>
+                        <option value="missing">نیازمند قیمت</option>
+                      </Select>
+                    </Field>
+                    <Field label="محتوا" className="mb-0">
+                      <Select value={contentFilter} onChange={(event) => setContentFilter(event.target.value as typeof contentFilter)}>
+                        <option value="all">همه</option>
+                        <option value="with-images">دارای تصویر</option>
+                        <option value="without-images">بدون تصویر</option>
+                        <option value="with-specs">دارای مشخصات</option>
+                      </Select>
+                    </Field>
+                    <Field label="مرتب‌سازی" className="mb-0">
+                      <Select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)}>
+                        <option value="newest">جدیدترین</option>
+                        <option value="name">نام محصول</option>
+                        <option value="price-high">بیشترین قیمت</option>
+                        <option value="price-low">کمترین قیمت</option>
+                      </Select>
+                    </Field>
+                    <div className="flex items-end">
+                      <Button type="button" variant="secondary" size="sm" onClick={clearFilters} disabled={!filtersActive}>پاک کردن فیلترها</Button>
+                    </div>
+                  </div>
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card bg-plaster px-3 py-3">
                     <label className="flex items-center gap-2 text-sm text-ink">
                       <input
                         type="checkbox"
                         className="h-4 w-4 rounded border-fog text-flame-700 focus:ring-flame-500"
-                        checked={selected.size === catalog.length}
+                        checked={allFilteredSelected}
                         onChange={toggleAll}
                       />
-                      انتخاب همه
+                      انتخاب همه نتایج فیلترشده
                     </label>
+                    <span className="text-xs text-ash">{faDigits(selected.size)} انتخاب‌شده</span>
                     <div className="flex flex-wrap items-center gap-3">
                       <Checkbox label="پس از ورود منتشر کن" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
                       <Button type="button" onClick={() => void importSelected()} disabled={!selected.size || importing}>
@@ -399,42 +531,46 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                   </div>
                   {importMessage ? <p className="mb-4 rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{importMessage}</p> : null}
                   {notice?.kind === "error" ? <p role="alert" className="mb-4 rounded-card bg-red-50 px-3 py-2 text-sm text-red-800">{notice.text}</p> : null}
-                  <div className="overflow-hidden rounded-card border border-plaster">
-                    <Table>
-                      <THead>
-                        <TR>
-                          <TH className="w-10" />
-                          <TH>محصول</TH>
-                          <TH>دسته</TH>
-                          <TH>قیمت</TH>
-                          <TH>مشخصات</TH>
-                        </TR>
-                      </THead>
-                      <TBody>
-                        {catalog.map((item) => (
-                          <TR key={item.slug} onClick={() => setDetail(item)} className={selected.has(item.slug) ? "bg-flame-50" : undefined}>
-                            <TD>
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-fog text-flame-700 focus:ring-flame-500"
-                                checked={selected.has(item.slug)}
-                                onChange={() => toggleSelected(item.slug)}
-                                onClick={(event) => event.stopPropagation()}
-                                aria-label={`انتخاب ${item.name}`}
-                              />
-                            </TD>
-                            <TD>
-                              <div className="font-medium text-ink">{item.name}</div>
-                              <div className="mt-1 text-xs text-ash" dir="ltr">{item.slug}</div>
-                            </TD>
-                            <TD className="whitespace-nowrap text-xs text-ash">{ROOT_LABELS[item.category] ?? item.category} / {SUB_LABELS[item.subCategory] ?? item.subCategory}</TD>
-                            <TD className="whitespace-nowrap text-xs">{item.price > 0 ? formatToman(item.price) : <span className="text-amber-700">نیازمند قیمت</span>}</TD>
-                            <TD className="tabular-nums text-xs text-ash">{faDigits(item.specs.length)}</TD>
+                  {filteredCatalog.length ? (
+                    <div className="overflow-hidden rounded-card border border-plaster">
+                      <Table>
+                        <THead>
+                          <TR>
+                            <TH className="w-10" />
+                            <TH>محصول</TH>
+                            <TH>دسته</TH>
+                            <TH>قیمت</TH>
+                            <TH>مشخصات</TH>
                           </TR>
-                        ))}
-                      </TBody>
-                    </Table>
-                  </div>
+                        </THead>
+                        <TBody>
+                          {filteredCatalog.map((item) => (
+                            <TR key={item.slug} onClick={() => setDetail(item)} className={selected.has(item.slug) ? "bg-flame-50" : undefined}>
+                              <TD>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-fog text-flame-700 focus:ring-flame-500"
+                                  checked={selected.has(item.slug)}
+                                  onChange={() => toggleSelected(item.slug)}
+                                  onClick={(event) => event.stopPropagation()}
+                                  aria-label={`انتخاب ${item.name}`}
+                                />
+                              </TD>
+                              <TD>
+                                <div className="font-medium text-ink">{item.name}</div>
+                                <div className="mt-1 text-xs text-ash" dir="ltr">{item.slug}</div>
+                              </TD>
+                              <TD className="whitespace-nowrap text-xs text-ash">{ROOT_LABELS[item.category] ?? item.category} / {SUB_LABELS[item.subCategory] ?? item.subCategory}</TD>
+                              <TD className="whitespace-nowrap text-xs">{item.price > 0 ? formatToman(item.price) : <span className="text-amber-700">نیازمند قیمت</span>}</TD>
+                              <TD className="tabular-nums text-xs text-ash">{faDigits(item.specs.length)}</TD>
+                            </TR>
+                          ))}
+                        </TBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="rounded-card bg-plaster px-3 py-8 text-center text-sm text-ash">محصولی با این فیلترها پیدا نشد.</p>
+                  )}
                   {detail ? <ProductDetail item={detail} onClose={() => setDetail(null)} /> : <p className="mt-4 text-sm text-ash">برای دیدن توضیحات، تصاویر و مشخصات کامل، روی یک ردیف کلیک کنید.</p>}
                 </>
               ) : (
