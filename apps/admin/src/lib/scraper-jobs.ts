@@ -128,8 +128,9 @@ class ScraperJobManager {
   }
 
   async readOutput(filename: string): Promise<{ body: Buffer; filename: string } | null> {
-    if (!OUTPUT_FILES.has(filename) || !this.current?.snapshot.outputDir) return null;
-    const body = await readFile(join(this.current.snapshot.outputDir, filename));
+    const outputDir = this.current?.snapshot.outputDir ?? join(scraperPackageDir(), "out");
+    if (!OUTPUT_FILES.has(filename)) return null;
+    const body = await readFile(join(outputDir, filename));
     return { body, filename };
   }
 
@@ -230,6 +231,8 @@ const globalForScraper = globalThis as typeof globalThis & {
   __kmodernScraperJobs?: ScraperJobManager;
 };
 
+const existingJobs = globalForScraper.__kmodernScraperJobs;
 export const scraperJobs =
-  globalForScraper.__kmodernScraperJobs ??
-  (globalForScraper.__kmodernScraperJobs = new ScraperJobManager());
+  existingJobs && typeof existingJobs.getCatalog === "function"
+    ? existingJobs
+    : (globalForScraper.__kmodernScraperJobs = new ScraperJobManager());

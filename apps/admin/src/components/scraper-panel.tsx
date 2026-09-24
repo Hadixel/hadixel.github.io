@@ -108,12 +108,13 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [cache, setCache] = useState(true);
   const [publish, setPublish] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
-  const active = job?.status === "running" || job?.status === "cancelling";
+  const active = starting || job?.status === "running" || job?.status === "cancelling";
   const progress = useMemo(() => {
     if (!job?.total) return job && active ? 8 : 0;
     return Math.min(100, Math.round((job.current / job.total) * 100));
@@ -140,15 +141,14 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   }, [active, refresh]);
 
   useEffect(() => {
-    const jobId = job?.id;
-    if (job?.status !== "completed" || !jobId || catalogJobId === jobId) return;
+    if (active || catalogJobId) return;
     let cancelled = false;
     setCatalogLoading(true);
     void apiRequest<{ items: ScraperCatalogItem[] }>("/api/admin/scraper?view=catalog")
       .then((data) => {
         if (cancelled) return;
         setCatalog(data.items);
-        setCatalogJobId(jobId);
+        setCatalogJobId(job?.id ?? "persisted");
         setSelected(new Set());
         setDetail(null);
       })
@@ -161,14 +161,16 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     return () => {
       cancelled = true;
     };
-  }, [catalogJobId, job?.id, job?.status]);
+  }, [active, catalogJobId, job?.id]);
 
   async function start() {
     setBusy(true);
+    setStarting(true);
     setNotice(null);
     setImportMessage(null);
     setCatalog([]);
     setCatalogJobId("");
+    setJob(null);
     setSelected(new Set());
     setDetail(null);
     try {
@@ -181,6 +183,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     } catch (error) {
       setNotice({ kind: "error", text: errorText(error) });
     } finally {
+      setStarting(false);
       setBusy(false);
     }
   }
