@@ -8,13 +8,14 @@ import {
   type PipelineResult,
 } from "@kmodern/scraper";
 import type {
+  ScraperCatalogItem,
   ScraperJobOptions,
   ScraperJobPhase,
   ScraperJobSnapshot,
   ScraperJobStatus,
 } from "@/lib/scraper-types";
 
-export type { ScraperJobOptions, ScraperJobPhase, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
+export type { ScraperCatalogItem, ScraperJobOptions, ScraperJobPhase, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
 
 interface InternalJob {
   controller: AbortController;
@@ -130,6 +131,28 @@ class ScraperJobManager {
     if (!OUTPUT_FILES.has(filename) || !this.current?.snapshot.outputDir) return null;
     const body = await readFile(join(this.current.snapshot.outputDir, filename));
     return { body, filename };
+  }
+
+  async getCatalog(): Promise<ScraperCatalogItem[]> {
+    const file = await this.readOutput("catalog.fragment.json").catch(() => null);
+    if (!file) return [];
+    try {
+      const parsed: unknown = JSON.parse(file.body.toString("utf8"));
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((item): item is ScraperCatalogItem => {
+        if (!item || typeof item !== "object") return false;
+        const value = item as Record<string, unknown>;
+        return typeof value.slug === "string" &&
+          typeof value.name === "string" &&
+          typeof value.brand === "string" &&
+          Array.isArray(value.colors) &&
+          Array.isArray(value.image) &&
+          Array.isArray(value.features) &&
+          Array.isArray(value.specs);
+      });
+    } catch {
+      return [];
+    }
   }
 
   private onProgress(job: InternalJob, event: PipelineEvent): void {

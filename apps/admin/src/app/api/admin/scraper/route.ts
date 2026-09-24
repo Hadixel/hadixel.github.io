@@ -43,7 +43,8 @@ export async function GET(request: Request) {
   const auth = await authorize();
   if ("response" in auth) return auth.response;
 
-  const download = new URL(request.url).searchParams.get("download");
+  const params = new URL(request.url).searchParams;
+  const download = params.get("download");
   if (download) {
     try {
       const file = await scraperJobs.readOutput(download);
@@ -58,6 +59,11 @@ export async function GET(request: Request) {
     } catch {
       return errorResponse("output_unavailable", 404);
     }
+  }
+
+  if (params.get("view") === "catalog") {
+    const items = await scraperJobs.getCatalog();
+    return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
   }
 
   return NextResponse.json(scraperJobs.get(), {

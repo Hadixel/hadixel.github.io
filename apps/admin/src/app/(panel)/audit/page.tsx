@@ -44,6 +44,7 @@ const ACTION_LABELS: Record<string, string> = {
   SETTINGS_UPDATED: "ویرایش تنظیمات",
   SCRAPER_STARTED: "شروع اسکرپر",
   SCRAPER_CANCEL_REQUESTED: "درخواست لغو اسکرپر",
+  SCRAPER_IMPORTED: "وارد کردن نتایج اسکرپر",
   DISCOUNT_CREATED: "ایجاد تخفیف",
   DISCOUNT_UPDATED: "ویرایش تخفیف",
   DISCOUNT_DELETED: "حذف تخفیف",

@@ -14,6 +14,23 @@ export interface ScraperJobOptions {
   cache: boolean;
 }
 
+export interface ScraperCatalogItem {
+  _id: string;
+  slug: string;
+  name: string;
+  brand: string;
+  category: string;
+  subCategory: string;
+  colors: string[];
+  price: number;
+  bestSeller: boolean;
+  date: number;
+  image: string[];
+  description: string;
+  features: string[];
+  specs: Array<{ label: string; value: string }>;
+}
+
 export interface ScraperJobSnapshot {
   id: string;
   status: ScraperJobStatus;

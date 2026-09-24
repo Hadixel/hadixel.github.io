@@ -37,3 +37,11 @@ Outputs are written to `packages/scraper/out/`:
 
 The seed image preparation command accepts both local paths and HTTP(S) image
 URLs, so the generated fragment can be handed to the database seed workflow.
+
+## Admin review and import
+
+Owners can open `/scraper` in the admin app to run a crawl, inspect every
+refined product, expand its specs/images, and select records for import. The
+explicit import action is idempotent by product slug and variant SKU; leave
+"publish after import" off to create drafts, or enable it to publish the
+selected records immediately.

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatToman } from "@kmodern/schema";
 import { formatJalaliDateTime } from "@/lib/date";
-import type { ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
+import type { ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
 import {
   Badge,
   Button,
@@ -14,12 +15,24 @@ import {
   Input,
   Select,
   Spinner,
+  Table,
+  TBody,
+  TD,
+  TH,
+  THead,
+  TR,
   faDigits,
 } from "@/components/ui";
 
 interface SourceOption {
   id: string;
   label: string;
+}
+
+interface ImportResult {
+  products: number;
+  variants: number;
+  status: "DRAFT" | "PUBLISHED";
 }
 
 const STATUS: Record<ScraperJobStatus, { label: string; color: "gray" | "blue" | "green" | "amber" | "red" }> = {
@@ -40,6 +53,36 @@ const PHASE: Record<ScraperJobSnapshot["phase"], string> = {
   complete: "پایان اجرا",
 };
 
+const ROOT_LABELS: Record<string, string> = {
+  sink: "سینک",
+  hood: "هود",
+  oven: "فر",
+  stove: "اجاق گاز",
+  "air-fryer": "سرخ‌کن",
+};
+
+const SUB_LABELS: Record<string, string> = {
+  "double-bowl": "دولگن",
+  "built-in": "توکار",
+  chimney: "شومینه‌ای",
+  steel: "استیل",
+  glass: "شیشه‌ای",
+  "dual-basket": "دوسبد",
+};
+
+async function apiRequest<T>(path = "/api/admin/scraper", init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body) headers.set("Content-Type", "application/json");
+  const response = await fetch(path, {
+    credentials: "same-origin",
+    ...init,
+    headers,
+  });
+  const data = (await response.json()) as T & { error?: string };
+  if (!response.ok) throw new Error(data.error ?? "پاسخ نامعتبر از سرور");
+  return data;
+}
+
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : "درخواست ناموفق بود";
 }
@@ -55,12 +98,20 @@ function formatTime(value: string | null): string {
 
 export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [job, setJob] = useState<ScraperJobSnapshot | null>(null);
+  const [catalog, setCatalog] = useState<ScraperCatalogItem[]>([]);
+  const [catalogJobId, setCatalogJobId] = useState("");
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [detail, setDetail] = useState<ScraperCatalogItem | null>(null);
   const [source, setSource] = useState("all");
   const [limit, setLimit] = useState("");
   const [cache, setCache] = useState(true);
+  const [publish, setPublish] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   const active = job?.status === "running" || job?.status === "cancelling";
   const progress = useMemo(() => {
@@ -68,29 +119,15 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     return Math.min(100, Math.round((job.current / job.total) * 100));
   }, [active, job]);
 
-  const request = useCallback(async (init?: RequestInit) => {
-    const response = await fetch("/api/admin/scraper", {
-      credentials: "same-origin",
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers ?? {}),
-      },
-    });
-    const data = (await response.json()) as ScraperJobSnapshot & { error?: string };
-    if (!response.ok) throw new Error(data.error ?? "پاسخ نامعتبر از سرور");
-    return data;
-  }, []);
-
   const refresh = useCallback(async () => {
     try {
-      setJob(await request());
+      setJob(await apiRequest<ScraperJobSnapshot>());
     } catch (error) {
       setNotice({ kind: "error", text: errorText(error) });
     } finally {
       setLoading(false);
     }
-  }, [request]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -102,16 +139,45 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     return () => window.clearInterval(timer);
   }, [active, refresh]);
 
+  useEffect(() => {
+    const jobId = job?.id;
+    if (job?.status !== "completed" || !jobId || catalogJobId === jobId) return;
+    let cancelled = false;
+    setCatalogLoading(true);
+    void apiRequest<{ items: ScraperCatalogItem[] }>("/api/admin/scraper?view=catalog")
+      .then((data) => {
+        if (cancelled) return;
+        setCatalog(data.items);
+        setCatalogJobId(jobId);
+        setSelected(new Set());
+        setDetail(null);
+      })
+      .catch((error) => {
+        if (!cancelled) setNotice({ kind: "error", text: errorText(error) });
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogJobId, job?.id, job?.status]);
+
   async function start() {
     setBusy(true);
     setNotice(null);
+    setImportMessage(null);
+    setCatalog([]);
+    setCatalogJobId("");
+    setSelected(new Set());
+    setDetail(null);
     try {
       const body = JSON.stringify({
         source,
         limit: limit.trim() ? Number(limit) : null,
         cache,
       });
-      setJob(await request({ method: "POST", body }));
+      setJob(await apiRequest<ScraperJobSnapshot>( "/api/admin/scraper", { method: "POST", body }));
     } catch (error) {
       setNotice({ kind: "error", text: errorText(error) });
     } finally {
@@ -123,11 +189,45 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     setBusy(true);
     setNotice(null);
     try {
-      setJob(await request({ method: "DELETE" }));
+      setJob(await apiRequest<ScraperJobSnapshot>("/api/admin/scraper", { method: "DELETE" }));
     } catch (error) {
       setNotice({ kind: "error", text: errorText(error) });
     } finally {
       setBusy(false);
+    }
+  }
+
+  function toggleSelected(slug: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((current) => current.size === catalog.length ? new Set() : new Set(catalog.map((item) => item.slug)));
+  }
+
+  async function importSelected() {
+    if (!selected.size) return;
+    const mode = publish ? "منتشر کردن" : "ذخیره به‌عنوان پیش‌نویس";
+    if (!window.confirm(`${faDigits(selected.size)} محصول انتخاب شده است. آن‌ها ${mode} شوند؟`)) return;
+    setImporting(true);
+    setNotice(null);
+    setImportMessage(null);
+    try {
+      const result = await apiRequest<ImportResult>("/api/admin/scraper/import", {
+        method: "POST",
+        body: JSON.stringify({ slugs: [...selected], publish }),
+      });
+      setImportMessage(`${faDigits(result.products)} محصول و ${faDigits(result.variants)} تنوع با موفقیت وارد شد.`);
+      setSelected(new Set());
+    } catch (error) {
+      setNotice({ kind: "error", text: errorText(error) });
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -139,7 +239,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
         <div>
           <h1 className="text-xl font-bold text-ink">اسکرپر کاتالوگ</h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-ash">
-            داده خام سازنده را می‌گیرد، به سبک فروشگاه فارسی تبدیل می‌کند و فقط خروجی قابل بررسی می‌سازد.
+            داده خام سازنده را می‌گیرد، به سبک فروشگاه فارسی تبدیل می‌کند و نتایج را برای بررسی و ورود به فروشگاه آماده می‌کند.
           </p>
         </div>
         <Badge color={status.color}>{status.label}</Badge>
@@ -252,17 +352,94 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
       </div>
 
       {job?.status === "completed" ? (
-        <Card>
-          <CardHeader title="خروجی قابل بررسی" subtitle="این فایل‌ها هنوز به‌صورت خودکار وارد فروشگاه نمی‌شوند." />
-          <CardBody>
-            <div className="flex flex-wrap gap-2">
-              <DownloadLink filename="catalog.fragment.json" label="دانلود catalog.fragment.json" />
-              <DownloadLink filename="raw-scrape.json" label="دانلود raw-scrape.json" />
-              <DownloadLink filename="merge-report.json" label="دانلود merge-report.json" />
-            </div>
-            {job.outputDir ? <p className="mt-4 break-all text-xs leading-5 text-ash" dir="ltr">{job.outputDir}</p> : null}
-          </CardBody>
-        </Card>
+        <>
+          <Card>
+            <CardHeader title="خروجی قابل بررسی" subtitle="این فایل‌ها هنوز به‌صورت خودکار وارد فروشگاه نمی‌شوند." />
+            <CardBody>
+              <div className="flex flex-wrap gap-2">
+                <DownloadLink filename="catalog.fragment.json" label="دانلود catalog.fragment.json" />
+                <DownloadLink filename="raw-scrape.json" label="دانلود raw-scrape.json" />
+                <DownloadLink filename="merge-report.json" label="دانلود merge-report.json" />
+              </div>
+              {job.outputDir ? <p className="mt-4 break-all text-xs leading-5 text-ash" dir="ltr">{job.outputDir}</p> : null}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="نتایج محصولات"
+              subtitle={catalogLoading ? "در حال خواندن خروجی…" : `${faDigits(catalog.length)} محصول برای بررسی آماده است.`}
+              actions={catalog.length ? <span className="text-xs text-ash">{faDigits(selected.size)} انتخاب شده</span> : undefined}
+            />
+            <CardBody>
+              {catalogLoading ? (
+                <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-ash"><Spinner /> در حال آماده‌سازی فهرست…</div>
+              ) : catalog.length ? (
+                <>
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-card bg-plaster px-3 py-3">
+                    <label className="flex items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-fog text-flame-700 focus:ring-flame-500"
+                        checked={selected.size === catalog.length}
+                        onChange={toggleAll}
+                      />
+                      انتخاب همه
+                    </label>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Checkbox label="پس از ورود منتشر کن" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
+                      <Button type="button" onClick={() => void importSelected()} disabled={!selected.size || importing}>
+                        {importing ? <Spinner /> : null}
+                        {publish ? "ارسال و انتشار به فروشگاه" : "ذخیره به‌عنوان پیش‌نویس"}
+                      </Button>
+                    </div>
+                  </div>
+                  {importMessage ? <p className="mb-4 rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{importMessage}</p> : null}
+                  {notice?.kind === "error" ? <p role="alert" className="mb-4 rounded-card bg-red-50 px-3 py-2 text-sm text-red-800">{notice.text}</p> : null}
+                  <div className="overflow-hidden rounded-card border border-plaster">
+                    <Table>
+                      <THead>
+                        <TR>
+                          <TH className="w-10" />
+                          <TH>محصول</TH>
+                          <TH>دسته</TH>
+                          <TH>قیمت</TH>
+                          <TH>مشخصات</TH>
+                        </TR>
+                      </THead>
+                      <TBody>
+                        {catalog.map((item) => (
+                          <TR key={item.slug} onClick={() => setDetail(item)} className={selected.has(item.slug) ? "bg-flame-50" : undefined}>
+                            <TD>
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-fog text-flame-700 focus:ring-flame-500"
+                                checked={selected.has(item.slug)}
+                                onChange={() => toggleSelected(item.slug)}
+                                onClick={(event) => event.stopPropagation()}
+                                aria-label={`انتخاب ${item.name}`}
+                              />
+                            </TD>
+                            <TD>
+                              <div className="font-medium text-ink">{item.name}</div>
+                              <div className="mt-1 text-xs text-ash" dir="ltr">{item.slug}</div>
+                            </TD>
+                            <TD className="whitespace-nowrap text-xs text-ash">{ROOT_LABELS[item.category] ?? item.category} / {SUB_LABELS[item.subCategory] ?? item.subCategory}</TD>
+                            <TD className="whitespace-nowrap text-xs">{item.price > 0 ? formatToman(item.price) : <span className="text-amber-700">نیازمند قیمت</span>}</TD>
+                            <TD className="tabular-nums text-xs text-ash">{faDigits(item.specs.length)}</TD>
+                          </TR>
+                        ))}
+                      </TBody>
+                    </Table>
+                  </div>
+                  {detail ? <ProductDetail item={detail} onClose={() => setDetail(null)} /> : <p className="mt-4 text-sm text-ash">برای دیدن توضیحات، تصاویر و مشخصات کامل، روی یک ردیف کلیک کنید.</p>}
+                </>
+              ) : (
+                <p className="text-sm text-ash">خروجی محصولی برای نمایش پیدا نشد.</p>
+              )}
+            </CardBody>
+          </Card>
+        </>
       ) : null}
     </div>
   );
@@ -285,5 +462,31 @@ function DownloadLink({ filename, label }: { filename: string; label: string }) 
     >
       {label}
     </a>
+  );
+}
+
+function ProductDetail({ item, onClose }: { item: ScraperCatalogItem; onClose: () => void }) {
+  return (
+    <div className="mt-5 rounded-card border border-plaster bg-plaster/40 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-ink">{item.name}</h2>
+          <p className="mt-1 text-xs text-ash" dir="ltr">{item.slug} · {item._id}</p>
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>بستن</Button>
+      </div>
+      <p className="mt-4 max-w-3xl text-sm leading-7 text-ink">{item.description || "توضیحی برای این محصول ثبت نشده است."}</p>
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-ink">ویژگی‌ها</h3>
+          {item.features.length ? <ul className="space-y-1 text-sm leading-6 text-ash">{item.features.map((feature) => <li key={feature}>• {feature}</li>)}</ul> : <p className="text-sm text-ash">—</p>}
+        </div>
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-ink">مشخصات فنی</h3>
+          {item.specs.length ? <dl className="divide-y divide-plaster text-sm">{item.specs.map((spec) => <div key={`${spec.label}-${spec.value}`} className="flex justify-between gap-4 py-2"><dt className="text-ash">{spec.label}</dt><dd className="text-left text-ink">{spec.value}</dd></div>)}</dl> : <p className="text-sm text-ash">—</p>}
+        </div>
+      </div>
+      {item.image.length ? <div className="mt-5"><h3 className="mb-2 text-sm font-semibold text-ink">تصاویر</h3><div className="flex flex-wrap gap-2">{item.image.slice(0, 8).map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" className="block h-16 w-16 overflow-hidden rounded-card border border-plaster bg-white"><img src={url} alt={item.name} className="h-full w-full object-contain" loading="lazy" /></a>)}</div></div> : null}
+    </div>
   );
 }
