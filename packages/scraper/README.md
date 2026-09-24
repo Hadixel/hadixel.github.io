@@ -57,6 +57,7 @@ Outputs are written to `packages/scraper/out/`:
 - `raw-scrape.json` — adapter records before refinement
 - `catalog.fragment.json` — shape consumed by `packages/db/seed/catalog.json`
 - `merge-report.json` — counts, conflicts, page errors, and image errors
+- `price-list-report.json` — price-row matches, raw-only rows, and rejected conflicts
 - `images/<product-slug>/` — downloaded image files when `--images` is enabled
 
 When image downloads are enabled, `catalog.fragment.json` keeps the local
@@ -85,3 +86,43 @@ The explicit import action is idempotent by product slug and variant SKU; leave
 selected records immediately. Published products must have a positive price.
 Datees color-specific prices create separate color variants; manually editing
 the aggregate price clears the imported price provenance for that product.
+
+### Applying a new XLSX price list
+
+The price-list command accepts an XLSX/XLS/CSV workbook with `model` and a
+consumer-price column such as `consumer_price_toman`. It also accepts common Persian headers,
+including `مدل` and `قیمت مصرف کننده`. Model matching normalizes spaces,
+hyphens, Persian/Arabic digits, bidi marks, and common RTL-reversed forms such
+as `DG 598`/`598-DG`; word models such as `Volira` are supported as well.
+
+The command resolves every row against both `catalog.fragment.json` and the
+latest `raw-scrape.json`. The admin preview/apply revision hashes both files,
+so a changed scrape or catalog invalidates the preview before it can be
+applied:
+
+```bash
+# Preview and persist a review report without changing the catalog
+pnpm --filter @kmodern/scraper price-list -- --file /path/to/D0249.xlsx --brand Datees --dry-run
+
+# Apply only unambiguous catalog matches
+pnpm --filter @kmodern/scraper price-list -- --file /path/to/D0249.xlsx --brand Datees
+```
+
+Use `--unit toman|rial` only when the workbook does not declare its unit. A
+consumer price in Rial is converted to Toman. Repeated model rows, multiple
+model codes in one cell, cross-brand collisions, raw/catalog conflicts,
+unmatched rows, and invalid rows are reported but never applied. Re-running
+the same file is idempotent; aggregate XLSX prices clear stale color-price and
+stock metadata because the file does not provide those facts.
+
+The admin review page exposes the same operation at `/scraper`: upload a file,
+preview the report, then explicitly apply it to the review snapshot. Applying a
+price list never publishes or imports products; use the existing product
+selection flow afterwards. The full report is available as
+`price-list-report.json`.
+
+A scrape can apply a list in the same run when needed:
+
+```bash
+pnpm --filter @kmodern/scraper scrape --price-list /path/to/D0249.xlsx --price-brand Datees
+```

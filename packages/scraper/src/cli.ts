@@ -5,18 +5,17 @@
 //   pnpm --filter @kmodern/scraper scrape --limit 5           # smoke run
 //   pnpm --filter @kmodern/scraper scrape --images            # download product images
 //   pnpm --filter @kmodern/scraper scrape --no-prices          # skip Datees Shop prices
+//   pnpm --filter @kmodern/scraper scrape --price-list ./prices.xlsx --price-brand Datees
 //   pnpm --filter @kmodern/scraper scrape --category oven --color black
 //   SCRAPE_CACHE=1 pnpm … scrape                              # enable disk cache
 
 import { runPipeline } from "./pipeline";
 import type { ScrapeContentFilter, ScrapeFilters, ScrapePriceFilter, ScrapeSort } from "./types";
+import { readFlag } from "./args";
 
 const args = process.argv.slice(2);
 
-function flag(name: string): string | undefined {
-  const i = args.indexOf(`--${name}`);
-  return i >= 0 ? args[i + 1] : undefined;
-}
+const flag = (name: string): string | undefined => readFlag(args, name);
 
 function optionalFlag(name: string): string | undefined {
   const value = flag(name)?.trim();
@@ -36,6 +35,11 @@ async function main() {
   const quiet = args.includes("--quiet");
   const downloadImages = args.includes("--images");
   const priceLookup = !args.includes("--no-prices");
+  const priceListPath = flag("price-list");
+  const priceListUnit = flag("price-list-unit") as "toman" | "rial" | undefined;
+  if (priceListUnit && priceListUnit !== "toman" && priceListUnit !== "rial") {
+    throw new Error("Invalid --price-list-unit: use toman or rial");
+  }
   const cacheDir = process.env.SCRAPE_CACHE ? ".scrape-cache" : undefined;
   const filters: ScrapeFilters = {
     search: optionalFlag("search"),
@@ -55,6 +59,12 @@ async function main() {
     quiet,
     downloadImages,
     priceLookup,
+    filePriceList: priceListPath ? {
+      filePath: priceListPath,
+      brand: flag("price-brand"),
+      unit: priceListUnit,
+      dryRun: args.includes("--price-list-dry-run"),
+    } : undefined,
     filters,
     fetchOpts: { cacheDir },
   });

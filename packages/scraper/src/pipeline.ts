@@ -2,7 +2,7 @@
 // Each stage logs progress; failures on individual pages are collected, not fatal.
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { basename, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters, PriceLookupReport } from "./types";
 import type { FetchOptions } from "./http";
@@ -17,6 +17,7 @@ import {
   fetchDateesShopPriceIndex,
   matchDateesShopPrice,
 } from "./price-sources";
+import type { ApplyPriceListOptions, PriceListReport } from "./price-list";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_OUT_DIR = join(HERE, "..", "out");
@@ -32,7 +33,9 @@ export type PipelineEvent =
   | { type: "refine-complete"; kept: number; merged: number; conflicts: number }
   | { type: "image-start"; total: number }
   | { type: "image-complete"; current: number; total: number; downloaded?: number; path: string }
-  | { type: "image-error"; url: string; message: string };
+  | { type: "image-error"; url: string; message: string }
+  | { type: "price-list-start"; fileName: string }
+  | { type: "price-list-complete"; matched: number; rawOnly: number; unmatched: number; ambiguous: number; duplicate: number };
 
 export interface PipelineOptions {
   sources?: string[]; // subset of adapter ids; default all
@@ -48,6 +51,8 @@ export interface PipelineOptions {
   filters?: ScrapeFilters;
   /** Enrich Datees records from the official Datees Shop price API. */
   priceLookup?: boolean;
+  /** Optional user-supplied XLSX consumer-price list applied after refinement. */
+  filePriceList?: Pick<ApplyPriceListOptions, "filePath" | "brand" | "unit" | "dryRun">;
   onProgress?: (event: PipelineEvent) => void;
 }
 
@@ -60,6 +65,7 @@ export interface PipelineResult {
   imagesTotal: number;
   filteredOut: number;
   priceLookup?: PriceLookupReport;
+  priceListReport?: PriceListReport;
   outDir: string;
 }
 
@@ -380,14 +386,40 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
 
   writeFileSync(rawPath, JSON.stringify(allRecords, null, 2));
   writeFileSync(refinedPath, JSON.stringify(outputProducts.map(toCatalogShape), null, 2));
-  writeFileSync(reportPath, JSON.stringify({ report, outputKept: outputProducts.length, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, filters, priceLookup }, null, 2));
+
+  let priceListReport: PriceListReport | undefined;
+  if (opts.filePriceList) {
+    emit(opts, { type: "price-list-start", fileName: basename(opts.filePriceList.filePath) });
+    const { applyPriceList, applyPriceListReportToProducts } = await import("./price-list");
+    priceListReport = await applyPriceList({
+      ...opts.filePriceList,
+      outDir,
+    });
+    if (!opts.filePriceList.dryRun) {
+      outputProducts = applyPriceListReportToProducts(outputProducts, priceListReport);
+    }
+    emit(opts, {
+      type: "price-list-complete",
+      matched: priceListReport.matchedCatalog,
+      rawOnly: priceListReport.rawOnly,
+      unmatched: priceListReport.unmatched,
+      ambiguous: priceListReport.ambiguous,
+      duplicate: priceListReport.duplicate,
+    });
+    log(
+      opts,
+      `  ✓ price list: ${priceListReport.matchedCatalog} matched, ${priceListReport.rawOnly} raw-only, ${priceListReport.unmatched} unmatched, ${priceListReport.ambiguous} ambiguous, ${priceListReport.duplicate} duplicate`,
+    );
+  }
+
+  writeFileSync(reportPath, JSON.stringify({ report, outputKept: outputProducts.length, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, filters, priceLookup, priceListReport }, null, 2));
 
   log(opts, `\n  wrote:\n    ${rawPath}\n    ${refinedPath}\n    ${reportPath}`);
   if (errors.length) log(opts, `  ⚠ ${errors.length} page errors (see merge-report.json)`);
   if (imageErrors.length) log(opts, `  ⚠ ${imageErrors.length} image errors (remote fallbacks retained)`);
   if (filteredOut) log(opts, `  ℹ ${filteredOut} product page(s) excluded by scrape filters`);
 
-  return { products: outputProducts, report, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, priceLookup, outDir };
+  return { products: outputProducts, report, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, priceLookup, priceListReport, outDir };
 }
 
 function isHttpUrl(value: string): boolean {

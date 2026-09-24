@@ -9,6 +9,11 @@ import {
   type PipelineEvent,
   type PipelineResult,
 } from "@kmodern/scraper";
+import {
+  applyPriceList as applyPriceListFile,
+  type ApplyPriceListOptions,
+  type PriceListReport,
+} from "@kmodern/scraper/price-list";
 import type {
   ScraperCatalogItem,
   ScraperJobOptions,
@@ -30,7 +35,7 @@ interface CatalogSnapshot {
   revision: string | null;
 }
 
-const OUTPUT_FILES = new Set(["raw-scrape.json", "catalog.fragment.json", "merge-report.json"]);
+const OUTPUT_FILES = new Set(["raw-scrape.json", "catalog.fragment.json", "merge-report.json", "price-list-report.json"]);
 const MAX_LIMIT = 500;
 
 function isRemoteImage(value: string): boolean {
@@ -61,6 +66,10 @@ function scraperPackageDir(): string {
   return cwd.endsWith(`${sep}apps${sep}admin`)
     ? resolve(cwd, "../..", "packages", "scraper")
     : resolve(cwd, "packages", "scraper");
+}
+
+export function scraperOutputDir(): string {
+  return join(scraperPackageDir(), "out");
 }
 
 function emptySnapshot(): ScraperJobSnapshot {
@@ -243,12 +252,30 @@ class ScraperJobManager {
     const rawFile = await this.readOutput("raw-scrape.json").catch(() => null);
     return {
       items: this.parseCatalogFile(file.body, rawFile?.body ?? null, options),
-      revision: createHash("sha256").update(file.body).digest("hex"),
+      revision: createHash("sha256")
+        .update(file.body)
+        .update(rawFile?.body ?? Buffer.alloc(0))
+        .digest("hex"),
     };
   }
 
   async getCatalog(options: { publicView?: boolean } = {}): Promise<ScraperCatalogItem[]> {
     return (await this.getCatalogSnapshot(options)).items;
+  }
+
+  /** Apply a reviewed XLSX price list to the current review snapshot. */
+  async applyPriceList(options: Omit<ApplyPriceListOptions, "outDir"> & { outDir?: string }): Promise<PriceListReport> {
+    if (!this.beginImport()) throw new Error("IMPORT_IN_PROGRESS");
+    try {
+      const revision = options.expectedRevision ?? (await this.getCatalogSnapshot()).revision ?? undefined;
+      return await applyPriceListFile({
+        ...options,
+        expectedRevision: revision,
+        outDir: options.outDir ?? scraperOutputDir(),
+      });
+    } finally {
+      this.endImport();
+    }
   }
 
   private parseCatalogFile(file: Buffer, rawFile: Buffer | null, options: { publicView?: boolean }): ScraperCatalogItem[] {
@@ -400,6 +427,12 @@ class ScraperJobManager {
         state.imageErrors += 1;
         this.addActivity(state, `✗ image ${event.url}: ${event.message}`);
         break;
+      case "price-list-start":
+        this.addActivity(state, `بررسی لیست قیمت ${event.fileName}…`);
+        break;
+      case "price-list-complete":
+        this.addActivity(state, `لیست قیمت: ${event.matched} تطبیق قطعی، ${event.unmatched} بدون محصول، ${event.ambiguous} تعارض.`);
+        break;
     }
   }
 
@@ -422,7 +455,7 @@ class ScraperJobManager {
     job.snapshot.outputDir = result.outDir;
     this.addActivity(
       job.snapshot,
-      `Completed with ${result.errors.length} page error(s), ${result.filteredOut} filtered record(s), ${result.priceLookup?.matched ?? 0} Datees Shop price match(es), and ${result.imageErrors.length} image error(s).`,
+      `Completed with ${result.errors.length} page error(s), ${result.filteredOut} filtered record(s), ${result.priceLookup?.matched ?? 0} Datees Shop price match(es), ${result.priceListReport?.matchedCatalog ?? 0} file price match(es), and ${result.imageErrors.length} image error(s).`,
     );
   }
 
@@ -450,6 +483,7 @@ export const scraperJobs =
   existingJobs &&
   typeof existingJobs.getCatalog === "function" &&
   typeof existingJobs.getCatalogSnapshot === "function" &&
+  typeof existingJobs.applyPriceList === "function" &&
   typeof existingJobs.beginImport === "function" &&
   typeof existingJobs.endImport === "function"
     ? existingJobs

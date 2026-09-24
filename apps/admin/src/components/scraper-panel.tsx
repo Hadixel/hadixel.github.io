@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { formatToman } from "@kmodern/schema";
 import { formatJalaliDateTime } from "@/lib/date";
-import type { ScrapeFilters, ScraperCatalogEdit, ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
+import type { PriceListReport, ScrapeFilters, ScraperCatalogEdit, ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
 import {
   Badge,
   Button,
@@ -36,6 +36,11 @@ interface ImportResult {
   images: number;
   imageErrors: number;
   status: "DRAFT" | "PUBLISHED";
+}
+
+interface PriceListResponse {
+  mode: "preview" | "apply";
+  report: PriceListReport;
 }
 
 const STATUS: Record<ScraperJobStatus, { label: string; color: "gray" | "blue" | "green" | "amber" | "red" }> = {
@@ -158,7 +163,7 @@ function safePreviewUrl(value: string | undefined): string | null {
 
 async function apiRequest<T>(path = "/api/admin/scraper", init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (init?.body) headers.set("Content-Type", "application/json");
+  if (init?.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
   const response = await fetch(path, {
     credentials: "same-origin",
     ...init,
@@ -228,6 +233,13 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [starting, setStarting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [priceListFile, setPriceListFile] = useState<File | null>(null);
+  const [priceListRevision, setPriceListRevision] = useState("");
+  const [priceListBrand, setPriceListBrand] = useState("Datees");
+  const [priceListUnit, setPriceListUnit] = useState<"auto" | "toman" | "rial">("auto");
+  const [priceListBusy, setPriceListBusy] = useState<"preview" | "apply" | null>(null);
+  const [priceListReport, setPriceListReport] = useState<PriceListReport | null>(null);
+  const [priceListNotice, setPriceListNotice] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
@@ -357,6 +369,10 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     setStarting(true);
     setNotice(null);
     setImportMessage(null);
+    setPriceListFile(null);
+    setPriceListRevision("");
+    setPriceListReport(null);
+    setPriceListNotice(null);
     setCatalog([]);
     setEdits({});
     setCatalogRevision("");
@@ -412,6 +428,72 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  function choosePriceList(file: File | null) {
+    setPriceListFile(file);
+    setPriceListRevision("");
+    setPriceListReport(null);
+    setPriceListNotice(null);
+  }
+
+  async function submitPriceList(mode: "preview" | "apply") {
+    if (!priceListFile || priceListBusy) return;
+    if (mode === "apply" && !priceListReport) {
+      setPriceListNotice("قبل از اعمال، پیش‌نمایش لیست قیمت را بررسی کنید.");
+      return;
+    }
+    if (mode === "apply" && Object.keys(edits).length > 0 && !window.confirm("ویرایش‌های ذخیره‌نشده محصولات پاک می‌شوند. ادامه می‌دهید؟")) return;
+    const revision = mode === "apply" ? priceListRevision : catalogRevision;
+    if (!revision) {
+      setPriceListNotice("ابتدا خروجی بررسی را بارگذاری کنید و سپس لیست را دوباره پیش‌نمایش بگیرید.");
+      return;
+    }
+    setPriceListBusy(mode);
+    setPriceListNotice(null);
+    const form = new FormData();
+    form.set("file", priceListFile);
+    form.set("mode", mode);
+    form.set("catalogRevision", revision);
+    if (priceListBrand.trim()) form.set("brand", priceListBrand.trim());
+    if (priceListUnit !== "auto") form.set("unit", priceListUnit);
+    try {
+      const result = await apiRequest<PriceListResponse>("/api/admin/scraper/prices", {
+        method: "POST",
+        body: form,
+      });
+      setPriceListReport(result.report);
+      if (mode === "preview") setPriceListRevision(revision);
+      if (mode === "apply") {
+        setPriceListRevision("");
+        setCatalogJobId("");
+        setCatalogRevision("");
+        setEdits({});
+        setSelected(new Set());
+        setDetail(null);
+        setPriceListNotice("لیست قیمت روی خروجی بررسی اعمال شد؛ برای ورود یا انتشار، محصولات را مثل همیشه انتخاب کنید.");
+      } else {
+        setPriceListNotice("پیش‌نمایش آماده است؛ ردیف‌های نامشخص و تعارضی خودکار اعمال نمی‌شوند.");
+      }
+    } catch (error) {
+      setPriceListNotice(errorText(error));
+    } finally {
+      setPriceListBusy(null);
+    }
+  }
+
+  function changePriceListBrand(value: string) {
+    setPriceListBrand(value);
+    setPriceListRevision("");
+    setPriceListReport(null);
+    setPriceListNotice(null);
+  }
+
+  function changePriceListUnit(value: "auto" | "toman" | "rial") {
+    setPriceListUnit(value);
+    setPriceListRevision("");
+    setPriceListReport(null);
+    setPriceListNotice(null);
   }
 
   function toggleSelected(slug: string) {
@@ -761,6 +843,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                 <DownloadLink filename="catalog.fragment.json" label="کاتالوگ نهایی" description="مناسب ورود به فروشگاه" />
                 <DownloadLink filename="raw-scrape.json" label="داده خام سازنده" description="برای بررسی و رفع اشکال" />
                 <DownloadLink filename="merge-report.json" label="گزارش ادغام و خطاها" description="برای دیدن تعداد و تعارض‌ها" />
+                <DownloadLink filename="price-list-report.json" label="گزارش لیست قیمت" description="تطبیق‌ها و ردیف‌های ردشده" />
               </div>
               <div className="mt-4 rounded-card bg-plaster px-4 py-3 text-sm leading-6">
                 <p className="font-semibold text-ink">کدام فایل را استفاده کنم؟</p>
@@ -774,6 +857,20 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                ) : null}
             </CardBody>
           </Card>
+
+          <PriceListCard
+            file={priceListFile}
+            brand={priceListBrand}
+            unit={priceListUnit}
+            busy={priceListBusy}
+            report={priceListReport}
+            notice={priceListNotice}
+            onFileChange={choosePriceList}
+            onBrandChange={changePriceListBrand}
+            onUnitChange={changePriceListUnit}
+            onPreview={() => void submitPriceList("preview")}
+            onApply={() => void submitPriceList("apply")}
+          />
 
           <Card>
             <CardHeader
@@ -925,6 +1022,129 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
         </>
       ) : null}
     </div>
+  );
+}
+
+function PriceListCard({
+  file,
+  brand,
+  unit,
+  busy,
+  report,
+  notice,
+  onFileChange,
+  onBrandChange,
+  onUnitChange,
+  onPreview,
+  onApply,
+}: {
+  file: File | null;
+  brand: string;
+  unit: "auto" | "toman" | "rial";
+  busy: "preview" | "apply" | null;
+  report: PriceListReport | null;
+  notice: string | null;
+  onFileChange: (file: File | null) => void;
+  onBrandChange: (value: string) => void;
+  onUnitChange: (value: "auto" | "toman" | "rial") => void;
+  onPreview: () => void;
+  onApply: () => void;
+}) {
+  const needsReview = report?.matches.filter((item) => item.status !== "matched") ?? [];
+  const statusLabel: Record<string, string> = {
+    "raw-only": "فقط در اسکرپ خام",
+    unmatched: "بدون محصول",
+    ambiguous: "تعارض",
+    duplicate: "تکراری",
+    invalid: "ردیف نامعتبر",
+  };
+  return (
+    <Card>
+      <CardHeader
+        title="لیست قیمت جدید"
+        subtitle="فایل XLSX یا CSV را با ستون‌های مدل و قیمت مصرف‌کننده بدهید؛ فقط تطبیق‌های قطعی روی خروجی بررسی اعمال می‌شوند."
+      />
+      <CardBody>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)]">
+          <Field label="فایل قیمت" hint="حداکثر ۱۰ مگابایت" className="mb-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <input
+                id="scraper-price-list-file"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="peer sr-only"
+                onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+                disabled={Boolean(busy)}
+                aria-label="انتخاب فایل لیست قیمت"
+              />
+              <label
+                htmlFor="scraper-price-list-file"
+                className={`inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-card border border-fog bg-canvas px-3 text-sm font-medium text-ink transition-colors hover:bg-plaster peer-focus-visible:ring-2 peer-focus-visible:ring-flame-100 ${busy ? "pointer-events-none opacity-50" : ""}`}
+              >
+                انتخاب فایل
+              </label>
+              <span className="min-w-0 truncate text-sm text-ash" dir="ltr" title={file?.name}>
+                {file?.name ?? "فایلی انتخاب نشده"}
+              </span>
+            </div>
+          </Field>
+          <Field label="برند" hint="برای جلوگیری از تطبیق اشتباه" className="mb-0">
+            <Input value={brand} onChange={(event) => onBrandChange(event.target.value)} placeholder="مثلاً Datees" dir="ltr" disabled={Boolean(busy)} />
+          </Field>
+          <Field label="واحد قیمت" hint="پیش‌فرض: تشخیص از فایل" className="mb-0">
+            <Select value={unit} onChange={(event) => onUnitChange(event.target.value as "auto" | "toman" | "rial")} disabled={Boolean(busy)}>
+              <option value="auto">تشخیص خودکار</option>
+              <option value="toman">تومان</option>
+              <option value="rial">ریال</option>
+            </Select>
+          </Field>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button type="button" variant="secondary" onClick={onPreview} disabled={!file || Boolean(busy)}>
+            {busy === "preview" ? <Spinner /> : null}
+            پیش‌نمایش تطبیق
+          </Button>
+          <Button type="button" onClick={onApply} disabled={!file || !report || Boolean(busy)}>
+            {busy === "apply" ? <Spinner /> : null}
+            اعمال روی خروجی بررسی
+          </Button>
+        </div>
+        {notice ? <p className="mt-3 rounded-card bg-plaster px-3 py-2 text-sm leading-6 text-ink">{notice}</p> : null}
+        {report ? (
+          <div className="mt-4 rounded-card border border-plaster p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-ink">نتیجه تطبیق</h3>
+              <span className="text-xs text-ash">{faDigits(report.validRows)} ردیف معتبر از {faDigits(report.totalRows)}</span>
+            </div>
+            <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+              <Metric label="تطبیق قطعی" value={report.matchedCatalog} />
+              <Metric label="فقط خام" value={report.rawOnly} />
+              <Metric label="بدون محصول" value={report.unmatched} danger={report.unmatched > 0} />
+              <Metric label="تعارض" value={report.ambiguous} danger={report.ambiguous > 0} />
+              <Metric label="تکراری" value={report.duplicate} danger={report.duplicate > 0} />
+              <Metric label="نامعتبر" value={report.invalidRows} danger={report.invalidRows > 0} />
+            </dl>
+            {report.warnings.length ? <p className="mt-3 text-xs leading-5 text-amber-800">{report.warnings.join(" · ")}</p> : null}
+            {needsReview.length ? (
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs font-medium text-flame-700">دیدن ردیف‌های نیازمند بررسی</summary>
+                <ul className="mt-2 space-y-1 text-xs text-ash">
+                  {needsReview.slice(0, 12).map((item, index) => (
+                    <li key={`${item.row.sourceSheet}-${item.row.sourceRow}-${index}`} className="flex flex-wrap items-center gap-2">
+                      <Badge color={item.status === "unmatched" || item.status === "invalid" ? "amber" : "gray"}>{statusLabel[item.status] ?? item.status}</Badge>
+                      <span className="break-all" dir="auto">{item.row.sourceModel || "—"}</span>
+                      {item.candidates?.length ? <span className="min-w-0 break-words text-ash">{item.candidates.map((candidate) => candidate.name).join(" · ")}</span> : null}
+                    </li>
+                  ))}
+                  {needsReview.length > 12 ? <li>و {faDigits(needsReview.length - 12)} ردیف دیگر در گزارش کامل.</li> : null}
+                </ul>
+              </details>
+            ) : null}
+            <p className="mt-3 text-xs leading-5 text-ash">اعمال، فقط خروجی بررسی را تغییر می‌دهد؛ انتشار و ورود به فروشگاه همچنان با دکمه انتخاب محصول انجام می‌شود.</p>
+          </div>
+        ) : null}
+      </CardBody>
+    </Card>
   );
 }
 

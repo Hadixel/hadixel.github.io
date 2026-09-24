@@ -397,6 +397,12 @@ class ScraperTui {
         state.imageErrors += 1;
         state.activity.unshift(`✗ image ${shortUrl(event.url)}: ${event.message}`);
         break;
+      case "price-list-start":
+        state.activity.unshift(`Price list: ${event.fileName}…`);
+        break;
+      case "price-list-complete":
+        state.activity.unshift(`Price list: ${event.matched} matched, ${event.unmatched} unmatched, ${event.ambiguous} ambiguous.`);
+        break;
     }
     state.activity = state.activity.slice(0, 8);
     this.render();

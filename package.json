@@ -13,6 +13,7 @@
     "db:migrate": "pnpm --filter @kmodern/db db:migrate",
     "scrape": "pnpm --filter @kmodern/scraper scrape",
     "scrape:tui": "pnpm --filter @kmodern/scraper tui",
+    "price-list": "pnpm --filter @kmodern/scraper price-list",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck"
   },
