@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@kmodern/db";
 import { getAdminUser } from "@/lib/auth";
 import { scraperJobs } from "@/lib/scraper-jobs";
-import { importScrapedCatalog } from "@/lib/scraper-import";
+import { importScrapedCatalog, applyScraperCatalogEdits } from "@/lib/scraper-import";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,33 +46,54 @@ export async function POST(request: Request) {
   }
   const slugs = [...new Set(body.slugs as string[])];
   if (!slugs.length || slugs.length > 500) return errorResponse("invalid_selection", 400);
+  if (typeof body.catalogRevision !== "string" || !body.catalogRevision) return errorResponse("invalid_catalog_revision", 400);
+  if (body.publish !== undefined && typeof body.publish !== "boolean") return errorResponse("invalid_publish", 400);
+  if (
+    body.edits !== undefined &&
+    (!body.edits || typeof body.edits !== "object" || Array.isArray(body.edits))
+  ) return errorResponse("invalid_edits", 400);
   const publish = body.publish === true;
-  const catalog = await scraperJobs.getCatalog();
-  const selected = catalog.filter((item) => slugs.includes(item.slug));
+  if (scraperJobs.isRunning()) return errorResponse("scrape_in_progress", 409);
+  const snapshot = await scraperJobs.getCatalogSnapshot();
+  if (snapshot.revision !== body.catalogRevision) return errorResponse("catalog_changed", 409);
+  const catalog = snapshot.items;
+  const catalogBySlug = new Map(catalog.map((item) => [item.slug, item]));
+  const missing = slugs.filter((slug) => !catalogBySlug.has(slug));
+  if (missing.length) return errorResponse("scraped_results_changed", 409);
+  const selected = slugs.map((slug) => catalogBySlug.get(slug)!);
   if (!selected.length) return errorResponse("no_scraped_results", 409);
+  if (!scraperJobs.beginImport()) return errorResponse("import_in_progress", 409);
 
   try {
-    const result = await importScrapedCatalog(selected, publish);
-    await db().adminAuditLog.create({
-      data: {
-        adminUserId: ctx.admin.id,
-        action: "SCRAPER_IMPORTED",
-        entityType: "SCRAPER",
-        meta: {
-          slugs: selected.map((item) => item.slug),
-          products: result.products,
-          variants: result.variants,
-          images: result.images,
-          imageErrors: result.imageErrors,
-          status: result.status,
-          ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
-          userAgent: request.headers.get("user-agent") ?? undefined,
+    const importItems = applyScraperCatalogEdits(selected, (body.edits ?? {}) as Record<string, unknown>);
+    const result = await importScrapedCatalog(importItems, publish);
+    try {
+      await db().adminAuditLog.create({
+        data: {
+          adminUserId: ctx.admin.id,
+          action: "SCRAPER_IMPORTED",
+          entityType: "SCRAPER",
+          meta: {
+            slugs: importItems.map((item) => item.slug),
+            edited: Object.keys((body.edits ?? {}) as Record<string, unknown>).length,
+            products: result.products,
+            variants: result.variants,
+            images: result.images,
+            imageErrors: result.imageErrors,
+            status: result.status,
+            ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+            userAgent: request.headers.get("user-agent") ?? undefined,
+          },
         },
-      },
-    });
+      });
+    } catch (auditError) {
+      console.error("scraper import audit write failed", auditError);
+    }
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "وارد کردن محصولات ناموفق بود";
     return errorResponse(message, 409);
+  } finally {
+    scraperJobs.endImport();
   }
 }

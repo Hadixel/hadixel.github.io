@@ -78,24 +78,34 @@ export function polishCopy(text: string): string {
  *  Patterns observed on datees.ir: "فر دو طبقه TFT669", "اجاق گاز شیشه ای DG-586",
  *  "اجاق گاز مدل DS 524", "هود ریوان Rivan". Codes: Latin letters + digits,
  *  optional hyphen/space separators, 2–12 chars total. */
-const MODEL_RE = /\b([A-Z]{1,8}[ -]*\d{2,4}(?:[ -]?(?:ULTRA|PLUS|PRO|MAX|SMART|IOT|LED|TFT|RIVAL))?|[A-Z]{4,8})\b/i;
+const MODEL_RE = /\b([A-Z]{1,8}[ -]*\d{2,4}(?:[ -]?(?:ULTRA|PLUS|PRO|MAX|SMART|IOT|LED|TFT|RIVAL))?)\b/i;
+const LEGACY_MODEL_RE = /\b([A-Z]{1,8}[ -]*\d{2,4}(?:[ -]?(?:ULTRA|PLUS|PRO|MAX|SMART|IOT|LED|TFT|RIVAL))?|[A-Z]{4,8})\b/i;
 
-export function extractModel(name: string, specs: { label: string; value: string }[]): string {
+export interface ModelExtractionOptions {
+  allowWordModels?: boolean;
+}
+
+export function extractModel(
+  name: string,
+  specs: { label: string; value: string }[],
+  options: ModelExtractionOptions = {},
+): string {
+  const modelPattern = options.allowWordModels === false ? MODEL_RE : LEGACY_MODEL_RE;
   // 1. explicit spec wins — authoritative
   for (const sp of specs) {
     if (/نام\s*مدل|مدل|کد\s*محصول/i.test(sp.label)) {
-      const m = sp.value.match(MODEL_RE);
+      const m = sp.value.match(modelPattern);
       if (m) return canonModel(m[1]);
       const v = normalizeFa(sp.value);
       if (v.length <= 24 && /\d/.test(v)) return canonModel(v);
     }
   }
   // 2. scan the name
-  const m = normalizeFa(name).match(MODEL_RE);
+  const m = normalizeFa(name).match(modelPattern);
   if (m) return canonModel(m[1]);
   // 3. any spec value shaped like a code
   for (const sp of specs) {
-    const m2 = sp.value.match(MODEL_RE);
+    const m2 = sp.value.match(modelPattern);
     if (m2) return canonModel(m2[1]);
   }
   return "";
@@ -108,10 +118,33 @@ function canonModel(raw: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+export function extractModelForSource(
+  sourceId: string,
+  name: string,
+  specs: { label: string; value: string }[],
+): string {
+  return extractModel(name, specs, { allowWordModels: sourceId !== "schuffel" });
+}
+
 /** Canonical Latin slug: brand-model first, fall back to full-name transliteration. */
-export function makeSlug(brand: string, model: string, name: string): string {
+const LEGACY_WORD_MODEL_RE = /\b[A-Z]{4,8}\b/i;
+
+export function makeSlug(
+  brand: string,
+  model: string,
+  name: string,
+  specs: { label: string; value: string }[] = [],
+): string {
   if (model) return slugify(`${brand}-${model}`);
-  return slugify(name).slice(0, 96);
+  if (brand.toLocaleLowerCase("en") === "datees") {
+    // Preserve slugs emitted by older Datees runs, which treated word-only
+    // names such as Eleva and Self Clean as model codes.
+    const legacy =
+      normalizeFa(name).match(LEGACY_WORD_MODEL_RE)?.[0] ??
+      specs.map((spec) => normalizeFa(spec.value).match(LEGACY_WORD_MODEL_RE)?.[0]).find(Boolean);
+    return legacy ? slugify(`${brand}-${legacy}`) : slugify(name).slice(0, 96);
+  }
+  return slugify(`${brand}-${name}`).slice(0, 96);
 }
 
 /** Strip marketing boilerplate tails from descriptions ("… سفارش دهید", CTA lines). */

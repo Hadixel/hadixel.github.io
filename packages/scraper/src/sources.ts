@@ -6,6 +6,7 @@ import * as cheerio from "cheerio";
 import type { ScrapeRecord, RawSpec } from "./types";
 import type { FetchOptions } from "./http";
 import { fetchHtml } from "./http";
+import { schuffel } from "./schuffel";
 
 export interface SourceTaxonomy {
   category: string;
@@ -15,12 +16,16 @@ export interface SourceTaxonomy {
 export interface SourceAdapter {
   id: string; // stable key, recorded on every ScrapeRecord
   brand: string; // default Brand attribution
+  /** Optional brands emitted by a multi-brand source. */
+  brands?: string[];
   /** Discover all product URLs (category crawl or flat list). */
   listProducts(fetchOpts?: FetchOptions): Promise<string[]>;
   /** Optional taxonomy learned while discovering a product URL. */
   taxonomyFor?(url: string): SourceTaxonomy | null;
   /** Extract one product page. Throw on unrecoverable parse failure. */
   parseProduct(url: string, html: string): ScrapeRecord;
+  /** Optional API-backed record seam; avoids fetching a page already listed. */
+  productFor?(url: string): ScrapeRecord | undefined | Promise<ScrapeRecord | undefined>;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,7 +68,7 @@ const DATEES_COLOR_WORDS: [RegExp, string][] = [
   [/(\u0627\u0633\u062A\u06CC\u0644|\u0632\u0646\u06AF|\u0645\u062A\u0627\u0644)/, "steel"], // استیل/زنگ/متال
 ];
 
-function detectColors(...texts: string[]): string[] {
+export function detectColors(...texts: string[]): string[] {
   const found = new Set<string>();
   const joined = texts.join(" ");
   for (const [re, token] of DATEES_COLOR_WORDS) if (re.test(joined)) found.add(token);
@@ -217,4 +222,5 @@ export function categoryFor(sourceId: string, faCatSlug: string): DateesTaxonomy
   return DATEES_CATEGORIES[decoded] ?? null;
 }
 
-export const SOURCES: Record<string, SourceAdapter> = { datees };
+export { schuffel };
+export const SOURCES: Record<string, SourceAdapter> = { datees, schuffel };

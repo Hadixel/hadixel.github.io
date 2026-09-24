@@ -5,7 +5,7 @@
 
 import type { ScrapeRecord, RefinedProduct, MergeReport, Conflict } from "./types";
 import {
-  extractModel,
+  extractModelForSource,
   makeSlug,
   normalizeFa,
   refineDescription,
@@ -44,6 +44,14 @@ function foldInto(
   if (primary.price === null && sec.price !== null) primary.price = sec.price;
   else if (primary.price !== null && sec.price !== null && primary.price !== sec.price) {
     report("price");
+  }
+  if (sec.priceByColor) {
+    primary.priceByColor ??= {};
+    for (const [color, price] of Object.entries(sec.priceByColor)) {
+      const existing = primary.priceByColor[color];
+      if (existing === undefined) primary.priceByColor[color] = price;
+      else if (existing !== price) report("priceByColor");
+    }
   }
 
   const mergeUnique = (
@@ -113,7 +121,7 @@ export function refineAndMerge(records: ScrapeRecord[]): {
   const byIdentity = new Map<string, ScrapeRecord[]>();
 
   for (const rec of records) {
-    const model = extractModel(rec.name, rec.specs);
+    const model = extractModelForSource(rec.sourceId, rec.name, rec.specs);
     const identityKey = model || normalizeFa(rec.name).replace(/\s+/g, " ").toLowerCase() || rec.url;
     const identity = `${rec.brand.trim().toLowerCase()}|${identityKey}`;
     const bucket = byIdentity.get(identity);
@@ -129,7 +137,7 @@ export function refineAndMerge(records: ScrapeRecord[]): {
     // sort newest-first so scrapedAt ties break toward fresher data
     group.sort((a, b) => b.scrapedAt - a.scrapedAt);
     const primary = group[0];
-    const model = extractModel(primary.name, primary.specs);
+    const model = extractModelForSource(primary.sourceId, primary.name, primary.specs);
     const slug = makeSlug(primary.brand, model, primary.name);
 
     if (group.length > 1) {

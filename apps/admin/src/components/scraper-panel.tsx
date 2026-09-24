@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { formatToman } from "@kmodern/schema";
 import { formatJalaliDateTime } from "@/lib/date";
-import type { ScrapeFilters, ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
+import type { ScrapeFilters, ScraperCatalogEdit, ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
 import {
   Badge,
   Button,
@@ -16,6 +16,7 @@ import {
   Select,
   Spinner,
   Table,
+  Textarea,
   TBody,
   TD,
   TH,
@@ -68,16 +69,20 @@ const SUB_LABELS: Record<string, string> = {
   "double-bowl": "دولگن",
   "built-in": "توکار",
   chimney: "شومینه‌ای",
+  concealed: "مخفی",
+  wall: "دیواری",
   steel: "استیل",
+  granite: "گرانیتی",
   glass: "شیشه‌ای",
+  freestanding: "رومیزی",
   "dual-basket": "دوسبد",
 };
 
 const SCRAPE_SUB_LABELS: Record<string, string[]> = {
-  sink: ["steel"],
-  hood: ["chimney", "glass"],
+  sink: ["steel", "granite"],
+  hood: ["chimney", "concealed", "wall", "glass"],
   oven: ["built-in", "steel", "glass"],
-  stove: ["built-in"],
+  stove: ["built-in", "freestanding"],
   "air-fryer": ["dual-basket"],
 };
 
@@ -159,8 +164,17 @@ async function apiRequest<T>(path = "/api/admin/scraper", init?: RequestInit): P
     ...init,
     headers,
   });
-  const data = (await response.json()) as T & { error?: string };
-  if (!response.ok) throw new Error(data.error ?? "پاسخ نامعتبر از سرور");
+  const raw = await response.text();
+  let data: (T & { error?: string }) | null = null;
+  if (raw.trim()) {
+    try {
+      data = JSON.parse(raw) as T & { error?: string };
+    } catch {
+      throw new Error(response.ok ? `پاسخ JSON از ${path} معتبر نیست.` : `خطای ${response.status} از ${path}.`);
+    }
+  }
+  if (!response.ok) throw new Error(data?.error ?? `خطای ${response.status} از ${path}.`);
+  if (!data) throw new Error(`پاسخ خالی از ${path} دریافت شد.`);
   return data;
 }
 
@@ -180,6 +194,8 @@ function formatTime(value: string | null): string {
 export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [job, setJob] = useState<ScraperJobSnapshot | null>(null);
   const [catalog, setCatalog] = useState<ScraperCatalogItem[]>([]);
+  const [edits, setEdits] = useState<Record<string, ScraperCatalogEdit>>({});
+  const [catalogRevision, setCatalogRevision] = useState("");
   const [catalogJobId, setCatalogJobId] = useState("");
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -197,6 +213,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [limit, setLimit] = useState("");
   const [cache, setCache] = useState(true);
   const [downloadImages, setDownloadImages] = useState(true);
+  const [priceLookup, setPriceLookup] = useState(true);
   const [scrapeSearch, setScrapeSearch] = useState("");
   const [scrapeManufacturer, setScrapeManufacturer] = useState("");
   const [scrapeWebsite, setScrapeWebsite] = useState("");
@@ -215,6 +232,10 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
   const active = starting || job?.status === "running" || job?.status === "cancelling";
+  const reviewCatalog = useMemo(
+    () => catalog.map((item) => ({ ...item, ...(edits[item.slug] ?? {}) })),
+    [catalog, edits],
+  );
   const progress = useMemo(() => {
     const imageStage = job?.phase === "downloading" && job.imagesTotal > 0;
     const current = job?.current ?? 0;
@@ -228,32 +249,32 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     : job?.total ?? 0;
 
   const subcategoryOptions = useMemo(() => {
-    const values = catalog
+    const values = reviewCatalog
       .filter((item) => rootFilter === "all" || item.category === rootFilter)
       .map((item) => item.subCategory);
     return [...new Set(values)].sort((a, b) => (SUB_LABELS[a] ?? a).localeCompare(SUB_LABELS[b] ?? b, "fa"));
-  }, [catalog, rootFilter]);
+  }, [reviewCatalog, rootFilter]);
 
   const scrapeSubcategoryOptions = useMemo(() => {
     return SCRAPE_SUB_LABELS[scrapeCategory] ?? Object.keys(SUB_LABELS);
   }, [scrapeCategory]);
 
   const manufacturerOptions = useMemo(() => {
-    return [...new Set(catalog.map((item) => item.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fa"));
-  }, [catalog]);
+    return [...new Set(reviewCatalog.map((item) => item.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fa"));
+  }, [reviewCatalog]);
 
   const websiteOptions = useMemo(() => {
     const labels = new Map<string, string>();
-    for (const item of catalog) {
+    for (const item of reviewCatalog) {
       const key = websiteKey(item);
       if (!labels.has(key)) labels.set(key, websiteLabel(item));
     }
     return [...labels.entries()].sort((a, b) => a[1].localeCompare(b[1], "fa"));
-  }, [catalog]);
+  }, [reviewCatalog]);
 
   const filteredCatalog = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("fa");
-    const filtered = catalog.filter((item) => {
+    const filtered = reviewCatalog.filter((item) => {
       const searchable = [item.name, item.brand, item.sourceId, item.sourceUrl, item._id, item.slug, item.description]
         .join(" ")
         .toLocaleLowerCase("fa");
@@ -277,7 +298,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
       if (sortOrder === "price-low") return a.price - b.price;
       return b.date - a.date;
     });
-  }, [catalog, colorFilter, contentFilter, manufacturerFilter, priceFilter, query, rootFilter, sortOrder, subFilter, websiteFilter]);
+  }, [reviewCatalog, colorFilter, contentFilter, manufacturerFilter, priceFilter, query, rootFilter, sortOrder, subFilter, websiteFilter]);
 
   const filtersActive = Boolean(
     query || manufacturerFilter !== "all" || websiteFilter !== "all" || rootFilter !== "all" ||
@@ -310,10 +331,12 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     if (active || catalogJobId) return;
     let cancelled = false;
     setCatalogLoading(true);
-    void apiRequest<{ items: ScraperCatalogItem[] }>("/api/admin/scraper?view=catalog")
+    void apiRequest<{ items: ScraperCatalogItem[]; revision: string | null }>("/api/admin/scraper?view=catalog")
       .then((data) => {
         if (cancelled) return;
         setCatalog(data.items);
+        setCatalogRevision(data.revision ?? "");
+        setEdits({});
         setCatalogJobId(job?.id ?? "persisted");
         setSelected(new Set());
         setDetail(null);
@@ -335,6 +358,8 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     setNotice(null);
     setImportMessage(null);
     setCatalog([]);
+    setEdits({});
+    setCatalogRevision("");
     setCatalogJobId("");
     setQuery("");
     setManufacturerFilter("all");
@@ -365,6 +390,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
         limit: limit.trim() ? Number(limit) : null,
         cache,
         downloadImages,
+        priceLookup,
         filters,
       });
       setJob(await apiRequest<ScraperJobSnapshot>( "/api/admin/scraper", { method: "POST", body }));
@@ -444,22 +470,65 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     setSortOrder("newest");
   }
 
+  function updateItemEdit(slug: string, patch: ScraperCatalogEdit) {
+    setEdits((current) => ({ ...current, [slug]: { ...(current[slug] ?? {}), ...patch } }));
+    setDetail((current) => current?.slug === slug ? { ...current, ...patch } : current);
+  }
+
+  function resetItemEdit(slug: string) {
+    setEdits((current) => {
+      const next = { ...current };
+      delete next[slug];
+      return next;
+    });
+    const original = catalog.find((item) => item.slug === slug);
+    setDetail((current) => current?.slug === slug ? original ?? null : current);
+  }
+
   async function importSelected() {
     if (!selected.size) return;
+    const selectedItems = reviewCatalog.filter((item) => selected.has(item.slug));
+    if (publish && selectedItems.some((item) => item.price <= 0)) {
+      setNotice({ kind: "error", text: "برای انتشار، برای همه محصولات انتخاب‌شده قیمت مثبت وارد کنید." });
+      return;
+    }
     const mode = publish ? "منتشر کردن" : "ذخیره به‌عنوان پیش‌نویس";
     if (!window.confirm(`${faDigits(selected.size)} محصول انتخاب شده است. آن‌ها ${mode} شوند؟`)) return;
     setImporting(true);
     setNotice(null);
     setImportMessage(null);
+    const selectedSlugs = [...selected];
+    const selectedEdits = Object.fromEntries(
+      selectedSlugs.filter((slug) => edits[slug]).map((slug) => [slug, edits[slug]]),
+    );
     try {
       const result = await apiRequest<ImportResult>("/api/admin/scraper/import", {
         method: "POST",
-        body: JSON.stringify({ slugs: [...selected], publish }),
+        body: JSON.stringify({ slugs: selectedSlugs, edits: selectedEdits, catalogRevision, publish }),
       });
       const imageNote = result.imageErrors
         ? ` ${faDigits(result.imageErrors)} تصویر با خطا مواجه شد و آدرس جایگزین حفظ شد.`
         : "";
       setImportMessage(`${faDigits(result.products)} محصول و ${faDigits(result.variants)} تنوع با موفقیت وارد شد. ${faDigits(result.images)} تصویر آماده شد.${imageNote}`);
+      setCatalog((current) => current.map((item) => {
+        const edit = edits[item.slug];
+        if (!selectedSlugs.includes(item.slug) || !edit) return item;
+        const updated = { ...item, ...edit };
+        if (edit.price !== undefined) {
+          delete updated.priceByColor;
+          delete updated.priceCurrency;
+          delete updated.priceFetchedAt;
+          delete updated.priceInStock;
+          delete updated.priceSourceId;
+          delete updated.priceSourceUrl;
+        }
+        return updated;
+      }));
+      setEdits((current) => {
+        const next = { ...current };
+        for (const slug of selectedSlugs) delete next[slug];
+        return next;
+      });
       setSelected(new Set());
     } catch (error) {
       setNotice({ kind: "error", text: errorText(error) });
@@ -589,6 +658,15 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                 />
                 <p className="mt-1 pr-6 text-xs leading-5 text-ash">تصاویر در پوشه out/images ذخیره می‌شوند و هنگام ورود برای فروشگاه آماده می‌مانند.</p>
               </div>
+              <div className="border-t border-plaster pt-3">
+                <Checkbox
+                  label="دریافت قیمت از داتیس شاپ"
+                  checked={priceLookup}
+                  onChange={(event) => setPriceLookup(event.target.checked)}
+                  disabled={active}
+                />
+                <p className="mt-1 pr-6 text-xs leading-5 text-ash">قیمت‌های فعلی از API رسمی داتیس شاپ با مدل محصول تطبیق داده می‌شوند.</p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={() => void start()} disabled={active || busy}>
@@ -643,12 +721,17 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                   <Metric label="ادغام‌شده" value={job?.merged ?? 0} />
                   <Metric label="خطای صفحه" value={job?.errors ?? 0} danger={(job?.errors ?? 0) > 0} />
                   <Metric label="فیلترشده" value={job?.filteredOut ?? 0} />
-                  <Metric label="تصویر دریافتی" value={job?.imagesDownloaded ?? 0} />
+                  <Metric label="قیمت داتیس‌شاپ" value={job?.priceMatched ?? 0} />
+                   <Metric label="قیمت پیدا نشد" value={job?.priceUnmatched ?? 0} danger={(job?.priceUnmatched ?? 0) > 0} />
+                   <Metric label="تصویر دریافتی" value={job?.imagesDownloaded ?? 0} />
                   <Metric label="خطای تصویر" value={job?.imageErrors ?? 0} danger={(job?.imageErrors ?? 0) > 0} />
                 </dl>
 
                 {job?.error ? (
                   <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-800">{job.error}</p>
+                ) : null}
+                {job?.priceError ? (
+                  <p className="mt-2 rounded-card bg-amber-50 px-3 py-2 text-xs text-amber-800">دریافت قیمت داتیس شاپ کامل نشد: {job.priceError}</p>
                 ) : null}
 
                 <div>
@@ -669,7 +752,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
         </Card>
       </div>
 
-      {job?.status === "completed" ? (
+      {job?.status === "completed" || catalog.length > 0 ? (
         <>
           <Card>
             <CardHeader title="خروجی و راهنمای فایل‌ها" subtitle="هر فایل کار متفاوتی انجام می‌دهد؛ فایل مناسب هر مرحله را از راهنمای زیر انتخاب کنید." />
@@ -683,7 +766,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                 <p className="font-semibold text-ink">کدام فایل را استفاده کنم؟</p>
                 <p className="mt-1 text-ash"><strong className="text-ink">کاتالوگ نهایی</strong> همان فایلی است که برای بررسی محصولات و ورود انتخاب‌شده به فروشگاه استفاده می‌شود. <strong className="text-ink">داده خام</strong> فقط برای عیب‌یابی scraper است و <strong className="text-ink">گزارش ادغام</strong> می‌گوید چه چیزی حذف، ادغام یا با خطا مواجه شده است. اگر دریافت تصاویر فعال بوده باشد، فایل‌های محلی در <span dir="ltr">out/images</span> نگهداری می‌شوند.</p>
               </div>
-              {job.outputDir ? (
+              {job?.outputDir ? (
                  <div className="mt-4 space-y-1 text-xs leading-5 text-ash">
                    <p className="break-all" dir="ltr">{job.outputDir}</p>
                    {job.downloadImages ? <p className="break-all" dir="ltr">{job.outputDir}/images/</p> : null}
@@ -813,7 +896,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                                 />
                               </TD>
                               <TD>
-                                <div className="font-medium text-ink">{item.name}</div>
+                                <div className="flex flex-wrap items-center gap-2"><span className="font-medium text-ink">{item.name}</span>{edits[item.slug] ? <Badge color="blue">ویرایش‌شده</Badge> : null}</div>
                                 <div className="mt-1 text-xs text-ash" dir="ltr">{item.slug}</div>
                                </TD>
                                <TD><ProductThumbnail item={item} /></TD>
@@ -822,7 +905,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                                  <div className="mt-1" dir="ltr">{websiteLabel(item)}</div>
                               </TD>
                               <TD className="whitespace-nowrap text-xs text-ash">{ROOT_LABELS[item.category] ?? item.category} / {SUB_LABELS[item.subCategory] ?? item.subCategory}</TD>
-                              <TD className="whitespace-nowrap text-xs">{item.price > 0 ? formatToman(item.price) : <span className="text-amber-700">نیازمند قیمت</span>}</TD>
+                              <TD className="whitespace-nowrap text-xs">{item.priceInStock === false ? <span className="text-red-700">ناموجود</span> : item.price > 0 ? formatToman(item.price) : <span className="text-amber-700">نیازمند قیمت</span>}</TD>
                               <TD className="tabular-nums text-xs text-ash">{faDigits(item.specs.length)}</TD>
                             </TR>
                           ))}
@@ -832,7 +915,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                   ) : (
                     <p className="rounded-card bg-plaster px-3 py-8 text-center text-sm text-ash">محصولی با این فیلترها پیدا نشد.</p>
                   )}
-                  {detail ? <ProductDetail item={detail} onClose={() => setDetail(null)} /> : <p className="mt-4 text-sm text-ash">برای دیدن توضیحات، تصاویر و مشخصات کامل، روی یک ردیف کلیک کنید.</p>}
+                  {detail ? <ProductDetail item={detail} onClose={() => setDetail(null)} onSave={(patch) => updateItemEdit(detail.slug, patch)} onReset={() => resetItemEdit(detail.slug)} /> : <p className="mt-4 text-sm text-ash">برای دیدن توضیحات، تصاویر و مشخصات کامل، روی یک ردیف کلیک کنید.</p>}
                 </>
               ) : (
                 <p className="text-sm text-ash">خروجی محصولی برای نمایش پیدا نشد.</p>
@@ -900,38 +983,140 @@ function ProductThumbnail({ item }: { item: ScraperCatalogItem }) {
   );
 }
 
-function ProductDetail({ item, onClose }: { item: ScraperCatalogItem; onClose: () => void }) {
+function ProductDetail({
+  item,
+  onClose,
+  onSave,
+  onReset,
+}: {
+  item: ScraperCatalogItem;
+  onClose: () => void;
+  onSave: (patch: ScraperCatalogEdit) => void;
+  onReset: () => void;
+}) {
+  const [name, setName] = useState(item.name);
+  const [price, setPrice] = useState(item.price > 0 ? String(item.price) : "");
+  const [description, setDescription] = useState(item.description);
+  const [features, setFeatures] = useState(item.features.join("\n"));
+  const [specs, setSpecs] = useState(item.specs.map((spec) => `${spec.label}: ${spec.value}`).join("\n"));
+  const [category, setCategory] = useState(item.category);
+  const [subCategory, setSubCategory] = useState(item.subCategory);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(item.name);
+    setPrice(item.price > 0 ? String(item.price) : "");
+    setDescription(item.description);
+    setFeatures(item.features.join("\n"));
+    setSpecs(item.specs.map((spec) => `${spec.label}: ${spec.value}`).join("\n"));
+    setCategory(item.category);
+    setSubCategory(item.subCategory);
+    setError(null);
+  }, [item]);
+
   const previewImages = (item.image.length ? item.image : item.sourceImages ?? [])
     .map((url) => safePreviewUrl(url))
     .filter((url): url is string => Boolean(url));
   const sourcePage = safeExternalUrl(item.sourcePageUrl);
   const sourceSite = safeExternalUrl(item.sourceUrl);
+  const priceSource = safeExternalUrl(item.priceSourceUrl);
+  const subOptions = SCRAPE_SUB_LABELS[category] ?? Object.keys(SUB_LABELS);
+  const dirty =
+    name !== item.name ||
+    price !== (item.price > 0 ? String(item.price) : "") ||
+    description !== item.description ||
+    features !== item.features.join("\n") ||
+    specs !== item.specs.map((spec) => `${spec.label}: ${spec.value}`).join("\n") ||
+    category !== item.category ||
+    subCategory !== item.subCategory;
+
+  function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!name.trim()) {
+      setError("نام محصول نمی‌تواند خالی باشد.");
+      return;
+    }
+    try {
+      const parsedSpecs = specs.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+        const match = line.match(/^(.+?)\s*[:：]\s*(.+)$/);
+        if (!match) throw new Error(`مشخصات باید به شکل «برچسب: مقدار» نوشته شوند: ${line}`);
+        return { label: match[1].trim(), value: match[2].trim() };
+      });
+      const numericPrice = price.trim() ? Number(price) : 0;
+      if (!Number.isFinite(numericPrice) || numericPrice < 0) throw new Error("قیمت باید عددی مثبت یا صفر باشد.");
+      onSave({
+        name: name.trim(),
+        price: numericPrice,
+        description,
+        features: features.split(/\r?\n/).map((feature) => feature.trim()).filter(Boolean),
+        specs: parsedSpecs,
+        category,
+        subCategory,
+      });
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "ذخیره ویرایش ناموفق بود.");
+    }
+  }
 
   return (
     <div className="mt-5 rounded-card border border-plaster bg-plaster/40 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-ink">{item.name}</h2>
+          <h2 className="text-base font-semibold text-ink">ویرایش و بررسی محصول</h2>
           <p className="mt-1 text-xs text-ash" dir="ltr">{item.slug} · {item._id}</p>
           <p className="mt-2 text-xs text-ash">
             سازنده: <span className="text-ink">{item.brand || "نامشخص"}</span>
             {sourceSite ? <> · <a href={sourceSite} target="_blank" rel="noreferrer" className="text-flame-700 underline underline-offset-2" dir="ltr">{websiteLabel(item)}</a></> : null}
             {sourcePage ? <> · <a href={sourcePage} target="_blank" rel="noreferrer" className="text-flame-700 underline underline-offset-2">صفحه محصول</a></> : null}
+            {priceSource ? <> · <a href={priceSource} target="_blank" rel="noreferrer" className="text-flame-700 underline underline-offset-2">منبع قیمت</a></> : null}
           </p>
+          <p className="mt-1 text-[11px] text-ash">برند، مدل، رنگ و تصاویر برای حفظ هویت محصول و SKU از ویرایش مستقیم خارج هستند.</p>
+          {item.priceInStock === false ? <p className="mt-1 text-[11px] text-red-700">این محصول در منبع قیمت‌دهی ناموجود است.</p> : null}
+          {item.priceByColor && Object.keys(item.priceByColor).length ? (
+            <p className="mt-1 text-[11px] text-ash">قیمت‌های رنگی: {Object.entries(item.priceByColor).map(([color, value]) => `${COLOR_LABELS[color] ?? color}: ${formatToman(value)}`).join(" · ")}</p>
+          ) : null}
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>بستن</Button>
       </div>
-      <p className="mt-4 max-w-3xl text-sm leading-7 text-ink">{item.description || "توضیحی برای این محصول ثبت نشده است."}</p>
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-ink">ویژگی‌ها</h3>
-          {item.features.length ? <ul className="space-y-1 text-sm leading-6 text-ash">{item.features.map((feature) => <li key={feature}>• {feature}</li>)}</ul> : <p className="text-sm text-ash">—</p>}
+
+      <form className="mt-5 space-y-4" onSubmit={save}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Field label="نام محصول" className="mb-0">
+            <Input value={name} onChange={(event) => setName(event.target.value)} />
+          </Field>
+          <Field label="قیمت (تومان)" hint="برای انتشار اجباری است؛ خالی یعنی نیازمند قیمت." className="mb-0">
+            <Input type="number" min={0} step={1} value={price} onChange={(event) => setPrice(event.target.value)} placeholder="نیازمند قیمت" />
+          </Field>
+          <Field label="دسته اصلی" className="mb-0">
+            <Select value={category} onChange={(event) => { setCategory(event.target.value); setSubCategory(SCRAPE_SUB_LABELS[event.target.value]?.[0] ?? "all"); }}>
+              {Object.entries(ROOT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </Select>
+          </Field>
+          <Field label="زیر‌دسته" className="mb-0">
+            <Select value={subCategory} onChange={(event) => setSubCategory(event.target.value)}>
+              {subOptions.map((value) => <option key={value} value={value}>{SUB_LABELS[value] ?? value}</option>)}
+            </Select>
+          </Field>
         </div>
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-ink">مشخصات فنی</h3>
-          {item.specs.length ? <dl className="divide-y divide-plaster text-sm">{item.specs.map((spec) => <div key={`${spec.label}-${spec.value}`} className="flex justify-between gap-4 py-2"><dt className="text-ash">{spec.label}</dt><dd className="text-left text-ink">{spec.value}</dd></div>)}</dl> : <p className="text-sm text-ash">—</p>}
+        <Field label="توضیحات" className="mb-0">
+          <Textarea value={description} onChange={(event) => setDescription(event.target.value)} dir="auto" />
+        </Field>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Field label="ویژگی‌ها" hint="هر ویژگی را در یک خط بنویسید." className="mb-0">
+            <Textarea value={features} onChange={(event) => setFeatures(event.target.value)} dir="auto" />
+          </Field>
+          <Field label="مشخصات فنی" hint="هر سطر به شکل «برچسب: مقدار»." className="mb-0">
+            <Textarea value={specs} onChange={(event) => setSpecs(event.target.value)} dir="auto" />
+          </Field>
         </div>
-      </div>
+        {error ? <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" disabled={!dirty}>ذخیره ویرایش</Button>
+          <Button type="button" variant="secondary" onClick={onReset} disabled={!dirty}>بازگردانی</Button>
+        </div>
+      </form>
+
       {previewImages.length ? (
         <div className="mt-5">
           <h3 className="mb-2 text-sm font-semibold text-ink">تصاویر ({faDigits(previewImages.length)} از {faDigits(item.image.length)})</h3>

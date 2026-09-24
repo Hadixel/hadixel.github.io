@@ -20,7 +20,7 @@ export default async function ScraperPage() {
 
   const sources = Object.values(SOURCES).map((source) => ({
     id: source.id,
-    label: source.brand === "Datees" ? "داتیس" : source.brand,
+    label: source.brand === "Datees" ? "داتیس" : source.brand === "Schuffle" ? "شافل" : source.brand,
   }));
 
   return <ScraperPanel sources={sources} />;

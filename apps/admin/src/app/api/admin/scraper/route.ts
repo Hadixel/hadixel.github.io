@@ -84,8 +84,8 @@ export async function GET(request: Request) {
   }
 
   if (params.get("view") === "catalog") {
-    const items = await scraperJobs.getCatalog({ publicView: true });
-    return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
+    const snapshot = await scraperJobs.getCatalogSnapshot({ publicView: true });
+    return NextResponse.json(snapshot, { headers: { "Cache-Control": "no-store" } });
   }
 
   return NextResponse.json(scraperJobs.get(), {
@@ -145,8 +145,10 @@ export async function POST(request: Request) {
   const source = typeof body.source === "string" ? body.source : "all";
   const cache = body.cache === undefined ? true : body.cache;
   const downloadImages = body.downloadImages === undefined ? true : body.downloadImages;
+  const priceLookup = body.priceLookup === undefined ? true : body.priceLookup;
   if (typeof cache !== "boolean") return errorResponse("invalid_cache", 400);
   if (typeof downloadImages !== "boolean") return errorResponse("invalid_download_images", 400);
+  if (typeof priceLookup !== "boolean") return errorResponse("invalid_price_lookup", 400);
   const filters = parseFilters(body.filters);
   if (!filters) return errorResponse("invalid_filters", 400);
 
@@ -160,10 +162,11 @@ export async function POST(request: Request) {
 
   let snapshot;
   try {
-    snapshot = scraperJobs.start({ source, limit, cache, downloadImages, filters });
+    snapshot = scraperJobs.start({ source, limit, cache, downloadImages, priceLookup, filters });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message === "SCRAPE_IN_PROGRESS") return errorResponse("scrape_in_progress", 409);
+    if (message === "IMPORT_IN_PROGRESS") return errorResponse("import_in_progress", 409);
     if (message === "UNKNOWN_SOURCE" || message === "INVALID_LIMIT") {
       return errorResponse(message.toLowerCase(), 400);
     }
@@ -180,7 +183,7 @@ export async function POST(request: Request) {
         entityId: snapshot.id,
         ip: meta.ip,
         userAgent: meta.userAgent,
-        meta: { source, limit: limit ?? null, cache, downloadImages, filters: filters as never },
+        meta: { source, limit: limit ?? null, cache, downloadImages, priceLookup, filters: filters as never },
       },
     });
   } catch (error) {

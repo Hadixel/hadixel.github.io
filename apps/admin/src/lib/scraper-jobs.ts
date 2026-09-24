@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import {
   runPipeline,
   SOURCES,
-  extractModel,
+  extractModelForSource,
   makeSlug,
   type PipelineEvent,
   type PipelineResult,
@@ -23,6 +23,11 @@ export type { ScrapeFilters, ScraperCatalogItem, ScraperJobOptions, ScraperJobPh
 interface InternalJob {
   controller: AbortController;
   snapshot: ScraperJobSnapshot;
+}
+
+interface CatalogSnapshot {
+  items: ScraperCatalogItem[];
+  revision: string | null;
 }
 
 const OUTPUT_FILES = new Set(["raw-scrape.json", "catalog.fragment.json", "merge-report.json"]);
@@ -67,6 +72,10 @@ function emptySnapshot(): ScraperJobSnapshot {
     limit: null,
     cache: true,
     downloadImages: true,
+    priceLookup: true,
+    priceMatched: 0,
+    priceUnmatched: 0,
+    priceError: null,
     filters: {},
     startedAt: null,
     finishedAt: null,
@@ -102,6 +111,7 @@ function errorMessage(error: unknown): string {
 
 class ScraperJobManager {
   private current?: InternalJob;
+  private importInProgress = false;
 
   get(): ScraperJobSnapshot {
     if (!this.current) return emptySnapshot();
@@ -109,11 +119,30 @@ class ScraperJobManager {
       ...emptySnapshot(),
       ...this.current.snapshot,
       filters: this.current.snapshot.filters ?? {},
+      priceLookup: this.current.snapshot.priceLookup ?? true,
+      priceMatched: this.current.snapshot.priceMatched ?? 0,
+      priceUnmatched: this.current.snapshot.priceUnmatched ?? 0,
+      priceError: this.current.snapshot.priceError ?? null,
       activity: [...(this.current.snapshot.activity ?? [])],
     };
   }
 
+  isRunning(): boolean {
+    return Boolean(this.current && isActive(this.current.snapshot.status));
+  }
+
+  beginImport(): boolean {
+    if (this.importInProgress || this.isRunning()) return false;
+    this.importInProgress = true;
+    return true;
+  }
+
+  endImport(): void {
+    this.importInProgress = false;
+  }
+
   start(options: ScraperJobOptions): ScraperJobSnapshot {
+    if (this.importInProgress) throw new Error("IMPORT_IN_PROGRESS");
     if (this.current && isActive(this.current.snapshot.status)) {
       throw new Error("SCRAPE_IN_PROGRESS");
     }
@@ -128,6 +157,7 @@ class ScraperJobManager {
     }
 
     const downloadImages = options.downloadImages ?? true;
+    const priceLookup = options.priceLookup ?? true;
     const filters: ScrapeFilters = options.filters ?? {};
     const job: InternalJob = {
       controller: new AbortController(),
@@ -140,6 +170,7 @@ class ScraperJobManager {
         limit: options.limit ?? null,
         cache: options.cache,
         downloadImages,
+        priceLookup,
         filters,
         startedAt: new Date().toISOString(),
         activity: [
@@ -158,6 +189,7 @@ class ScraperJobManager {
       outDir: join(scraperPackageDir(), "out"),
       downloadImages,
       imageDir: join(scraperPackageDir(), "out", "images"),
+      priceLookup,
       filters,
       fetchOpts: {
         cacheDir: options.cache ? join(scraperPackageDir(), ".scrape-cache") : undefined,
@@ -205,11 +237,23 @@ class ScraperJobManager {
     }
   }
 
-  async getCatalog(options: { publicView?: boolean } = {}): Promise<ScraperCatalogItem[]> {
+  async getCatalogSnapshot(options: { publicView?: boolean } = {}): Promise<CatalogSnapshot> {
     const file = await this.readOutput("catalog.fragment.json").catch(() => null);
-    if (!file) return [];
+    if (!file) return { items: [], revision: null };
+    const rawFile = await this.readOutput("raw-scrape.json").catch(() => null);
+    return {
+      items: this.parseCatalogFile(file.body, rawFile?.body ?? null, options),
+      revision: createHash("sha256").update(file.body).digest("hex"),
+    };
+  }
+
+  async getCatalog(options: { publicView?: boolean } = {}): Promise<ScraperCatalogItem[]> {
+    return (await this.getCatalogSnapshot(options)).items;
+  }
+
+  private parseCatalogFile(file: Buffer, rawFile: Buffer | null, options: { publicView?: boolean }): ScraperCatalogItem[] {
     try {
-      const parsed: unknown = JSON.parse(file.body.toString("utf8"));
+      const parsed: unknown = JSON.parse(file.toString("utf8"));
       if (!Array.isArray(parsed)) return [];
       const items = parsed.filter((item): item is ScraperCatalogItem => {
         if (!item || typeof item !== "object") return false;
@@ -224,10 +268,9 @@ class ScraperJobManager {
       });
 
       const provenance = new Map<string, { sourceId: string; sourceUrl?: string; sourcePageUrl?: string }>();
-      const rawFile = await this.readOutput("raw-scrape.json").catch(() => null);
       if (rawFile) {
         try {
-          const raw: unknown = JSON.parse(rawFile.body.toString("utf8"));
+          const raw: unknown = JSON.parse(rawFile.toString("utf8"));
           if (Array.isArray(raw)) {
             for (const record of raw) {
               if (!record || typeof record !== "object") continue;
@@ -238,7 +281,13 @@ class ScraperJobManager {
                     Boolean(spec && typeof spec === "object" && typeof (spec as { label?: unknown }).label === "string" && typeof (spec as { value?: unknown }).value === "string"),
                 )
                 : [];
-              const slug = makeSlug(value.brand, extractModel(value.name, specs), value.name);
+              const sourceId = typeof value.sourceId === "string" ? value.sourceId : value.brand.toLowerCase();
+               const slug = makeSlug(
+                 value.brand,
+                 extractModelForSource(sourceId, value.name, specs),
+                 value.name,
+                 specs,
+               );
               let sourceUrl: string | undefined;
               if (typeof value.url === "string" && isRemoteImage(value.url)) {
                 sourceUrl = new URL(value.url).origin;
@@ -364,13 +413,16 @@ class ScraperJobManager {
     job.snapshot.conflicts = result.report.conflicts.length;
     job.snapshot.errors = result.errors.length;
     job.snapshot.filteredOut = result.filteredOut;
+    job.snapshot.priceMatched = result.priceLookup?.matched ?? 0;
+    job.snapshot.priceUnmatched = result.priceLookup?.unmatched ?? 0;
+    job.snapshot.priceError = result.priceLookup?.error ?? null;
     job.snapshot.imageErrors = result.imageErrors.length;
     job.snapshot.imagesDownloaded = result.imagesDownloaded;
     job.snapshot.imagesTotal = result.imagesTotal;
     job.snapshot.outputDir = result.outDir;
     this.addActivity(
       job.snapshot,
-      `Completed with ${result.errors.length} page error(s), ${result.filteredOut} filtered record(s), and ${result.imageErrors.length} image error(s).`,
+      `Completed with ${result.errors.length} page error(s), ${result.filteredOut} filtered record(s), ${result.priceLookup?.matched ?? 0} Datees Shop price match(es), and ${result.imageErrors.length} image error(s).`,
     );
   }
 
@@ -395,6 +447,10 @@ const globalForScraper = globalThis as typeof globalThis & {
 
 const existingJobs = globalForScraper.__kmodernScraperJobs;
 export const scraperJobs =
-  existingJobs && typeof existingJobs.getCatalog === "function"
+  existingJobs &&
+  typeof existingJobs.getCatalog === "function" &&
+  typeof existingJobs.getCatalogSnapshot === "function" &&
+  typeof existingJobs.beginImport === "function" &&
+  typeof existingJobs.endImport === "function"
     ? existingJobs
     : (globalForScraper.__kmodernScraperJobs = new ScraperJobManager());

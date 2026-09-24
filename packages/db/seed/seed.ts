@@ -59,8 +59,12 @@ const FA_SUBS: Record<string, string> = {
   "double-bowl": "دولگن",
   "built-in": "توکار",
   chimney: "شومینه‌ای",
+  concealed: "مخفی",
+  wall: "دیواری",
   steel: "استیل",
+  granite: "گرانیتی",
   glass: "شیشه‌ای",
+  freestanding: "رومیزی",
   "dual-basket": "دوسبد",
 };
 

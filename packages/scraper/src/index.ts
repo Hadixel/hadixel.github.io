@@ -7,6 +7,7 @@ export {
 export {
   SOURCES,
   datees,
+  schuffel,
   categoryFor,
   type SourceAdapter,
   type SourceTaxonomy,
@@ -16,6 +17,7 @@ export {
   normalizeFa,
   polishCopy,
   extractModel,
+  extractModelForSource,
   makeSlug,
   refineDescription,
   refineFeatures,
@@ -23,6 +25,14 @@ export {
 } from "./refine";
 export { fetchHtml, fetchBuffer, type FetchOptions } from "./http";
 export { downloadProductImages, type ImageDownloadOptions, type ImageDownloadResult } from "./images";
+export {
+  DATEES_SHOP_CATALOG_URL,
+  DATEES_SHOP_ORIGIN,
+  DATEES_SHOP_PRODUCTS_URL,
+  fetchDateesShopPriceIndex,
+  matchDateesShopPrice,
+  type PriceQuote,
+} from "./price-sources";
 export type {
   ScrapeRecord,
   RefinedProduct,
@@ -33,4 +43,5 @@ export type {
   ScrapePriceFilter,
   ScrapeContentFilter,
   ScrapeSort,
+  PriceLookupReport,
 } from "./types";

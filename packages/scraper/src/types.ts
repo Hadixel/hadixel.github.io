@@ -34,6 +34,12 @@ export interface ScrapeRecord {
   subCategorySlug: string; // Latin child ("built-in", "double-bowl"…)
   colors: string[]; // Latin color tokens (seed COLOR_TOKENS)
   price: number | null; // TOMAN; null on manufacturer sites
+  priceByColor?: Record<string, number>; // current Toman price per color variant
+  priceCurrency?: "TOMAN";
+  priceFetchedAt?: number;
+  priceInStock?: boolean;
+  priceSourceId?: string; // optional price enrichment provenance
+  priceSourceUrl?: string;
   imageUrls: string[]; // absolute remote URLs
   description: string;
   features: string[];
@@ -53,6 +59,14 @@ export interface MergeReport {
   kept: number;
   merged: number; // records folded into another
   conflicts: Conflict[];
+}
+
+export interface PriceLookupReport {
+  sourceId: string;
+  sourceUrl: string;
+  matched: number;
+  unmatched: number;
+  error?: string;
 }
 
 export interface Conflict {

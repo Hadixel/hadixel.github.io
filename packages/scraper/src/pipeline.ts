@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters } from "./types";
+import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters, PriceLookupReport } from "./types";
 import type { FetchOptions } from "./http";
 import { fetchHtml } from "./http";
 import { SOURCES, categoryFor } from "./sources";
@@ -12,6 +12,11 @@ import type { SourceAdapter, SourceTaxonomy } from "./sources";
 import { extractModel, normalizeFa } from "./refine";
 import { refineAndMerge } from "./merge";
 import { downloadProductImages } from "./images";
+import {
+  DATEES_SHOP_CATALOG_URL,
+  fetchDateesShopPriceIndex,
+  matchDateesShopPrice,
+} from "./price-sources";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_OUT_DIR = join(HERE, "..", "out");
@@ -41,6 +46,8 @@ export interface PipelineOptions {
   imageMinIntervalMs?: number;
   imageMaxBytes?: number;
   filters?: ScrapeFilters;
+  /** Enrich Datees records from the official Datees Shop price API. */
+  priceLookup?: boolean;
   onProgress?: (event: PipelineEvent) => void;
 }
 
@@ -52,6 +59,7 @@ export interface PipelineResult {
   imagesDownloaded: number;
   imagesTotal: number;
   filteredOut: number;
+  priceLookup?: PriceLookupReport;
   outDir: string;
 }
 
@@ -102,7 +110,8 @@ function listingFilterReason(
   filters: ScrapeFilters,
 ): string | undefined {
   const manufacturer = activeFilter(filters.manufacturer);
-  if (manufacturer && normalizedText(adapter.brand) !== normalizedText(manufacturer)) return "manufacturer";
+  const adapterBrands = adapter.brands ?? [adapter.brand];
+  if (manufacturer && !adapterBrands.some((brand) => normalizedText(brand) === normalizedText(manufacturer))) return "manufacturer";
   if (!websiteMatches(url, filters.website)) return "website";
 
   const taxonomy: SourceTaxonomy | null = adapter.taxonomyFor?.(url) ?? null;
@@ -158,6 +167,7 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   const allRecords: ScrapeRecord[] = [];
   const filters = opts.filters ?? {};
   const hasPostFilters = Boolean(
+    activeFilter(filters.manufacturer) ||
     activeFilter(filters.search) ||
     activeFilter(filters.color) ||
     (filters.price && filters.price !== "all") ||
@@ -169,6 +179,7 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   const imageErrors: { url: string; message: string }[] = [];
   let imagesDownloaded = 0;
   let imagesTotal = 0;
+  let priceLookup: PriceLookupReport | undefined;
   const signal = opts.signal ?? opts.fetchOpts?.signal;
   const fetchOpts = opts.signal
     ? { ...(opts.fetchOpts ?? {}), signal: opts.signal }
@@ -230,8 +241,14 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
       });
       if (!opts.onProgress) process.stdout?.write(`\r  scraping ${i + 1}/${urls.length}…`);
       try {
-        const html = await fetchHtml(url, fetchOpts);
-        const rec = adapter.parseProduct(url, html);
+        let rec: ScrapeRecord;
+        const seeded = adapter.productFor ? await adapter.productFor(url) : undefined;
+        if (seeded) {
+          rec = seeded;
+        } else {
+          const html = await fetchHtml(url, fetchOpts);
+          rec = adapter.parseProduct(url, html);
+        }
 
         // Adapters may retain taxonomy learned during listing discovery.
         const taxonomy = adapter.taxonomyFor?.(url);
@@ -268,6 +285,46 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   }
 
   throwIfAborted(signal);
+  const dateesRecords = allRecords.filter((record) => record.sourceId === "datees");
+  if (opts.priceLookup !== false && dateesRecords.length) {
+    const candidates = dateesRecords.filter((record) => record.price === null);
+    try {
+      const priceIndex = await fetchDateesShopPriceIndex(fetchOpts);
+      let matched = 0;
+      for (const record of candidates) {
+        const quote = matchDateesShopPrice(record, priceIndex);
+        if (!quote) continue;
+        record.price = quote.price;
+        if (quote.priceByColor) {
+          record.priceByColor = { ...quote.priceByColor };
+          record.colors = Object.keys(quote.priceByColor);
+        }
+        record.priceCurrency = quote.currency;
+        record.priceFetchedAt = quote.fetchedAt;
+        record.priceInStock = quote.inStock;
+        record.priceSourceId = quote.sourceId;
+        record.priceSourceUrl = quote.sourceUrl;
+        matched += 1;
+      }
+      priceLookup = {
+        sourceId: "dateesshop",
+        sourceUrl: DATEES_SHOP_CATALOG_URL,
+        matched,
+        unmatched: candidates.length - matched,
+      };
+      log(opts, `  ✓ Datees Shop prices: ${matched}/${candidates.length} matched`);
+    } catch (error) {
+      priceLookup = {
+        sourceId: "dateesshop",
+        sourceUrl: DATEES_SHOP_CATALOG_URL,
+        matched: 0,
+        unmatched: candidates.length,
+        error: String(error),
+      };
+      log(opts, `  ⚠ Datees Shop price lookup failed: ${String(error)}`);
+    }
+  }
+
   log(opts, `\n▶ refining & merging ${allRecords.length} records…`);
   emit(opts, { type: "refine-start", records: allRecords.length });
   const { products: mergedProducts, report: mergeReport } = refineAndMerge(allRecords);
@@ -323,14 +380,14 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
 
   writeFileSync(rawPath, JSON.stringify(allRecords, null, 2));
   writeFileSync(refinedPath, JSON.stringify(outputProducts.map(toCatalogShape), null, 2));
-  writeFileSync(reportPath, JSON.stringify({ report, outputKept: outputProducts.length, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, filters }, null, 2));
+  writeFileSync(reportPath, JSON.stringify({ report, outputKept: outputProducts.length, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, filters, priceLookup }, null, 2));
 
   log(opts, `\n  wrote:\n    ${rawPath}\n    ${refinedPath}\n    ${reportPath}`);
   if (errors.length) log(opts, `  ⚠ ${errors.length} page errors (see merge-report.json)`);
   if (imageErrors.length) log(opts, `  ⚠ ${imageErrors.length} image errors (remote fallbacks retained)`);
   if (filteredOut) log(opts, `  ℹ ${filteredOut} product page(s) excluded by scrape filters`);
 
-  return { products: outputProducts, report, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, outDir };
+  return { products: outputProducts, report, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, priceLookup, outDir };
 }
 
 function isHttpUrl(value: string): boolean {
@@ -365,6 +422,12 @@ function toCatalogShape(p: RefinedProduct) {
     subCategory: p.subCategorySlug || "built-in",
     colors: p.colors,
     price: p.price ?? 0, // seed requires number; admin sets real price later
+    ...(p.priceByColor ? { priceByColor: p.priceByColor } : {}),
+    priceCurrency: p.priceCurrency,
+    priceFetchedAt: p.priceFetchedAt,
+    priceInStock: p.priceInStock,
+    priceSourceId: p.priceSourceId,
+    priceSourceUrl: p.priceSourceUrl,
     bestSeller: false,
     date: p.scrapedAt,
     image: p.localImageUrls?.length ? p.localImageUrls : p.imageUrls,

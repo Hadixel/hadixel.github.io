@@ -4,6 +4,7 @@
 //   pnpm --filter @kmodern/scraper scrape --source datees     # one source
 //   pnpm --filter @kmodern/scraper scrape --limit 5           # smoke run
 //   pnpm --filter @kmodern/scraper scrape --images            # download product images
+//   pnpm --filter @kmodern/scraper scrape --no-prices          # skip Datees Shop prices
 //   pnpm --filter @kmodern/scraper scrape --category oven --color black
 //   SCRAPE_CACHE=1 pnpm … scrape                              # enable disk cache
 
@@ -34,6 +35,7 @@ async function main() {
   const limit = Number(flag("limit")) || undefined;
   const quiet = args.includes("--quiet");
   const downloadImages = args.includes("--images");
+  const priceLookup = !args.includes("--no-prices");
   const cacheDir = process.env.SCRAPE_CACHE ? ".scrape-cache" : undefined;
   const filters: ScrapeFilters = {
     search: optionalFlag("search"),
@@ -52,6 +54,7 @@ async function main() {
     limit,
     quiet,
     downloadImages,
+    priceLookup,
     filters,
     fetchOpts: { cacheDir },
   });

@@ -43,6 +43,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "schuffel.net",
+        port: "",
+        pathname: "/wp-content/uploads/**",
+      },
       ...(storagePattern ? [storagePattern] : []),
     ],
   },

@@ -34,13 +34,23 @@ pnpm --filter @kmodern/scraper scrape --source datees --limit 5 --images
 
 # Apply the same filters used by the admin review list
 pnpm --filter @kmodern/scraper scrape --source datees --category oven --color black --content with-images
+
+# Scrape the Schuffel catalog (its public WooCommerce Store API is used)
+pnpm --filter @kmodern/scraper scrape --source schuffel --category hood
+
+# Skip the Datees Shop price API when you only need manufacturer data
+pnpm --filter @kmodern/scraper scrape --source datees --no-prices
 ```
 
 Supported CLI filters are `--search`, `--manufacturer`, `--website`,
 `--category`, `--subcategory`, `--color`, `--price`, `--content`, and `--sort`.
 Category/source filters can exclude listing URLs before product pages are read;
 content, price, color, and search filters are applied after each product page is
-parsed.
+parsed. Datees prices are enriched from the public `dateesshop.com` catalog API
+by normalized model; the original Datees product page remains the content
+source. The API's integer prices are treated as Toman (the site's structured
+IRR metadata is not used), and color-specific variant prices are retained for
+variant imports.
 
 Outputs are written to `packages/scraper/out/`:
 
@@ -63,8 +73,15 @@ both local paths and HTTP(S) URLs as well.
 
 Owners can open `/scraper` in the admin app to run a crawl, inspect every
 refined product, filter by manufacturer or source website, expand its
-specs/images, and select records for import. Image downloads are enabled by
-default for admin runs; failed image requests retain the manufacturer URL as a
-fallback. The explicit import action is idempotent by product slug and variant
-SKU; leave "publish after import" off to create drafts, or enable it to publish
-the selected records immediately.
+specs/images, and select records for import. Datees runs enrich prices from
+`dateesshop.com`; the Schuffel adapter reads the public WooCommerce Store API
+and retains unavailable prices as zero/draft-safe values. Click a result to
+edit its name, price, description, features, category, and specs before import.
+Slug, model, brand, colors, and image identity remain server-owned so retries
+and variant SKUs stay idempotent. Image downloads are enabled by default for
+admin runs; failed image requests retain the manufacturer URL as a fallback.
+The explicit import action is idempotent by product slug and variant SKU; leave
+"publish after import" off to create drafts, or enable it to publish the
+selected records immediately. Published products must have a positive price.
+Datees color-specific prices create separate color variants; manually editing
+the aggregate price clears the imported price provenance for that product.

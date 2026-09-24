@@ -2,7 +2,7 @@
 // Manufacturer sites are small; courtesy beats speed here.
 
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export interface FetchOptions {
@@ -10,6 +10,7 @@ export interface FetchOptions {
   timeoutMs?: number;
   retries?: number;
   cacheDir?: string; // unset = no caching
+  cacheTtlMs?: number; // cached HTML/API freshness window; 0 disables reads
   userAgent?: string;
   signal?: AbortSignal; // cooperative cancellation for interactive clients
   maxBytes?: number; // binary download guard
@@ -20,6 +21,7 @@ const DEFAULTS = {
   minIntervalMs: 1500,
   timeoutMs: 20_000,
   retries: 3,
+  cacheTtlMs: 24 * 60 * 60 * 1000,
   userAgent:
     "Mozilla/5.0 (compatible; kmodern-scraper/0.1; catalog ingestion)",
 };
@@ -69,6 +71,15 @@ function cacheKey(url: string): string {
   return createHash("sha256").update(url).digest("hex").slice(0, 32) + ".html";
 }
 
+function cacheIsFresh(file: string, ttlMs: number): boolean {
+  if (ttlMs <= 0 || !existsSync(/* turbopackIgnore: true */ file)) return false;
+  try {
+    return Date.now() - statSync(/* turbopackIgnore: true */ file).mtimeMs < ttlMs;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchHtml(
   url: string,
   opts: FetchOptions = {},
@@ -79,7 +90,7 @@ export async function fetchHtml(
 
   const dir = o.cacheDir && join(o.cacheDir, host);
   const file = dir && join(dir, cacheKey(url));
-  if (file && existsSync(/* turbopackIgnore: true */ file)) {
+  if (file && cacheIsFresh(file, o.cacheTtlMs!)) {
     return readFileSync(/* turbopackIgnore: true */ file, "utf8");
   }
 
