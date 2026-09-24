@@ -9,6 +9,7 @@ loadDotenv({ path: path.resolve(process.cwd(), "../../.env") });
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@kmodern/db", "@kmodern/schema", "@kmodern/adapters", "@kmodern/scraper", "@kmodern/ui"],
+  allowedDevOrigins: [process.env.ADMIN_DEV_ORIGIN ?? "192.168.70.176"],
 };
 
 export default nextConfig;
