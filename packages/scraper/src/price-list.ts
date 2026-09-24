@@ -341,8 +341,11 @@ function findHeaderInRows(rows: unknown[][]): HeaderMatch | null {
   return null;
 }
 
-function readRows(filePath: string, fallbackUnit: PriceUnit, unitOverride?: PriceUnit): ParsedRows {
-  const workbook = XLSX.readFile(resolve(filePath), { cellDates: false });
+async function readRows(filePath: string, fallbackUnit: PriceUnit, unitOverride?: PriceUnit): Promise<ParsedRows> {
+  // Read the bytes in Node and pass a buffer to SheetJS. Its `readFile`
+  // helper relies on a runtime `fs` binding that Next's server bundler does
+  // not preserve, which otherwise fails with `Cannot access file`.
+  const workbook = XLSX.read(await readFile(resolve(filePath)), { type: "buffer", cellDates: false });
   const rows: PriceListRow[] = [];
   const sourceUnits = new Set<PriceUnit>();
   let totalRows = 0;
@@ -510,7 +513,7 @@ export async function applyPriceList(options: ApplyPriceListOptions): Promise<Pr
   const filePath = resolve(options.filePath);
   const outDir = resolve(options.outDir);
   const sourceFile = basename(options.sourceName ?? filePath);
-  const parsed = readRows(filePath, options.unit ?? "toman", options.unit);
+  const parsed = await readRows(filePath, options.unit ?? "toman", options.unit);
   const catalogPath = join(outDir, "catalog.fragment.json");
   const rawPath = join(outDir, "raw-scrape.json");
   const catalogBody = await readFile(catalogPath, "utf8");

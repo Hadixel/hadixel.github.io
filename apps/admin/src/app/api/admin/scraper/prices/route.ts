@@ -106,6 +106,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ mode, report }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    console.error("scraper price-list upload failed", error);
     const message = error instanceof Error ? error.message : "اعمال لیست قیمت ناموفق بود";
     if (message === "IMPORT_IN_PROGRESS") return errorResponse("import_in_progress", 409);
     if (message === "CATALOG_CHANGED") return errorResponse("catalog_changed", 409);
