@@ -3,9 +3,9 @@
 // and page→ScrapeRecord extraction. Refinement stays shared.
 
 import * as cheerio from "cheerio";
-import type { ScrapeRecord, RawSpec } from "./types.js";
-import type { FetchOptions } from "./http.js";
-import { fetchHtml } from "./http.js";
+import type { ScrapeRecord, RawSpec } from "./types";
+import type { FetchOptions } from "./http";
+import { fetchHtml } from "./http";
 
 export interface SourceTaxonomy {
   category: string;

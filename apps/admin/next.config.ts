@@ -8,7 +8,7 @@ import path from "node:path";
 loadDotenv({ path: path.resolve(process.cwd(), "../../.env") });
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@kmodern/db", "@kmodern/schema", "@kmodern/adapters", "@kmodern/ui"],
+  transpilePackages: ["@kmodern/db", "@kmodern/schema", "@kmodern/adapters", "@kmodern/scraper", "@kmodern/ui"],
 };
 
 export default nextConfig;

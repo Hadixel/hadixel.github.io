@@ -5,7 +5,7 @@
 //   pnpm --filter @kmodern/scraper scrape --limit 5           # smoke run
 //   SCRAPE_CACHE=1 pnpm … scrape                              # enable disk cache
 
-import { runPipeline } from "./pipeline.js";
+import { runPipeline } from "./pipeline";
 
 const args = process.argv.slice(2);
 

@@ -65,9 +65,11 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
 export function Sidebar({
   ordersAwaiting,
   lowStock,
+  isOwner,
 }: {
   ordersAwaiting: number;
   lowStock: number;
+  isOwner: boolean;
 }) {
   return (
     <aside className="fixed inset-y-0 right-0 z-20 flex w-64 flex-col border-l border-plaster bg-white">
@@ -84,6 +86,7 @@ export function Sidebar({
             { href: "/products", label: "محصولات" },
             { href: "/categories", label: "دسته‌بندی‌ها" },
             { href: "/collections", label: "مجموعه‌ها" },
+            ...(isOwner ? [{ href: "/scraper", label: "اسکرپر کاتالوگ" }] : []),
           ]}
         />
         <NavLink item={{ href: "/inventory", label: "موجودی", badge: lowStock }} />
@@ -113,6 +116,7 @@ export function Topbar({ name, email }: { name: string; email: string }) {
     ["/products", "محصولات"],
     ["/categories", "دسته‌بندی‌ها"],
     ["/collections", "مجموعه‌ها"],
+    ["/scraper", "اسکرپر کاتالوگ"],
     ["/inventory", "موجودی"],
     ["/customers", "مشتریان"],
     ["/pages", "صفحات"],

@@ -4,14 +4,14 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ScrapeRecord, RefinedProduct, MergeReport } from "./types.js";
-import type { FetchOptions } from "./http.js";
-import { fetchHtml } from "./http.js";
-import { SOURCES, categoryFor } from "./sources.js";
-import { refineAndMerge } from "./merge.js";
+import type { ScrapeRecord, RefinedProduct, MergeReport } from "./types";
+import type { FetchOptions } from "./http";
+import { fetchHtml } from "./http";
+import { SOURCES, categoryFor } from "./sources";
+import { refineAndMerge } from "./merge";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT_DIR = join(HERE, "..", "out");
+const DEFAULT_OUT_DIR = join(HERE, "..", "out");
 
 export type PipelineEvent =
   | { type: "source-start"; sourceId: string; brand: string }
@@ -28,6 +28,7 @@ export interface PipelineOptions {
   fetchOpts?: FetchOptions;
   quiet?: boolean;
   signal?: AbortSignal;
+  outDir?: string;
   onProgress?: (event: PipelineEvent) => void;
 }
 
@@ -62,6 +63,7 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   const fetchOpts = opts.signal
     ? { ...(opts.fetchOpts ?? {}), signal: opts.signal }
     : opts.fetchOpts;
+  const outDir = opts.outDir ?? DEFAULT_OUT_DIR;
   const listingFetchOpts: FetchOptions = {
     ...(fetchOpts ?? {}),
     onError: (error, url) => {
@@ -157,10 +159,10 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
 
   throwIfAborted(signal);
   // emit outputs
-  mkdirSync(OUT_DIR, { recursive: true });
-  const rawPath = join(OUT_DIR, "raw-scrape.json");
-  const refinedPath = join(OUT_DIR, "catalog.fragment.json");
-  const reportPath = join(OUT_DIR, "merge-report.json");
+  mkdirSync(outDir, { recursive: true });
+  const rawPath = join(outDir, "raw-scrape.json");
+  const refinedPath = join(outDir, "catalog.fragment.json");
+  const reportPath = join(outDir, "merge-report.json");
 
   writeFileSync(rawPath, JSON.stringify(allRecords, null, 2));
   writeFileSync(refinedPath, JSON.stringify(products.map(toCatalogShape), null, 2));
@@ -169,7 +171,7 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   log(opts, `\n  wrote:\n    ${rawPath}\n    ${refinedPath}\n    ${reportPath}`);
   if (errors.length) log(opts, `  ⚠ ${errors.length} page errors (see merge-report.json)`);
 
-  return { products, report, errors, outDir: OUT_DIR };
+  return { products, report, errors, outDir };
 }
 
 /** Shape matching seed.ts CatalogProduct exactly (minus provenance). */

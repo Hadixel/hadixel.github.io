@@ -78,7 +78,9 @@ export async function fetchHtml(
 
   const dir = o.cacheDir && join(o.cacheDir, host);
   const file = dir && join(dir, cacheKey(url));
-  if (file && existsSync(file)) return readFileSync(file, "utf8");
+  if (file && existsSync(/* turbopackIgnore: true */ file)) {
+    return readFileSync(/* turbopackIgnore: true */ file, "utf8");
+  }
 
   let lastErr: unknown;
   for (let attempt = 0; attempt < o.retries!; attempt++) {

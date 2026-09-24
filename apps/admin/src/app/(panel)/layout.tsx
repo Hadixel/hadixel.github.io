@@ -20,7 +20,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-plaster">
-      <Sidebar ordersAwaiting={ordersAwaiting} lowStock={lowStock} />
+      <Sidebar
+        ordersAwaiting={ordersAwaiting}
+        lowStock={lowStock}
+        isOwner={ctx.admin.role === "OWNER"}
+      />
       <div className="mr-64">
         <Topbar name={ctx.admin.name} email={ctx.admin.email} />
         <main className="p-6">{children}</main>

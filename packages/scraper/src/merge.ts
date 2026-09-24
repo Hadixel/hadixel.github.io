@@ -3,7 +3,7 @@
 // disagree, richer/more-recent wins per field; conflicts are reported so a human
 // can arbitrate before seeding. Output is exactly CatalogProduct[] shape.
 
-import type { ScrapeRecord, RefinedProduct, MergeReport, Conflict } from "./types.js";
+import type { ScrapeRecord, RefinedProduct, MergeReport, Conflict } from "./types";
 import {
   extractModel,
   makeSlug,
@@ -11,7 +11,7 @@ import {
   refineDescription,
   refineFeatures,
   refineSpecs,
-} from "./refine.js";
+} from "./refine";
 
 /** Fold secondary into primary, preserving every usable field where possible. */
 function foldInto(

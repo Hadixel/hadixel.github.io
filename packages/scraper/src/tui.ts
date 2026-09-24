@@ -7,8 +7,8 @@ import {
   runPipeline,
   type PipelineEvent,
   type PipelineResult,
-} from "./pipeline.js";
-import { SOURCES } from "./sources.js";
+} from "./pipeline";
+import { SOURCES } from "./sources";
 
 const ESC = "\u001b";
 const ENTER_SCREEN = `${ESC}[?1049h${ESC}[?25l`;

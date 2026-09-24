@@ -3,15 +3,15 @@ export {
   type PipelineEvent,
   type PipelineOptions,
   type PipelineResult,
-} from "./pipeline.js";
+} from "./pipeline";
 export {
   SOURCES,
   datees,
   categoryFor,
   type SourceAdapter,
   type SourceTaxonomy,
-} from "./sources.js";
-export { refineAndMerge } from "./merge.js";
+} from "./sources";
+export { refineAndMerge } from "./merge";
 export {
   normalizeFa,
   polishCopy,
@@ -20,6 +20,6 @@ export {
   refineDescription,
   refineFeatures,
   refineSpecs,
-} from "./refine.js";
-export { fetchHtml, type FetchOptions } from "./http.js";
-export type { ScrapeRecord, RefinedProduct, MergeReport, Conflict, RawSpec } from "./types.js";
+} from "./refine";
+export { fetchHtml, type FetchOptions } from "./http";
+export type { ScrapeRecord, RefinedProduct, MergeReport, Conflict, RawSpec } from "./types";
