@@ -1,3 +1,7 @@
+import type { ScrapeFilters } from "@kmodern/scraper";
+
+export type { ScrapeFilters } from "@kmodern/scraper";
+
 export type ScraperJobStatus =
   | "idle"
   | "running"
@@ -6,12 +10,14 @@ export type ScraperJobStatus =
   | "failed"
   | "cancelled";
 
-export type ScraperJobPhase = "idle" | "discovering" | "scraping" | "refining" | "writing" | "complete";
+export type ScraperJobPhase = "idle" | "discovering" | "scraping" | "refining" | "downloading" | "writing" | "complete";
 
 export interface ScraperJobOptions {
   source: string;
   limit?: number;
   cache: boolean;
+  downloadImages?: boolean;
+  filters?: ScrapeFilters;
 }
 
 export interface ScraperCatalogItem {
@@ -19,6 +25,9 @@ export interface ScraperCatalogItem {
   slug: string;
   name: string;
   brand: string;
+  sourceId?: string;
+  sourceUrl?: string;
+  sourcePageUrl?: string;
   category: string;
   subCategory: string;
   colors: string[];
@@ -26,6 +35,7 @@ export interface ScraperCatalogItem {
   bestSeller: boolean;
   date: number;
   image: string[];
+  sourceImages?: string[];
   description: string;
   features: string[];
   specs: Array<{ label: string; value: string }>;
@@ -38,6 +48,8 @@ export interface ScraperJobSnapshot {
   source: string;
   limit: number | null;
   cache: boolean;
+  downloadImages: boolean;
+  filters: ScrapeFilters;
   startedAt: string | null;
   finishedAt: string | null;
   current: number;
@@ -47,6 +59,10 @@ export interface ScraperJobSnapshot {
   merged: number;
   conflicts: number;
   errors: number;
+  filteredOut: number;
+  imageErrors: number;
+  imagesDownloaded: number;
+  imagesTotal: number;
   outputDir: string | null;
   error: string | null;
   activity: string[];

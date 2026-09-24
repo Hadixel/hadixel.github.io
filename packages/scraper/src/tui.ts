@@ -23,12 +23,13 @@ const COLORS = {
 } as const;
 
 type Screen = "setup" | "running" | "result";
-type SetupField = "source" | "limit" | "cache";
+type SetupField = "source" | "limit" | "cache" | "images";
 type RunPhase =
   | "discovering"
   | "scrolling"
   | "scraping"
   | "refining"
+  | "downloading"
   | "writing"
   | "done"
   | "cancelling"
@@ -39,6 +40,7 @@ interface Settings {
   source: string;
   limit: string;
   cache: boolean;
+  downloadImages: boolean;
 }
 
 interface RunState {
@@ -50,6 +52,9 @@ interface RunState {
   records: number;
   currentUrl: string;
   currentName: string;
+  imagesDownloaded: number;
+  imagesTotal: number;
+  imageErrors: number;
   startedAt: number;
   activity: string[];
   result?: PipelineResult;
@@ -117,6 +122,7 @@ function defaultSettings(): Settings {
     source: SOURCE_IDS[0] ?? "all",
     limit: "",
     cache: true,
+    downloadImages: true,
   };
 }
 
@@ -130,6 +136,9 @@ function newRunState(settings: Settings): RunState {
     records: 0,
     currentUrl: "",
     currentName: "",
+    imagesDownloaded: 0,
+    imagesTotal: 0,
+    imageErrors: 0,
     startedAt: Date.now(),
     activity: [],
   };
@@ -209,7 +218,7 @@ class ScraperTui {
   }
 
   private handleSetupKey(key: Key): void {
-    const fields: SetupField[] = ["source", "limit", "cache"];
+    const fields: SetupField[] = ["source", "limit", "cache", "images"];
     const currentIndex = fields.indexOf(this.focus);
 
     switch (key.name) {
@@ -230,6 +239,9 @@ class ScraperTui {
       case "space":
         if (this.focus === "cache") {
           this.settings.cache = !this.settings.cache;
+          this.render();
+        } else if (this.focus === "images") {
+          this.settings.downloadImages = !this.settings.downloadImages;
           this.render();
         }
         return;
@@ -286,6 +298,7 @@ class ScraperTui {
           fetchOpts: {
             cacheDir: settings.cache ? ".scrape-cache" : undefined,
           },
+          downloadImages: settings.downloadImages,
           onProgress: (event) => this.handleProgress(state, event),
         });
 
@@ -294,8 +307,13 @@ class ScraperTui {
           state.activity.push("Cancelled; no output was written.");
         } else {
           state.result = result;
+          state.imagesDownloaded = result.imagesDownloaded;
+          state.imagesTotal = result.imagesTotal;
+          state.imageErrors = result.imageErrors.length;
           state.phase = "done";
-          state.activity.push(`Completed with ${result.errors.length} page error(s).`);
+          state.activity.push(
+            `Completed with ${result.errors.length} page error(s) and ${result.imageErrors.length} image error(s).`,
+          );
         }
       } catch (error) {
         if (controller.signal.aborted) {
@@ -360,6 +378,25 @@ class ScraperTui {
           `Merged ${event.merged} duplicate(s); ${event.conflicts} conflict(s).`,
         );
         break;
+      case "image-start":
+        state.phase = "downloading";
+        state.current = 0;
+        state.total = event.total;
+        state.imagesDownloaded = 0;
+        state.imagesTotal = event.total;
+        state.activity.unshift(`Downloading ${event.total} product image(s)…`);
+        break;
+      case "image-complete":
+        state.current = event.current;
+        state.total = event.total;
+        state.imagesDownloaded = event.downloaded ?? event.current;
+        state.imagesTotal = event.total;
+        if (event.current === event.total) state.activity.unshift(`Processed ${event.total}; downloaded ${event.downloaded ?? event.current} product image(s).`);
+        break;
+      case "image-error":
+        state.imageErrors += 1;
+        state.activity.unshift(`✗ image ${shortUrl(event.url)}: ${event.message}`);
+        break;
     }
     state.activity = state.activity.slice(0, 8);
     this.render();
@@ -413,7 +450,7 @@ class ScraperTui {
     if (this.screen === "setup") {
       title = "CONFIGURE";
       body = this.setupBody(terminalWidth);
-      footer = "↑/↓ field   ←/→ source   Space cache   Enter start   q quit";
+      footer = "↑/↓ field   ←/→ source   Space toggle   Enter start   q quit";
     } else if (this.screen === "running") {
       title = "SCRAPING";
       body = this.runningBody(terminalWidth);
@@ -441,6 +478,7 @@ class ScraperTui {
     const source = this.settings.source === "all" ? "all adapters" : this.settings.source;
     const limit = this.settings.limit.trim() || "all products";
     const cache = this.settings.cache ? "on" : "off";
+    const images = this.settings.downloadImages ? "on" : "off";
     const marker = (field: SetupField) => (this.focus === field ? "›" : " ");
     return [
       ...box(
@@ -449,6 +487,7 @@ class ScraperTui {
           `${marker("source")} Source     ${source}`,
           `${marker("limit")} Limit      ${limit}`,
           `${marker("cache")} Disk cache ${cache}`,
+          `${marker("images")} Images     ${images}`,
         ],
         terminalWidth,
       ),
@@ -458,6 +497,7 @@ class ScraperTui {
         [
           "The cache makes repeated runs fast and keeps requests polite.",
           "Blank limit crawls every discovered product.",
+          "Images are stored under packages/scraper/out/images.",
           "Existing CLI mode remains available for automation.",
         ],
         terminalWidth,
@@ -473,6 +513,7 @@ class ScraperTui {
       scrolling: "Listing ready",
       scraping: "Scraping product pages",
       refining: "Refining Persian text",
+      downloading: "Downloading product images",
       writing: "Writing catalog fragment",
       done: "Complete",
       cancelling: "Cancelling",
@@ -488,6 +529,7 @@ class ScraperTui {
           `Elapsed   ${elapsedSince(state.startedAt)}`,
           `Discovered ${state.discovered}`,
           `Records   ${state.records}`,
+          `Images    ${state.imagesDownloaded}/${state.imagesTotal}`,
           `Progress  ${progressBar(state.current, state.total)}`,
           `Current   ${shortUrl(state.currentUrl)}`,
           `Product   ${state.currentName || "—"}`,
@@ -520,11 +562,14 @@ class ScraperTui {
       ...box(
         "Summary",
         [
-          `Kept       ${report.kept} unique product(s)`,
+          `Kept       ${result.products.length} output product(s)`,
           `Merged     ${report.merged} duplicate(s)`,
           `Conflicts  ${report.conflicts.length}`,
+           `Images     ${result.imagesDownloaded}/${result.imagesTotal}`,
+           `Image errors ${result.imageErrors.length}`,
           `Errors     ${result.errors.length}`,
-          `Output     ${result.outDir}`,
+          `Filtered   ${result.filteredOut}`,
+           `Output     ${result.outDir}`,
         ],
         terminalWidth,
       ),

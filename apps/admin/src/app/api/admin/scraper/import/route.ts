@@ -62,6 +62,8 @@ export async function POST(request: Request) {
           slugs: selected.map((item) => item.slug),
           products: result.products,
           variants: result.variants,
+          images: result.images,
+          imageErrors: result.imageErrors,
           status: result.status,
           ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
           userAgent: request.headers.get("user-agent") ?? undefined,

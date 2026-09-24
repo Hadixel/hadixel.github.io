@@ -21,5 +21,16 @@ export {
   refineFeatures,
   refineSpecs,
 } from "./refine";
-export { fetchHtml, type FetchOptions } from "./http";
-export type { ScrapeRecord, RefinedProduct, MergeReport, Conflict, RawSpec } from "./types";
+export { fetchHtml, fetchBuffer, type FetchOptions } from "./http";
+export { downloadProductImages, type ImageDownloadOptions, type ImageDownloadResult } from "./images";
+export type {
+  ScrapeRecord,
+  RefinedProduct,
+  MergeReport,
+  Conflict,
+  RawSpec,
+  ScrapeFilters,
+  ScrapePriceFilter,
+  ScrapeContentFilter,
+  ScrapeSort,
+} from "./types";

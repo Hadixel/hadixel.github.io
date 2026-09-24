@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { ScrapeFilters } from "@kmodern/scraper";
 import { db } from "@kmodern/db";
 import { getAdminUser } from "@/lib/auth";
 import { scraperJobs } from "@/lib/scraper-jobs";
@@ -44,6 +45,27 @@ export async function GET(request: Request) {
   if ("response" in auth) return auth.response;
 
   const params = new URL(request.url).searchParams;
+  const image = params.get("image");
+  if (image !== null) {
+    const separator = image.lastIndexOf(":");
+    const slug = separator >= 0 ? image.slice(0, separator) : "";
+    const index = Number(image.slice(separator + 1));
+    if (!slug || !Number.isInteger(index)) return errorResponse("invalid_image", 400);
+    try {
+      const file = await scraperJobs.readImage(slug, index);
+      if (!file) return errorResponse("image_not_found", 404);
+      return new NextResponse(new Uint8Array(file.body), {
+        headers: {
+          "Cache-Control": "private, no-store",
+          "Content-Disposition": `inline; filename="${file.filename}"`,
+          "Content-Type": file.contentType,
+        },
+      });
+    } catch {
+      return errorResponse("image_unavailable", 404);
+    }
+  }
+
   const download = params.get("download");
   if (download) {
     try {
@@ -62,13 +84,46 @@ export async function GET(request: Request) {
   }
 
   if (params.get("view") === "catalog") {
-    const items = await scraperJobs.getCatalog();
+    const items = await scraperJobs.getCatalog({ publicView: true });
     return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
   }
 
   return NextResponse.json(scraperJobs.get(), {
     headers: { "Cache-Control": "no-store" },
   });
+}
+
+function parseFilters(value: unknown): ScrapeFilters | null {
+  if (value === undefined || value === null) return {};
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const input = value as Record<string, unknown>;
+  const filters: ScrapeFilters = {};
+  for (const key of ["search", "manufacturer", "website", "category", "subCategory", "color"] as const) {
+    const raw = input[key];
+    if (raw === undefined || raw === null || raw === "") continue;
+    if (typeof raw !== "string" || raw.length > 200) return null;
+    const text = raw.trim();
+    if (!text || text === "all") continue;
+    if (key === "search") filters.search = text;
+    if (key === "manufacturer") filters.manufacturer = text;
+    if (key === "website") filters.website = text;
+    if (key === "category") filters.category = text;
+    if (key === "subCategory") filters.subCategory = text;
+    if (key === "color") filters.color = text;
+  }
+  if (input.price !== undefined && input.price !== null && input.price !== "") {
+    if (input.price !== "all" && input.price !== "priced" && input.price !== "missing") return null;
+    if (input.price !== "all") filters.price = input.price;
+  }
+  if (input.content !== undefined && input.content !== null && input.content !== "") {
+    if (input.content !== "all" && input.content !== "with-images" && input.content !== "without-images" && input.content !== "with-specs") return null;
+    if (input.content !== "all") filters.content = input.content;
+  }
+  if (input.sort !== undefined && input.sort !== null && input.sort !== "") {
+    if (input.sort !== "all" && input.sort !== "newest" && input.sort !== "name" && input.sort !== "price-high" && input.sort !== "price-low") return null;
+    if (input.sort !== "all") filters.sort = input.sort;
+  }
+  return filters;
 }
 
 export async function POST(request: Request) {
@@ -89,7 +144,11 @@ export async function POST(request: Request) {
 
   const source = typeof body.source === "string" ? body.source : "all";
   const cache = body.cache === undefined ? true : body.cache;
+  const downloadImages = body.downloadImages === undefined ? true : body.downloadImages;
   if (typeof cache !== "boolean") return errorResponse("invalid_cache", 400);
+  if (typeof downloadImages !== "boolean") return errorResponse("invalid_download_images", 400);
+  const filters = parseFilters(body.filters);
+  if (!filters) return errorResponse("invalid_filters", 400);
 
   let limit: number | undefined;
   if (body.limit !== undefined && body.limit !== null && body.limit !== "") {
@@ -101,7 +160,7 @@ export async function POST(request: Request) {
 
   let snapshot;
   try {
-    snapshot = scraperJobs.start({ source, limit, cache });
+    snapshot = scraperJobs.start({ source, limit, cache, downloadImages, filters });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message === "SCRAPE_IN_PROGRESS") return errorResponse("scrape_in_progress", 409);
@@ -121,7 +180,7 @@ export async function POST(request: Request) {
         entityId: snapshot.id,
         ip: meta.ip,
         userAgent: meta.userAgent,
-        meta: { source, limit: limit ?? null, cache },
+        meta: { source, limit: limit ?? null, cache, downloadImages, filters: filters as never },
       },
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 // Cross-source dedupe + field-level refinement.
 // Identity: same brand + model code ⇒ one canonical Product. When two sources
 // disagree, richer/more-recent wins per field; conflicts are reported so a human
-// can arbitrate before seeding. Output is exactly CatalogProduct[] shape.
+// can arbitrate before seeding. Output adds optional provenance fields for review.
 
 import type { ScrapeRecord, RefinedProduct, MergeReport, Conflict } from "./types";
 import {

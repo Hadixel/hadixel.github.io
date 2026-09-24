@@ -7,6 +7,23 @@ export interface RawSpec {
   value: string;
 }
 
+export type ScrapePriceFilter = "all" | "priced" | "missing";
+export type ScrapeContentFilter = "all" | "with-images" | "without-images" | "with-specs";
+export type ScrapeSort = "newest" | "name" | "price-high" | "price-low";
+
+/** Filters applied before refinement; values use the normalized catalog slugs. */
+export interface ScrapeFilters {
+  search?: string;
+  manufacturer?: string;
+  website?: string;
+  category?: string;
+  subCategory?: string;
+  color?: string;
+  price?: ScrapePriceFilter;
+  content?: ScrapeContentFilter;
+  sort?: ScrapeSort;
+}
+
 /** What a source adapter extracts from one product page — unrefined. */
 export interface ScrapeRecord {
   sourceId: string; // adapter key, e.g. "datees"
@@ -28,6 +45,7 @@ export interface ScrapeRecord {
 export interface RefinedProduct extends ScrapeRecord {
   slug: string; // Latin URL slug, unique per (brand, model)
   model: string; // extracted model code, e.g. "TFT669", "DG-586"
+  localImageUrls?: string[]; // populated when image downloading is enabled
 }
 
 /** Merge verdict when two records describe the same physical product. */

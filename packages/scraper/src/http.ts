@@ -12,6 +12,7 @@ export interface FetchOptions {
   cacheDir?: string; // unset = no caching
   userAgent?: string;
   signal?: AbortSignal; // cooperative cancellation for interactive clients
+  maxBytes?: number; // binary download guard
   onError?: (error: Error, url: string) => void; // final request failure hook
 }
 
@@ -111,7 +112,7 @@ export async function fetchHtml(
       // exponential-ish backoff; 4xx other than 429 won't fix themselves
       const msg = String(e);
       if (/HTTP 4\d\d/.test(msg) && !msg.includes("429")) break;
-      await delay(1000 * 2 ** attempt, o.signal);
+      if (attempt < o.retries! - 1) await delay(1000 * 2 ** attempt, o.signal);
     } finally {
       clearTimeout(timer);
       o.signal?.removeEventListener("abort", onAbort);
@@ -120,6 +121,59 @@ export async function fetchHtml(
   const finalError = lastErr instanceof Error
     ? lastErr
     : new Error(lastErr ? String(lastErr) : "Request failed");
+  o.onError?.(finalError, url);
+  throw finalError;
+}
+
+/** Fetch a binary asset with the same retry, timeout, and politeness policy as HTML. */
+export async function fetchBuffer(
+  url: string,
+  opts: FetchOptions = {},
+): Promise<Uint8Array> {
+  const o = { ...DEFAULTS, ...opts };
+  if (o.signal?.aborted) throw abortError();
+  const host = new URL(url).host;
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt < o.retries!; attempt++) {
+    await throttle(host, o.minIntervalMs!, o.signal);
+    const ctrl = new AbortController();
+    const onAbort = () => ctrl.abort();
+    o.signal?.addEventListener("abort", onAbort, { once: true });
+    const timer = setTimeout(() => ctrl.abort(), o.timeoutMs!);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": o.userAgent!,
+          Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        },
+        signal: ctrl.signal,
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+      const declaredSize = Number(response.headers.get("content-length") ?? 0);
+      if (o.maxBytes && declaredSize > o.maxBytes) {
+        throw new Error(`Image exceeds ${o.maxBytes} bytes: ${url}`);
+      }
+      const body = new Uint8Array(await response.arrayBuffer());
+      if (o.maxBytes && body.byteLength > o.maxBytes) {
+        throw new Error(`Image exceeds ${o.maxBytes} bytes: ${url}`);
+      }
+      return body;
+    } catch (error) {
+      if (o.signal?.aborted) throw abortError();
+      lastErr = error;
+      const message = String(error);
+      if (/HTTP 4\d\d/.test(message) && !message.includes("429")) break;
+      if (attempt < o.retries! - 1) await delay(1000 * 2 ** attempt, o.signal);
+    } finally {
+      clearTimeout(timer);
+      o.signal?.removeEventListener("abort", onAbort);
+    }
+  }
+
+  const finalError = lastErr instanceof Error
+    ? lastErr
+    : new Error(lastErr ? String(lastErr) : "Binary request failed");
   o.onError?.(finalError, url);
   throw finalError;
 }

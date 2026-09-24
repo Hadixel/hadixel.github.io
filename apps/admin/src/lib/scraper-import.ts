@@ -1,4 +1,5 @@
 import { db } from "@kmodern/db";
+import { preparedVariantImages, prepareScrapedImages } from "@/lib/scraper-images";
 import type { ScraperCatalogItem } from "@/lib/scraper-types";
 
 const ROOT_META: Record<string, { name: string; weightKg: number }> = {
@@ -30,6 +31,8 @@ const COLOR_META: Record<string, { name: string; code: string }> = {
 export interface ScraperImportResult {
   products: number;
   variants: number;
+  images: number;
+  imageErrors: number;
   status: "DRAFT" | "PUBLISHED";
 }
 
@@ -47,7 +50,11 @@ export async function importScrapedCatalog(
   items: ScraperCatalogItem[],
   publish: boolean,
 ): Promise<ScraperImportResult> {
-  if (!items.length) return { products: 0, variants: 0, status: publish ? "PUBLISHED" : "DRAFT" };
+  if (!items.length) {
+    return { products: 0, variants: 0, images: 0, imageErrors: 0, status: publish ? "PUBLISHED" : "DRAFT" };
+  }
+
+  const preparedImages = await prepareScrapedImages(items);
 
   return db().$transaction(async (tx) => {
     let variantCount = 0;
@@ -129,12 +136,12 @@ export async function importScrapedCatalog(
 
       const colors = cleanList(item.colors).filter((color) => COLOR_META[color]);
       if (!colors.length) colors.push("steel");
-      const images = cleanList(item.image);
       const price = Number.isFinite(item.price) && item.price >= 0 ? item.price : 0;
       const brand = (item.brand || "Datees").toUpperCase();
       const model = (item._id || item.slug).toUpperCase();
 
       for (const color of colors) {
+        const images = preparedVariantImages(preparedImages, item.slug, color);
         const sku = `${brand}-${model}-${color.toUpperCase()}`;
         const existing = await tx.variant.findUnique({ where: { sku } });
         if (existing && existing.productId !== product.id) {
@@ -165,6 +172,12 @@ export async function importScrapedCatalog(
       }
     }
 
-    return { products: items.length, variants: variantCount, status: publish ? "PUBLISHED" : "DRAFT" };
+    return {
+      products: items.length,
+      variants: variantCount,
+      images: preparedImages.ready,
+      imageErrors: preparedImages.errors,
+      status: publish ? "PUBLISHED" : "DRAFT",
+    };
   });
 }
