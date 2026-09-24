@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     include: { product: { include: { category: true } } },
   });
   const map = new Map(variants.map((v) => [v.id, v]));
+  const rejectedVariantIds = ids.filter((id) => !map.has(id));
   const lines: Array<{
     variantId: string; qty: number; sku: string; colorName: string; price: number;
     stock: number; reserved: number; allowBackorder: boolean; productName: string;
@@ -44,5 +45,5 @@ export async function POST(req: NextRequest) {
   }
 
   const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
-  return NextResponse.json({ lines, subtotal });
+  return NextResponse.json({ lines, subtotal, rejectedVariantIds });
 }

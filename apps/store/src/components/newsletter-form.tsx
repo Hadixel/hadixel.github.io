@@ -10,8 +10,8 @@ export function NewsletterForm({ title }: { title?: string }) {
 
   if (done) {
     return (
-      <div className="rounded-card bg-flame-50 p-6 text-center text-lg font-semibold text-flame-800">
-        ثبت شد. از همراهی شما سپاسگزاریم.
+      <div className="rounded-card bg-flame-50 p-6 text-center text-lg font-semibold text-flame-800" role="status">
+        ایمیل شما در این نسخه ثبت شد. از همراهی شما سپاسگزاریم.
       </div>
     );
   }

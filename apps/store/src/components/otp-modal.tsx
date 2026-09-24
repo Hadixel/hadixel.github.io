@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toFaDigits } from "@kmodern/schema";
 import { Button, InputOTP, REGEXP_ONLY_DIGITS, Spinner } from "@heroui/react";
+import { StatusNotice } from "./status-notice";
 
-export default function OtpModal({ phone, onSuccess }: { phone: string; onSuccess: () => void }) {
+export default function OtpModal({ phone, onSuccess, onClose = () => {} }: { phone: string; onSuccess: () => void; onClose?: () => void }) {
   const [code, setCode] = useState("");
   const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -13,104 +14,133 @@ export default function OtpModal({ phone, onSuccess }: { phone: string; onSucces
   const [cooldown, setCooldown] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [onClose]);
+
   async function send() {
     setBusy(true);
     setError(null);
-    const r = await fetch("/api/otp", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "send", phone }),
-    });
-    const j = await r.json();
-    setBusy(false);
-    if (!r.ok) { setError(j.error ?? "خطا در ارسال کد"); return; }
-    setSent(true);
-    setDevCode(j.devCode ?? null);
-    // 60s resend cooldown
-    setCooldown(60);
-    if (timer.current) clearInterval(timer.current);
-    timer.current = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : (clearInterval(timer.current!), 0))), 1000);
+    try {
+      const response = await fetch("/api/otp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "send", phone }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        setError(json.error ?? "ارسال کد تأیید انجام نشد.");
+        return;
+      }
+      setSent(true);
+      setDevCode(json.devCode ?? null);
+      setCooldown(60);
+      if (timer.current) clearInterval(timer.current);
+      timer.current = setInterval(() => {
+        setCooldown((current) => {
+          if (current <= 1) {
+            if (timer.current) clearInterval(timer.current);
+            return 0;
+          }
+          return current - 1;
+        });
+      }, 1000);
+    } catch {
+      setError("خطای شبکه هنگام ارسال کد رخ داد.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function verify() {
     if (busy) return;
     setBusy(true);
     setError(null);
-    const r = await fetch("/api/otp", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "verify", phone, code }),
-    });
-    const j = await r.json();
-    setBusy(false);
-    if (!r.ok) { setError(j.error ?? "کد اشتباه"); return; }
-    onSuccess();
+    try {
+      const response = await fetch("/api/otp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "verify", phone, code }),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        setError(json.error ?? "کد واردشده صحیح نیست.");
+        return;
+      }
+      onSuccess();
+    } catch {
+      setError("خطای شبکه هنگام بررسی کد رخ داد.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-card bg-canvas p-6 shadow-[0_8px_24px_rgba(0,0,0,0.15)]">
-        <h3 className="text-lg font-bold">تأیید شماره موبایل</h3>
-        <p className="mt-1 text-sm text-ash">برای ادامه، کد پیامک‌شده به {phone} را وارد کنید</p>
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="otp-title"
+    >
+      <div className="w-full max-w-md rounded-card bg-canvas p-6 shadow-[var(--overlay-shadow)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="otp-title" className="font-display text-xl font-black text-ink">تأیید شماره موبایل</h3>
+            <p className="mt-2 text-sm leading-6 text-ash">کد پیامک‌شده به <span dir="ltr">{phone}</span> را وارد کنید.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="بستن" className="flex size-9 shrink-0 items-center justify-center rounded-card text-ash transition-colors hover:bg-plaster hover:text-ink">×</button>
+        </div>
+
         {!sent ? (
-          <Button
-            onPress={send}
-            variant="primary"
-            fullWidth
-            className="mt-5"
-            isDisabled={busy}
-            data-pending={busy || undefined}
-          >
+          <Button onPress={() => void send()} variant="primary" fullWidth className="mt-6 min-h-11" isDisabled={busy} data-pending={busy || undefined}>
             {busy && <Spinner size="sm" />}
             {busy ? "در حال ارسال…" : "ارسال کد تأیید"}
           </Button>
         ) : (
           <>
             {devCode && (
-              <div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
-                محیط توسعه: کد تأیید «{toFaDigits(devCode)}»
+              <div className="mt-4">
+                <StatusNotice tone="info" title="کد محیط توسعه">کد تأیید: <span className="font-code font-bold">{toFaDigits(devCode)}</span></StatusNotice>
               </div>
             )}
-            <div className="mt-4 flex flex-col items-center" dir="ltr">
+            <div className="mt-5 flex flex-col items-center" dir="ltr">
               <InputOTP
                 maxLength={6}
                 pattern={REGEXP_ONLY_DIGITS}
                 value={code}
                 onChange={setCode}
-                onComplete={verify}
-                placeholder="کد ۶ رقمی"
+                onComplete={() => void verify()}
+                placeholder="000000"
+                aria-label="کد تأیید شش رقمی"
                 className="justify-center"
               >
-                {/* InputOTP root stretches to container width; center the slot row inside it */}
                 <InputOTP.Group className="justify-center">
-                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <InputOTP.Slot key={i} index={i} className="h-12 [&_[data-slot=input-otp-slot-value]]:text-2xl" />
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <InputOTP.Slot key={index} index={index} className="h-12 w-10 sm:w-12 [&_[data-slot=input-otp-slot-value]]:text-xl" />
                   ))}
                 </InputOTP.Group>
               </InputOTP>
-              <Button
-                onPress={verify}
-                variant="primary"
-                className="mt-3 w-72"
-                isDisabled={code.length !== 6 || busy}
-              >
-                {busy ? "در حال بررسی…" : "ورود"}
+              <Button onPress={() => void verify()} variant="primary" className="mt-4 min-h-11 w-full max-w-xs" isDisabled={code.length !== 6 || busy} data-pending={busy || undefined}>
+                {busy ? "در حال بررسی…" : "تأیید و ادامه"}
               </Button>
             </div>
             <div className="mt-3 text-center">
-              <Button
-                onPress={send}
-                variant="ghost"
-                size="sm"
-                className="text-sm text-ash hover:text-flame-700"
-                isDisabled={cooldown > 0 || busy}
-              >
+              <Button onPress={() => void send()} variant="ghost" size="sm" className="text-sm text-ash hover:text-flame-700" isDisabled={cooldown > 0 || busy}>
                 {cooldown > 0 ? `ارسال مجدد تا ${toFaDigits(cooldown)} ثانیه` : "ارسال مجدد کد"}
               </Button>
             </div>
           </>
         )}
-        {error && <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+
+        {error && <div className="mt-4"><StatusNotice tone="danger" role="alert">{error}</StatusNotice></div>}
       </div>
     </div>
   );

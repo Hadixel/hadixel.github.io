@@ -26,24 +26,27 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 bg-canvas">
       {/* Announcement bar — ink, centered 13px copy, 36px */}
-      <div className="bg-ink">
-        <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-center px-4">
-          <p className="text-[13px] text-white">
-            ارسال سراسری · ضمانت اصالت کالا · پرداخت امن
-          </p>
+      <div className="bg-ink text-white">
+        <div className="mx-auto flex h-8 max-w-[1440px] items-center justify-center gap-2 px-4 text-[12px] sm:text-[13px]">
+          <span className="size-1.5 rounded-[30px] bg-flame-600" aria-hidden />
+          <span>ارسال سراسری</span>
+          <span className="text-white/35" aria-hidden>·</span>
+          <span className="text-white/75">ضمانت اصالت کالا</span>
+          <span className="hidden text-white/35 sm:inline" aria-hidden>·</span>
+          <span className="hidden text-white/75 sm:inline">پرداخت امن</span>
         </div>
       </div>
 
       {/* Single-row nav — menu(mobile) + logo + search field at the start
           (right, RTL), account/cart icons at the far end (Digikala anatomy) */}
       <div className="border-b border-plaster">
-        <div className="relative mx-auto flex h-[60px] max-w-[1440px] items-center gap-2 px-4">
+        <div className="relative mx-auto flex h-16 max-w-[1440px] items-center gap-2 px-4">
           <div className="lg:hidden">
             <MobileMenu tree={mobile?.tree ?? []} />
           </div>
 
           <Link href="/" aria-label={storeName} className="shrink-0">
-            <Image src="/icons/logo.png" alt={storeName} width={40} height={40} priority className="size-10" />
+            <Image src="/icons/logo.png" alt={storeName} width={40} height={40} preload className="size-10" />
           </Link>
 
           <SearchBar />
@@ -67,7 +70,7 @@ async function CategoryNav() {
   const topTree = header?.tree ?? [];
   if (topTree.length === 0) return null;
   return (
-    <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-1 px-4 pb-2.5 text-sm">
+    <div className="mx-auto hidden h-11 max-w-[1440px] items-center gap-x-6 overflow-visible border-t border-plaster/70 px-4 text-sm lg:flex">
       {topTree.map((item) => {
         if (item.children.length === 0) {
           return (
@@ -83,7 +86,7 @@ async function CategoryNav() {
             </Link>
             {/* Mega panel — CSS hover/focus only; children + MenuPromo imagery */}
             <div className="invisible absolute right-0 top-full z-30 pt-2 opacity-0 transition-opacity duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              <div className="flex max-w-[720px] gap-8 rounded-card border border-plaster bg-canvas p-5">
+              <div className="card-lift flex max-w-[720px] gap-8 rounded-card bg-canvas p-5">
                 <ul className="min-w-[160px] space-y-2.5">
                   {item.children.map((c) => (
                     <li key={c.id}>
@@ -96,10 +99,10 @@ async function CategoryNav() {
                 {item.promos.length > 0 && (
                   <div className="flex gap-3">
                     {item.promos.map((pr, i) => (
-                      <Link key={i} href={pr.href} target={pr.newTab ? "_blank" : undefined} className="block w-40 overflow-hidden rounded-card bg-plaster">
-                        <div className="relative aspect-[4/3]">
+                      <Link key={i} href={pr.href} target={pr.newTab ? "_blank" : undefined} rel={pr.newTab ? "noopener noreferrer" : undefined} className="block w-40 overflow-hidden rounded-card bg-plaster">
+                        <div className="relative aspect-[4/3] bg-canvas">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={pr.imageUrl} alt={pr.alt} className="h-full w-full object-cover" />
+                          <img src={pr.imageUrl} alt={pr.alt} className="h-full w-full object-contain p-2 mix-blend-multiply" />
                         </div>
                         {(pr.heading || pr.subtext) && (
                           <div className="px-2.5 py-2">

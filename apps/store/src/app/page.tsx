@@ -14,5 +14,9 @@ export default async function HomePage() {
     return <BlockRenderer blocks={blocks} />;
   }
   const products = await getPublishedProducts({ limit: 24 });
-  return <ProductGrid products={products} title="محصولات" />;
+  return (
+    <div className="mx-auto max-w-[1440px] px-4 py-10">
+      <ProductGrid products={products} title="محصولات" titleLevel="h1" />
+    </div>
+  );
 }

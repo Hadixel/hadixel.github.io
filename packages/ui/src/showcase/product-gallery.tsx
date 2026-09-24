@@ -87,14 +87,22 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         {/* white well — frames the photo, whites blend instead of pasting */}
         <div aria-hidden className="absolute inset-4 rounded-[10px] bg-canvas ring-1 ring-fog/40" />
         {count > 0 ? (
-          <Image
-            src={images[safeIndex]}
-            alt={alt}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-contain p-6 transition-transform duration-300 group-hover:[transform:scale(1.03)]"
-          />
+          <>
+            <Image
+              src={images[safeIndex]}
+              alt={alt}
+              fill
+              preload
+              loading="eager"
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-contain p-6 transition-transform duration-300 group-hover:[transform:scale(1.03)] motion-reduce:transform-none"
+            />
+            {count > 1 && (
+              <span className="absolute bottom-4 left-4 rounded-card bg-canvas/90 px-2.5 py-1 text-xs font-semibold tabular-nums text-ash backdrop-blur-sm">
+                {toFaDigits(safeIndex + 1)} / {toFaDigits(count)}
+              </span>
+            )}
+          </>
         ) : (
           <span className="flex aspect-square items-center justify-center text-sm text-slate-line">بدون تصویر</span>
         )}

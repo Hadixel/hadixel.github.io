@@ -4,12 +4,12 @@ import { db } from "@kmodern/db";
 import type { Block, ComponentProps } from "@kmodern/schema";
 import { hrefFor } from "@/lib/nav";
 import { getPublishedPosts, getPublishedProducts } from "@/lib/queries";
-import { FadeWords, RankNumeral, SectionHeader } from "@kmodern/ui";
+import { RankNumeral, SectionHeader } from "@kmodern/ui";
 import { ShowcaseCard } from "./showcase-card";
-import { FloatingProductCard } from "./floating-product-card";
+import { HomeHero } from "./home-hero";
 import { NewsletterForm } from "./newsletter-form";
 import { CountdownTimer } from "./countdown-timer";
-import { AnimatedContent, BlurText, CountUp, GlareHover, LogoLoop, Magnet } from "./reactbits";
+import { AnimatedContent, LogoLoop } from "./reactbits";
 
 // Page-builder renderer. Block list from DB Page.publishedBlocks; each type
 // renders server-side. Sections follow the reference anatomy exactly.
@@ -25,7 +25,7 @@ function Section({
   className?: string;
   id?: string;
 }) {
-  const pad = padding === "sm" ? "py-10" : padding === "lg" ? "py-24" : "py-16";
+  const pad = padding === "none" ? "" : padding === "sm" ? "py-10" : padding === "lg" ? "py-24" : "py-16";
   return (
     <section id={id} className={cnSection(pad, className)}>
       {children}
@@ -82,63 +82,23 @@ async function BlockNode({ block }: { block: Block }) {
   const { type, props } = block;
 
   switch (type) {
-    /* ---------- Hero: full-viewport photographic, overlay bottom-RIGHT
-       (RTL mirror of Zellerfeld's bottom-left), floating buy-card on the
-       opposite side. New-in badge → display headline → subhead. ---------- */
+    /* ---------- Hero: Burner Ignition. The catalog image is treated as a
+       contained product stage, never as a destructive full-bleed crop. The
+       existing storefront header remains outside this composition. ---------- */
     case "hero": {
       const p = props as ComponentProps["hero"];
       const cta = p.cta ? await hrefFor(p.cta.link) : null;
-      const products = await getPublishedProducts({ limit: 1 });
-      const hero = products[0];
+      const [hero] = await getPublishedProducts({ limit: 1 });
       return (
-        <section className="relative min-h-[88vh] w-full overflow-hidden bg-ink">
-          {p.image?.src && (
-            <div className="absolute inset-0">
-              <Image src={p.image.src} alt={p.image.alt ?? ""} fill priority className="object-cover" />
-            </div>
-          )}
-          {/* legibility wash over the bottom third only */}
-          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/55 to-transparent" />
-
-          <div className="relative mx-auto flex min-h-[88vh] max-w-[1440px] flex-col justify-end gap-6 px-4 pb-14 md:flex-row md:items-end md:justify-between">
-            {/* overlay stack — bottom-right in RTL */}
-            <div className="max-w-2xl">
-            {cta && (
-              <Link
-                href={cta.href}
-                target={cta.newTab ? "_blank" : undefined}
-                className="mb-5 inline-flex items-center rounded-[30px] bg-flame-700 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-flame-600"
-              >
-                {p.cta!.label}
-              </Link>
-            )}
-              <BlurText
-                text={p.title}
-                className="block font-display text-white [font-size:clamp(48px,8vw,112px)] font-black leading-[1.02]"
-                delay={90}
-              />
-              {p.subtitle && <p className="mt-4 max-w-md text-[15px] leading-7 text-white/80">{p.subtitle}</p>}
-            </div>
-
-            {hero && (
-              <Magnet padding={70} magnetStrength={5}>
-                <AnimatedContent delay={250} distance={36}>
-                  <div className="w-full max-w-[280px] shrink-0 md:mb-2">
-                    <GlareHover borderRadius="16px" glareColor="rgba(255,255,255,0.35)">
-                      <FloatingProductCard
-                        href={`/product/${hero.slug}`}
-                        name={hero.name}
-                        image={hero.image}
-                        price={hero.price}
-                        maxPrice={hero.maxPrice}
-                      />
-                    </GlareHover>
-                  </div>
-                </AnimatedContent>
-              </Magnet>
-            )}
-          </div>
-        </section>
+        <HomeHero
+          title={p.title}
+          subtitle={p.subtitle}
+          cta={cta ? { href: cta.href, label: p.cta!.label, newTab: cta.newTab } : null}
+          image={{
+            src: p.image?.src ?? hero?.image ?? null,
+            alt: p.image?.alt ?? hero?.name ?? p.title,
+          }}
+        />
       );
     }
 
@@ -146,9 +106,9 @@ async function BlockNode({ block }: { block: Block }) {
        watermark top-right of each plaster card, product centered. ---------- */
     case "productGrid": {
       const p = props as ComponentProps["productGrid"];
-      let products = await getPublishedProducts({ limit: 4 });
-      if (p.source.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: 4 });
-      if (p.source.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: 4 });
+      let products = await getPublishedProducts({ limit: Math.min(p.limit ?? 4, 8) });
+      if (p.source?.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: Math.min(p.limit ?? 4, 8) });
+      if (p.source?.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: Math.min(p.limit ?? 4, 8) });
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
@@ -174,12 +134,14 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "productSlider": {
       const p = props as ComponentProps["productSlider"];
-      const products = await getPublishedProducts({ limit: 8 });
+      let products = await getPublishedProducts({ limit: Math.min(p.limit ?? 8, 12) });
+      if (p.source?.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: Math.min(p.limit ?? 8, 12) });
+      if (p.source?.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: Math.min(p.limit ?? 8, 12) });
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
           <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
-            {products.slice(0, 8).map((pr) => (
+            {products.slice(0, p.limit ?? 8).map((pr) => (
               <div key={pr.id} className="w-64 shrink-0 snap-start sm:w-72">
                 <ShowcaseCard
                   href={`/product/${pr.slug}`}
@@ -211,16 +173,14 @@ async function BlockNode({ block }: { block: Block }) {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {tiles.map((t, i) => (
               <AnimatedContent key={t.href} delay={i * 70} distance={24}>
-                <GlareHover className="group h-full" glareColor="rgba(255,255,255,0.7)">
-                  <Link href={t.href} className="block overflow-hidden rounded-[10px] bg-plaster">
-                    <div className="relative aspect-[4/3]">
-                      {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04]" />}
-                    </div>
-                    <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-bold text-ink">
-                      {t.name}
-                    </div>
-                  </Link>
-                </GlareHover>
+                <Link href={t.href} className="group block h-full overflow-hidden rounded-card bg-plaster transition-colors hover:bg-fog/60">
+                  <div className="relative aspect-[4/3]">
+                    {t.image && <Image src={t.image} alt={t.name} fill sizes="(max-width:768px) 50vw, 20vw" className="object-contain p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:transform-none" />}
+                  </div>
+                  <div className="border-t border-white/60 px-3 py-3 text-center text-sm font-bold text-ink">
+                    {t.name}
+                  </div>
+                </Link>
               </AnimatedContent>
             ))}
           </div>
@@ -234,26 +194,45 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["banner"] & { banners?: ComponentProps["banner"][] };
       const items = p.banners ?? [p];
       const cols = type === "banner" ? 1 : type === "bannerPair" ? 2 : 3;
-      const links = await Promise.all(items.map(async (b) => (b.image?.link ? hrefFor(b.image.link) : null)));
+      const links = await Promise.all(items.map(async (banner) => (banner.image?.link ? hrefFor(banner.image.link) : null)));
       return (
-        <Section>
+        <Section id={p.anchorId}>
           <div className={`grid gap-4 ${cols === 1 ? "mx-auto max-w-[1100px]" : cols === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-            {items.map((b, i) => {
-              const link = links[i];
+            {items.map((banner, index) => {
+              const link = links[index];
               const inner = (
-                <div key={i} className="relative aspect-[16/9] max-h-[520px] w-full overflow-hidden rounded-card bg-plaster">
-                  {b.image?.src && <Image src={b.image.src} alt={b.image.alt ?? b.title ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />}
-                  {b.title && (
-                    <div className="absolute bottom-5 right-6 max-w-[70%]">
-                      <span className="font-display text-2xl font-extrabold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">{b.title}</span>
-                    </div>
-                  )}
+                <div className="group grid h-full overflow-hidden rounded-card bg-plaster transition-transform duration-300 motion-reduce:transform-none md:grid-cols-2">
+                  <div className="relative min-h-64 overflow-hidden bg-canvas md:min-h-80">
+                    {banner.image?.src && (
+                      <Image
+                        src={banner.image.src}
+                        alt={banner.image.alt ?? banner.title ?? ""}
+                        fill
+                        sizes="(max-width:768px) 100vw, 50vw"
+                        className="object-contain p-5 mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transform-none"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col justify-center p-6 sm:p-8">
+                    {banner.title && <div className="font-display text-2xl font-black leading-tight text-ink">{banner.title}</div>}
+                    {banner.subtitle && <p className="mt-3 text-sm leading-7 text-ash">{banner.subtitle}</p>}
+                    {link && (
+                      <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-ink">
+                        مشاهده
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="m9 18 6-6-6-6" />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
               return link ? (
-                <Link key={i} href={link.href} target={link.newTab ? "_blank" : undefined} className="block">{inner}</Link>
+                <Link key={`${banner.image?.src ?? "banner"}-${index}`} href={link.href} target={link.newTab ? "_blank" : undefined} rel={link.newTab ? "noopener noreferrer" : undefined} className="block rounded-card focus-visible:outline-offset-4">
+                  {inner}
+                </Link>
               ) : (
-                inner
+                <div key={`${banner.image?.src ?? "banner"}-${index}`}>{inner}</div>
               );
             })}
           </div>
@@ -303,13 +282,13 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["imageTextSplit"];
       const img = p.image;
       return (
-        <Section>
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-plaster">
-              <Image src={img.src} alt={img.alt ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
+        <Section id={p.anchorId}>
+          <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
+            <div className={`relative aspect-[4/3] overflow-hidden rounded-card bg-plaster ${p.imageSide === "RIGHT" ? "md:order-2" : ""}`}>
+              <Image src={img.src} alt={img.alt ?? ""} fill sizes="(max-width:768px) 100vw, 50vw" className="object-contain p-5 mix-blend-multiply" />
             </div>
-            <div>
-              <h3 className="font-display text-3xl font-extrabold text-ink">{p.title}</h3>
+            <div className={p.imageSide === "RIGHT" ? "md:order-1" : ""}>
+              <h3 className="font-display text-3xl font-extrabold leading-tight text-ink">{p.title}</h3>
               {p.text && <p className="mt-4 max-w-md leading-8 text-ash">{p.text}</p>}
             </div>
           </div>
@@ -425,8 +404,70 @@ async function BlockNode({ block }: { block: Block }) {
       );
     }
 
+    case "statsRow": {
+      const p = props as ComponentProps["statsRow"];
+      return (
+        <Section id={p.anchorId}>
+          <div className="grid gap-px overflow-hidden rounded-card bg-fog/70 sm:grid-cols-2 lg:grid-cols-4">
+            {p.items.map((item, index) => (
+              <div key={`${item.value}-${item.label}-${index}`} className="bg-plaster/70 p-6 text-center">
+                <div className="font-display text-3xl font-black tabular-nums text-ink">{item.value}</div>
+                <div className="mt-2 text-sm text-ash">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      );
+    }
+
+    case "slidingStrip": {
+      const p = props as ComponentProps["slidingStrip"];
+      const speed = p.speed === "slow" ? 24 : p.speed === "fast" ? 64 : 40;
+      return (
+        <div className="overflow-hidden border-y border-plaster bg-ink py-5" aria-label={p.items.join("، ")}>
+          <LogoLoop speed={speed} items={p.items.map((item) => <span key={item} className="text-sm font-bold text-white/70">{item}</span>)} />
+        </div>
+      );
+    }
+
+    case "beforeAfter": {
+      const p = props as ComponentProps["beforeAfter"];
+      const [beforeLink, afterLink] = await Promise.all([p.before.link ? hrefFor(p.before.link) : null, p.after.link ? hrefFor(p.after.link) : null]);
+      const pair = [
+        { image: p.before, link: beforeLink, label: "قبل" },
+        { image: p.after, link: afterLink, label: "بعد" },
+      ];
+      return (
+        <Section id={p.anchorId}>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pair.map(({ image, link, label }) => {
+              const content = <div className="group relative aspect-[4/3] overflow-hidden rounded-card bg-plaster"><Image src={image.src} alt={image.alt ?? label} fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transform-none" /><span className="absolute bottom-4 right-4 rounded-card bg-ink/85 px-3 py-1.5 text-xs font-bold text-white">{label}</span></div>;
+              return link ? <Link key={label} href={link.href} target={link.newTab ? "_blank" : undefined} rel={link.newTab ? "noopener noreferrer" : undefined}>{content}</Link> : <div key={label}>{content}</div>;
+            })}
+          </div>
+        </Section>
+      );
+    }
+
+    case "map": {
+      const p = props as ComponentProps["map"];
+      return (
+        <Section id={p.anchorId}>
+          {p.title && <SectionHeader title={p.title} />}
+          <div className="mx-auto aspect-[16/7] max-w-5xl overflow-hidden rounded-card bg-plaster">
+            <iframe src={p.embedUrl} title={p.title ?? "نقشه"} loading="lazy" className="h-full w-full" />
+          </div>
+        </Section>
+      );
+    }
+
+    case "customHtml": {
+      const p = props as ComponentProps["customHtml"];
+      return <Section id={p.anchorId}><div className="mx-auto max-w-3xl leading-8 text-ink" dangerouslySetInnerHTML={{ __html: p.html }} /></Section>;
+    }
+
     case "spacer":
-      return <div style={{ height: (props as ComponentProps["spacer"]).height }} aria-hidden />;
+      return <div style={{ height: (props as ComponentProps["spacer"]).height ?? 48 }} aria-hidden />;
 
     case "video": {
       const p = props as ComponentProps["video"];
@@ -478,10 +519,10 @@ async function BlockNode({ block }: { block: Block }) {
 export default async function BlockRenderer({ blocks }: { blocks: Block[] }) {
   const visible = blocks.filter((b) => (b.props as { visible?: boolean })?.visible !== false);
   return (
-    <main className="min-h-screen bg-canvas">
+    <div className="min-h-screen bg-canvas">
       {visible.map((b) => (
         <BlockNode key={b.id} block={b} />
       ))}
-    </main>
+    </div>
   );
 }

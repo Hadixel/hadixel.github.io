@@ -165,7 +165,7 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
           <a href="/products" onClick={onNavigate} className="block overflow-hidden rounded-card bg-ink">
             <div className="relative flex h-24 items-center justify-between px-5">
               <div>
-                <div className="text-sm font-bold text-white">دنبال تخفیف هستی؟</div>
+                <div className="text-sm font-bold text-white">تازه‌های فروشگاه</div>
                 <div className="mt-1 text-xs text-white/70">همه محصولات را ببین</div>
               </div>
               <span className="rounded-[30px] bg-flame-700 px-4 py-1.5 text-xs font-bold text-white">خرید</span>

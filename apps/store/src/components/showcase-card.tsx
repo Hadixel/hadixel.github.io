@@ -4,28 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@heroui/react";
-import { Price } from "@kmodern/ui";
-import { cn } from "@kmodern/ui";
+import { ColorDotSwatches, Price, cn } from "@kmodern/ui";
 import type { DotVariant } from "@kmodern/ui";
-import { ColorDotSwatches } from "@kmodern/ui";
 
-/*
- * Showcase badge variants → HeroUI Badge props. Flame = solid accent pill,
- * pale = soft accent, slate = monochrome plaster pill (no invented chroma).
- */
 const badgeProps = {
   flame: { color: "accent", variant: "primary" },
   pale: { color: "accent", variant: "soft" },
   slate: { color: "default", variant: "primary" },
 } as const;
-/*
- * Standard product card — exact Zellerfeld anatomy: plaster surface, no
- * border; soft elevation + hover lift per ADR-0002. Status badge top-LEFT
- * (12px offset; Zellerfeld's badge corner, kept left as the mirror of RTL
- * metadata anchoring right). Centered product image fills ~60% height.
- * Below: credit mark → name → mono credit → price. Color dots swap imagery
- * live (no navigation).
- */
+
 export function ShowcaseCard({
   href,
   name,
@@ -54,73 +41,34 @@ export function ShowcaseCard({
   const hasB = Boolean(imgB && imgB !== imgA);
 
   return (
-    <Link
-      href={href}
-      className={cn(
-        "group card-lift flex h-full flex-col rounded-card bg-plaster",
-        className,
-      )}
-    >
-      <div className="relative aspect-square overflow-hidden rounded-card bg-plaster">
-        {/* white well — frames the photo, whites blend instead of pasting */}
-        <div aria-hidden className="absolute inset-3 rounded-[10px] bg-canvas ring-1 ring-fog/40" />
-        {/* status badge — pill, 12px offset, identical anatomy across variants */}
-        {badge && (
-          <span className="absolute left-3 top-3 z-10">
-            <Badge color={badgeProps[badge.variant].color} variant={badgeProps[badge.variant].variant}>
-              {badge.label}
-            </Badge>
-          </span>
-        )}
-        {!available && !badge && (
-          <span className="absolute left-3 top-3 z-10">
-            <Badge color="default" variant="primary">ناموجود</Badge>
-          </span>
-        )}
-        {imgA ? (
-          <>
-            <Image
-              src={imgA}
-              alt={name}
-              fill
-              sizes="(max-width:768px) 50vw, 25vw"
-              className={cn(
-                "object-contain p-4 mix-blend-multiply transition duration-300",
-                hasB ? "group-hover:opacity-0" : "group-hover:[transform:scale(1.04)]",
-              )}
-            />
-            {hasB && (
+    <div className={cn("group card-lift flex h-full flex-col rounded-card bg-plaster", className)}>
+      <Link href={href} className="flex min-w-0 flex-1 flex-col" aria-label={`مشاهده ${name}`}>
+        <div className="relative aspect-square overflow-hidden rounded-card bg-plaster">
+          <div aria-hidden className="absolute inset-3 rounded-card bg-canvas ring-1 ring-fog/40" />
+          {badge && <span className="absolute left-3 top-3 z-10"><Badge color={badgeProps[badge.variant].color} variant={badgeProps[badge.variant].variant}>{badge.label}</Badge></span>}
+          {!available && !badge && <span className="absolute left-3 top-3 z-10"><Badge color="default" variant="primary">ناموجود</Badge></span>}
+          {imgA ? (
+            <>
               <Image
-                src={imgB}
-                alt=""
+                src={imgA}
+                alt={name}
                 fill
-                sizes="(max-width:768px) 50vw, 25vw"
-                className="[transform:scale(1.04)] object-contain p-4 opacity-0 mix-blend-multiply transition duration-300 group-hover:opacity-100"
+                sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"
+                className={cn("object-contain p-4 mix-blend-multiply transition duration-300", hasB ? "group-hover:opacity-0" : "group-hover:scale-[1.04] motion-reduce:transform-none")}
               />
-            )}
-          </>
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col p-5 pt-4">
-        {/* reserved 2-line title — keeps every card the same height */}
-        <div className="min-h-10">
-          <div className="line-clamp-2 text-[15px] font-bold leading-snug text-ink">{name}</div>
+              {hasB && <Image src={imgB} alt="" fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw" className="scale-[1.04] object-contain p-4 opacity-0 mix-blend-multiply transition duration-300 group-hover:opacity-100" />}
+            </>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>
+          )}
         </div>
-        <div className="min-h-5">
-          {model && <div className="text-code mt-1 text-xs text-ash">{model}</div>}
+        <div className="flex min-w-0 flex-1 flex-col p-5 pb-2">
+          <div className="min-h-10"><div className="line-clamp-2 text-[15px] font-bold leading-snug text-ink">{name}</div></div>
+          <div className="min-h-5">{model && <div className="text-code mt-1 text-xs text-ash">{model}</div>}</div>
+          <div className="mt-2 flex items-end justify-between"><Price amount={selected?.price ?? price} maxAmount={selected ? undefined : maxPrice} className="text-sm" /></div>
         </div>
-        <div className="mt-2 flex items-end justify-between">
-          <Price amount={selected?.price ?? price} maxAmount={selected ? undefined : maxPrice} className="text-sm" />
-        </div>
-        <div className="mt-auto pt-2">
-          <ColorDotSwatches
-            variants={variants}
-            onSwap={(v) => setSelected(v)}
-          />
-        </div>
-      </div>
-    </Link>
+      </Link>
+      {variants.length > 1 && <div className="px-5 pb-4 pt-1"><ColorDotSwatches variants={variants} onSwap={(variant) => setSelected(variant)} /></div>}
+    </div>
   );
 }

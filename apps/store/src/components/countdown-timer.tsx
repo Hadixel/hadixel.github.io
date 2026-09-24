@@ -14,24 +14,17 @@ function remaining(to: number) {
   };
 }
 
-// Countdown to props.endsAt (ISO); renders an ended state after the deadline.
-export function CountdownTimer({
-  endsAt,
-  linkHref,
-}: {
-  endsAt: string;
-  linkHref?: string | null;
-}) {
+export function CountdownTimer({ endsAt, linkHref }: { endsAt: string; linkHref?: string | null }) {
   const target = new Date(endsAt).getTime();
   const [left, setLeft] = useState(() => remaining(target));
 
   useEffect(() => {
-    const t = setInterval(() => setLeft(remaining(target)), 30_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setLeft(remaining(target)), 30_000);
+    return () => clearInterval(timer);
   }, [target]);
 
-  if (left.ended) {
-    return <div className="text-center text-lg font-semibold text-ash">این پیشنهاد به پایان رسید</div>;
+  if (left.ended || Number.isNaN(target)) {
+    return <div className="text-center text-sm font-semibold text-ash">این پیشنهاد به پایان رسید</div>;
   }
 
   const cells = [
@@ -41,15 +34,15 @@ export function CountdownTimer({
   ];
 
   const inner = (
-    <div className="flex items-center justify-center gap-4">
-      {cells.map((c) => (
-        <div key={c.label} className="min-w-20 rounded-card bg-ink px-4 py-3 text-center text-white">
-          <div className="text-2xl font-extrabold tabular-nums">{toFaDigits(String(c.value))}</div>
-          <div className="mt-1 text-xs text-slate-line">{c.label}</div>
+    <div className="grid grid-cols-3 gap-2 sm:gap-4" aria-live="polite">
+      {cells.map((cell) => (
+        <div key={cell.label} className="min-w-0 rounded-card bg-ink px-3 py-3 text-center text-white sm:min-w-20 sm:px-4">
+          <div className="text-xl font-black tabular-nums sm:text-2xl">{toFaDigits(cell.value)}</div>
+          <div className="mt-1 text-[11px] text-white/55 sm:text-xs">{cell.label}</div>
         </div>
       ))}
     </div>
   );
 
-  return linkHref ? <Link href={linkHref}>{inner}</Link> : inner;
+  return linkHref ? <Link href={linkHref} className="mx-auto block w-fit">{inner}</Link> : <div className="mx-auto w-fit">{inner}</div>;
 }

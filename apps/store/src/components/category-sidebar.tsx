@@ -22,6 +22,7 @@ export function CategorySidebar({
             <div key={r.id}>
               <Link
                 href={`/category/${r.slug}`}
+                aria-current={rootActive ? "page" : undefined}
                 className={cn(
                   "block py-1 font-semibold transition-colors",
                   rootActive ? "text-flame-700" : "text-ink hover:text-flame-700",
@@ -33,6 +34,7 @@ export function CategorySidebar({
                 <Link
                   key={k.id}
                   href={`/category/${k.slug}`}
+                  aria-current={k.slug === activeSlug ? "page" : undefined}
                   className={cn(
                     "block py-0.5 text-sm transition-colors",
                     k.slug === activeSlug

@@ -31,8 +31,8 @@ export default function MobileSearchModal({ open, onClose }: { open: boolean; on
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 md:hidden" onClick={onClose} role="dialog" aria-modal="true" aria-label="جستجو">
-      <div className="mx-4 mt-4 rounded-card border border-plaster bg-canvas p-4 shadow-[0_8px_24px_rgba(0,0,0,0.15)]" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-black/45 md:hidden" onClick={onClose} role="dialog" aria-modal="true" aria-label="جستجو">
+      <div className="h-full overflow-y-auto bg-canvas px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
           <Input
             ref={inputRef}
@@ -53,7 +53,7 @@ export default function MobileSearchModal({ open, onClose }: { open: boolean; on
             ✕
           </Button>
         </div>
-        <div className="mt-3 max-h-[65vh] overflow-y-auto">
+        <div className="mt-5 min-h-[60vh] overflow-y-auto pb-8">
           <SearchSuggestions query={q} onNavigate={onClose} />
         </div>
       </div>

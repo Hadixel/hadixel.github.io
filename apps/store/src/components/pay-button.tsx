@@ -1,39 +1,40 @@
 "use client";
 
 import { useState } from "react";
-
+import { Button } from "@heroui/react";
+import { StatusNotice } from "./status-notice";
 
 export default function PayButton({ orderId }: { orderId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   return (
     <div className="mt-6">
-      <button
-        disabled={busy}
-        onClick={async () => {
+      <Button
+        variant="primary"
+        onPress={async () => {
           setBusy(true);
           setError(null);
           try {
-            const r = await fetch(`/api/orders/${orderId}/pay`, { method: "POST" });
-            const j = await r.json();
-            if (r.ok && j.url) {
-              window.location.href = j.url;
+            const response = await fetch(`/api/orders/${orderId}/pay`, { method: "POST" });
+            const json = await response.json();
+            if (response.ok && json.url) {
+              window.location.href = json.url;
               return;
             }
-            setError(j.error ?? "خطا در شروع پرداخت");
+            setError(json.error ?? "شروع پرداخت انجام نشد.");
           } catch {
-            setError("خطای شبکه — دوباره تلاش کنید");
+            setError("خطای شبکه رخ داد.");
           } finally {
             setBusy(false);
           }
         }}
-        className="w-full rounded-card bg-flame-700 py-3.5 font-bold text-white hover:bg-flame-600 disabled:opacity-50"
+        isDisabled={busy}
+        className="min-h-12 w-full"
       >
         {busy ? "در حال اتصال به درگاه…" : "پرداخت آنلاین"}
-      </button>
-      {error && (
-        <p className="mt-2 rounded-card border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{error} — می‌توانید دوباره تلاش کنید.</p>
-      )}
+      </Button>
+      {error && <div className="mt-3"><StatusNotice tone="danger" role="alert">{error} — می‌توانید دوباره تلاش کنید.</StatusNotice></div>}
     </div>
   );
 }

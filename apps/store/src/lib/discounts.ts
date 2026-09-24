@@ -116,7 +116,8 @@ export async function applyDiscounts(
 
   let coupon: Prisma.DiscountGetPayload<Record<string, never>> | null = null;
   if (couponCode) {
-    coupon = coupons.find((d) => d.code === couponCode.trim()) ?? null;
+    const normalizedCode = couponCode.trim().toLowerCase();
+    coupon = coupons.find((d) => d.code?.trim().toLowerCase() === normalizedCode) ?? null;
     if (!coupon) {
       // still allow automatic discounts, but report coupon error
       const auto = bestAutomatic(automatics, ctx);

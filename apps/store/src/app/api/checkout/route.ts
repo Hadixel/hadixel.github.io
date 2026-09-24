@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
 
     // shipping method gating (011): COD only when LOCAL
     const totals = await computeOrderTotals(lines, address.province, address.city, me.customer.id, couponCode);
+    if (paymentMethod === "COD" && totals.shippingMethod !== "LOCAL") {
+      return NextResponse.json({ error: "پرداخت هنگام تحویل فقط برای ارسال درونشهری کرمان فعال است" }, { status: 400 });
+    }
     if (paymentMethod === "COD") {
       const maxCod = await getSettingOrDefault<number>(settingKeys.shippingMaxCodTotal, 50000000);
       if (totals.total > maxCod) {

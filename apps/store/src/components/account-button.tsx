@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import AuthModal from "./auth-modal";
 
@@ -15,12 +14,9 @@ function UserIcon() {
 
 /*
  * AccountButton — profile icon on all sizes. Logged in → link to /account.
- * Logged out → opens the shared auth modal (login/signup in one flow).
- * `loggedIn` is resolved server-side in the header.
+ * Logged out → renders the shared auth modal's real trigger.
  */
 export default function AccountButton({ loggedIn }: { loggedIn: boolean }) {
-  const [open, setOpen] = useState(false);
-
   if (loggedIn) {
     return (
       <Link
@@ -34,16 +30,11 @@ export default function AccountButton({ loggedIn }: { loggedIn: boolean }) {
   }
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="ورود / ثبت‌نام"
-        onClick={() => setOpen(true)}
-        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster"
-      >
-        <UserIcon />
-      </button>
-      <AuthModal open={open} onClose={() => setOpen(false)} />
-    </>
+    <AuthModal
+      onClose={() => undefined}
+      triggerLabel="ورود / ثبت‌نام"
+      triggerClassName="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster"
+      trigger={<UserIcon />}
+    />
   );
 }

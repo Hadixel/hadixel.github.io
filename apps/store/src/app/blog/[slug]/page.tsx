@@ -1,6 +1,7 @@
-import { getPublishedPost } from "@/lib/queries";
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
+import { notFound } from "next/navigation";
+import { getPublishedPost } from "@/lib/queries";
 import PostBody from "@/components/post-body";
 
 export const dynamic = "force-dynamic";
@@ -11,18 +12,24 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) notFound();
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10">
+    <article className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
+      <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-ash transition-colors hover:text-ink">
+        <span aria-hidden>→</span>
+        بازگشت به مجله
+      </Link>
+      <header className="mt-8">
+        <h1 className="text-balance font-display text-3xl font-black leading-tight text-ink sm:text-5xl">{post.title}</h1>
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ash">
+          <span>{post.byline ?? "خانه مدرن"}</span>
+          {post.publishAt && <><span aria-hidden>·</span><span>{new Date(post.publishAt).toLocaleDateString("fa-IR")}</span></>}
+        </div>
+      </header>
       {post.coverImage && (
-        <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-card bg-plaster">
-          <Image src={post.coverImage} alt={post.title} fill sizes="100vw" className="object-cover" />
+        <div className="relative mt-8 aspect-[16/8] overflow-hidden rounded-card bg-plaster">
+          <Image src={post.coverImage} alt={post.title} fill sizes="(max-width:768px) 100vw, 768px" className="object-cover" />
         </div>
       )}
-      <h1 className="text-3xl font-bold">{post.title}</h1>
-      <div className="mt-3 flex items-center gap-3 text-sm text-ash">
-        <span>{post.byline ?? "خانه مدرن"}</span>
-        {post.publishAt && <span>· {new Date(post.publishAt).toLocaleDateString("fa-IR")}</span>}
-      </div>
-      <div className="mt-8">
+      <div className="mt-10">
         <PostBody body={post.body} />
       </div>
     </article>
