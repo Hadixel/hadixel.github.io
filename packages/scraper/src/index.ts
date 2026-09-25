@@ -1,5 +1,6 @@
 export {
   runPipeline,
+  matchesScrapeFilters,
   type PipelineEvent,
   type PipelineOptions,
   type PipelineResult,
@@ -40,6 +41,7 @@ export type {
   Conflict,
   RawSpec,
   ScrapeFilters,
+  ScrapeFilterValue,
   ScrapePriceFilter,
   ScrapeContentFilter,
   ScrapeSort,

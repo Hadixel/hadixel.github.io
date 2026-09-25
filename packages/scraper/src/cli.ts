@@ -6,7 +6,7 @@
 //   pnpm --filter @kmodern/scraper scrape --images            # download product images
 //   pnpm --filter @kmodern/scraper scrape --no-prices          # skip Datees Shop prices
 //   pnpm --filter @kmodern/scraper scrape --price-list ./prices.xlsx --price-brand Datees
-//   pnpm --filter @kmodern/scraper scrape --category oven --color black
+//   pnpm --filter @kmodern/scraper scrape --category oven,stove --color black,steel
 //   SCRAPE_CACHE=1 pnpm … scrape                              # enable disk cache
 
 import { runPipeline } from "./pipeline";
@@ -20,6 +20,14 @@ const flag = (name: string): string | undefined => readFlag(args, name);
 function optionalFlag(name: string): string | undefined {
   const value = flag(name)?.trim();
   return value && value !== "all" ? value : undefined;
+}
+
+function multiFlag(name: string): string[] | undefined {
+  const values = (flag(name) ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value && value !== "all");
+  return values.length ? [...new Set(values)] : undefined;
 }
 
 function enumFlag<T extends string>(name: string, allowed: readonly (T | "all")[]): T | undefined {
@@ -43,11 +51,11 @@ async function main() {
   const cacheDir = process.env.SCRAPE_CACHE ? ".scrape-cache" : undefined;
   const filters: ScrapeFilters = {
     search: optionalFlag("search"),
-    manufacturer: optionalFlag("manufacturer"),
-    website: optionalFlag("website"),
-    category: optionalFlag("category"),
-    subCategory: optionalFlag("subcategory") ?? optionalFlag("sub-category"),
-    color: optionalFlag("color"),
+    manufacturer: multiFlag("manufacturer"),
+    website: multiFlag("website"),
+    category: multiFlag("category"),
+    subCategory: multiFlag("subcategory") ?? multiFlag("sub-category"),
+    color: multiFlag("color"),
     price: enumFlag<ScrapePriceFilter>("price", ["all", "priced", "missing"]),
     content: enumFlag<ScrapeContentFilter>("content", ["all", "with-images", "without-images", "with-specs"]),
     sort: enumFlag<ScrapeSort>("sort", ["all", "newest", "name", "price-high", "price-low"]),

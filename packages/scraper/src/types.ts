@@ -11,14 +11,16 @@ export type ScrapePriceFilter = "all" | "priced" | "missing";
 export type ScrapeContentFilter = "all" | "with-images" | "without-images" | "with-specs";
 export type ScrapeSort = "newest" | "name" | "price-high" | "price-low";
 
-/** Filters applied before refinement; values use the normalized catalog slugs. */
+export type ScrapeFilterValue = string | string[];
+
+/** Filters applied before refinement; multi-value dimensions use OR within a dimension. */
 export interface ScrapeFilters {
   search?: string;
-  manufacturer?: string;
-  website?: string;
-  category?: string;
-  subCategory?: string;
-  color?: string;
+  manufacturer?: ScrapeFilterValue;
+  website?: ScrapeFilterValue;
+  category?: ScrapeFilterValue;
+  subCategory?: ScrapeFilterValue;
+  color?: ScrapeFilterValue;
   price?: ScrapePriceFilter;
   content?: ScrapeContentFilter;
   sort?: ScrapeSort;

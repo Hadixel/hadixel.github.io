@@ -106,8 +106,10 @@ function emptySnapshot(): ScraperJobSnapshot {
 }
 
 function filterSummary(filters: ScrapeFilters): string | null {
-  const active = Object.entries(filters).filter(([, value]) => value && value !== "all");
-  return active.length ? active.map(([key, value]) => `${key}=${value}`).join(", ") : null;
+  const active = Object.entries(filters).filter(([, value]) => (Array.isArray(value) ? value.length > 0 : value && value !== "all"));
+  return active.length
+    ? active.map(([key, value]) => `${key}=${Array.isArray(value) ? value.join("|") : value}`).join(", ")
+    : null;
 }
 
 function isActive(status: ScraperJobStatus): boolean {

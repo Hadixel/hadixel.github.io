@@ -12,6 +12,7 @@ Date: 2026-09-25
 - Made order status changes, manual stock adjustments, and manual-order stock reservations compare-and-set/transactional; COD now creates and commits reservations atomically, and stock cannot be adjusted below reserved quantity.
 - Added product/collection child ownership checks, financial/stock/discount validation, strict navigation/menu validation, and bounded customer/discount pagination.
 - Added scraper SSRF protections for direct and redirected requests, private/link-local IP blocking, content-type and response-size limits, and retryable scraper status UI.
+- Scraper manufacturer, website, category, subcategory, and color filters now support multiple selections; values within one dimension are ORed, while different dimensions remain ANDed.
 - Split lightweight schema formatter/setting-key entry points and scraper source metadata from the heavy Zod/crawler barrels, and removed avoidable client-side schema imports from the page builder and scraper screen.
 - Upgraded Next.js/Prisma, replaced the vulnerable SheetJS npm artifact with the patched SheetJS release, and added dependency overrides; `pnpm audit --prod` reports zero advisories.
 

@@ -100,23 +100,44 @@ export async function GET(request: Request) {
   });
 }
 
+type MultiFilterKey = "manufacturer" | "website" | "category" | "subCategory" | "color";
+const MULTI_FILTER_KEYS: MultiFilterKey[] = ["manufacturer", "website", "category", "subCategory", "color"];
+
+function parseMultiFilterValue(value: unknown): string[] | null {
+  if (value === undefined || value === null || value === "") return [];
+  const rawValues = Array.isArray(value) ? value : [value];
+  if (rawValues.length > 50) return null;
+  const values: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of rawValues) {
+    if (typeof raw !== "string" || raw.length > 200) return null;
+    const text = raw.trim();
+    if (!text || text === "all") continue;
+    const key = text.toLocaleLowerCase("en");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    values.push(text);
+  }
+  return values;
+}
+
 function parseFilters(value: unknown): ScrapeFilters | null {
   if (value === undefined || value === null) return {};
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
   const filters: ScrapeFilters = {};
-  for (const key of ["search", "manufacturer", "website", "category", "subCategory", "color"] as const) {
+  for (const key of ["search", ...MULTI_FILTER_KEYS] as const) {
     const raw = input[key];
-    if (raw === undefined || raw === null || raw === "") continue;
-    if (typeof raw !== "string" || raw.length > 200) return null;
-    const text = raw.trim();
-    if (!text || text === "all") continue;
-    if (key === "search") filters.search = text;
-    if (key === "manufacturer") filters.manufacturer = text;
-    if (key === "website") filters.website = text;
-    if (key === "category") filters.category = text;
-    if (key === "subCategory") filters.subCategory = text;
-    if (key === "color") filters.color = text;
+    if (key === "search") {
+      if (raw === undefined || raw === null || raw === "") continue;
+      if (typeof raw !== "string" || raw.length > 200) return null;
+      const text = raw.trim();
+      if (text && text !== "all") filters.search = text;
+      continue;
+    }
+    const values = parseMultiFilterValue(raw);
+    if (!values) return null;
+    if (values.length) (filters as Record<MultiFilterKey, string[]>)[key] = values;
   }
   if (input.price !== undefined && input.price !== null && input.price !== "") {
     if (input.price !== "all" && input.price !== "priced" && input.price !== "missing") return null;

@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters, PriceLookupReport } from "./types";
+import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters, ScrapeFilterValue, PriceLookupReport } from "./types";
 import type { FetchOptions } from "./http";
 import { fetchHtml } from "./http";
 import { SOURCES, categoryFor } from "./sources";
@@ -85,9 +85,20 @@ function throwIfAborted(signal: AbortSignal | undefined): void {
   }
 }
 
-function activeFilter(value: string | undefined): string | undefined {
-  const normalized = value?.trim();
-  return normalized && normalized !== "all" ? normalized : undefined;
+function activeFilters(value: ScrapeFilterValue | undefined): string[] {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  const seen = new Set<string>();
+  return values.flatMap((entry) => {
+    const normalized = typeof entry === "string" ? entry.trim() : "";
+    const key = normalized.toLocaleLowerCase("en");
+    if (!normalized || normalized === "all" || seen.has(key)) return [];
+    seen.add(key);
+    return [normalized];
+  });
+}
+
+function activeFilter(value: ScrapeFilterValue | undefined): string | undefined {
+  return activeFilters(value)[0];
 }
 
 function normalizedText(value: string): string {
@@ -102,12 +113,15 @@ function urlHost(value: string): string | undefined {
   }
 }
 
-function websiteMatches(url: string, filter: string | undefined): boolean {
-  const wanted = activeFilter(filter);
-  if (!wanted) return true;
+function websiteMatches(url: string, filter: ScrapeFilterValue | undefined): boolean {
+  const wanted = activeFilters(filter);
+  if (!wanted.length) return true;
   const host = urlHost(url);
-  const normalizedWanted = normalizedText(wanted).replace(/^https?:\/\//, "").split("/")[0];
-  return Boolean(host && normalizedWanted && (host === normalizedWanted || normalizedWanted.endsWith(`.${host}`) || host.endsWith(`.${normalizedWanted}`)));
+  if (!host) return false;
+  return wanted.some((entry) => {
+    const normalizedWanted = normalizedText(entry).replace(/^https?:\/\//, "").split("/")[0];
+    return Boolean(normalizedWanted && (host === normalizedWanted || normalizedWanted.endsWith(`.${host}`) || host.endsWith(`.${normalizedWanted}`)));
+  });
 }
 
 function listingFilterReason(
@@ -115,27 +129,29 @@ function listingFilterReason(
   adapter: SourceAdapter,
   filters: ScrapeFilters,
 ): string | undefined {
-  const manufacturer = activeFilter(filters.manufacturer);
+  const manufacturers = activeFilters(filters.manufacturer);
   const adapterBrands = adapter.brands ?? [adapter.brand];
-  if (manufacturer && !adapterBrands.some((brand) => normalizedText(brand) === normalizedText(manufacturer))) return "manufacturer";
+  if (manufacturers.length && !manufacturers.some((manufacturer) => adapterBrands.some((brand) => normalizedText(brand) === normalizedText(manufacturer)))) return "manufacturer";
   if (!websiteMatches(url, filters.website)) return "website";
 
   const taxonomy: SourceTaxonomy | null = adapter.taxonomyFor?.(url) ?? null;
-  const category = activeFilter(filters.category);
-  const subCategory = activeFilter(filters.subCategory);
-  if (taxonomy && category && taxonomy.category !== category) return "category";
-  if (taxonomy && subCategory && taxonomy.subCategory !== subCategory) return "subcategory";
+  const categories = activeFilters(filters.category);
+  const subCategories = activeFilters(filters.subCategory);
+  if (taxonomy && categories.length && !categories.includes(taxonomy.category)) return "category";
+  if (taxonomy && subCategories.length && !subCategories.includes(taxonomy.subCategory)) return "subcategory";
   return undefined;
 }
 
 function productFilterReason(record: ScrapeRecord, filters: ScrapeFilters): string | undefined {
-  const manufacturer = activeFilter(filters.manufacturer);
-  if (manufacturer && normalizedText(record.brand) !== normalizedText(manufacturer)) return "manufacturer";
+  const manufacturers = activeFilters(filters.manufacturer);
+  if (manufacturers.length && !manufacturers.some((manufacturer) => normalizedText(record.brand) === normalizedText(manufacturer))) return "manufacturer";
   if (!websiteMatches(record.url, filters.website)) return "website";
-  if (activeFilter(filters.category) && record.categorySlug !== activeFilter(filters.category)) return "category";
-  if (activeFilter(filters.subCategory) && record.subCategorySlug !== activeFilter(filters.subCategory)) return "subcategory";
-  const color = activeFilter(filters.color);
-  if (color && !record.colors.includes(color)) return "color";
+  const categories = activeFilters(filters.category);
+  if (categories.length && !categories.includes(record.categorySlug)) return "category";
+  const subCategories = activeFilters(filters.subCategory);
+  if (subCategories.length && !subCategories.includes(record.subCategorySlug)) return "subcategory";
+  const colors = activeFilters(filters.color);
+  if (colors.length && !record.colors.some((color) => colors.includes(color))) return "color";
   if (filters.price === "priced" && (record.price === null || record.price <= 0)) return "price";
   if (filters.price === "missing" && record.price !== null && record.price > 0) return "price";
   if (filters.content === "with-images" && record.imageUrls.length === 0) return "content";
@@ -157,6 +173,10 @@ function productFilterReason(record: ScrapeRecord, filters: ScrapeFilters): stri
     if (!normalizedText(searchable).includes(normalizedText(search))) return "search";
   }
   return undefined;
+}
+
+export function matchesScrapeFilters(record: ScrapeRecord, filters: ScrapeFilters): boolean {
+  return productFilterReason(record, filters) === undefined;
 }
 
 function sortProducts(products: RefinedProduct[], sort: ScrapeFilters["sort"]): RefinedProduct[] {

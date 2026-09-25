@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { formatToman } from "@kmodern/schema/format";
 import { formatJalaliDateTime } from "@/lib/date";
 import type { PriceListReport, ScrapeFilters, ScraperCatalogEdit, ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
@@ -140,9 +140,126 @@ const SCRAPE_FILTER_LABELS: Record<string, string> = {
 function formatScrapeFilters(filters: ScrapeFilters | null | undefined): string {
   if (!filters) return "";
   return Object.entries(filters)
-    .filter(([, value]) => value && value !== "all")
-    .map(([key, value]) => `${SCRAPE_FILTER_LABELS[key] ?? key}: ${value}`)
+    .filter(([, value]) => value && value !== "all" && (!Array.isArray(value) || value.length > 0))
+    .map(([key, value]) => `${SCRAPE_FILTER_LABELS[key] ?? key}: ${Array.isArray(value) ? value.join("، ") : value}`)
     .join(" · ");
+}
+
+interface MultiSelectOption {
+  value: string;
+  label: string;
+}
+
+function MultiSelectField({
+  label,
+  values,
+  options,
+  onChange,
+  disabled,
+  placeholder = "همه",
+  allowCustom = false,
+}: {
+  label: string;
+  values: string[];
+  options: MultiSelectOption[];
+  onChange: (values: string[]) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  allowCustom?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: MouseEvent) => {
+      if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  const selectedOptions = values.map((value) => options.find((option) => option.value === value) ?? { value, label: value });
+  const visibleOptions = [...options, ...values.filter((value) => !options.some((option) => option.value === value)).map((value) => ({ value, label: value }))];
+
+  const toggle = (value: string) => {
+    if (values.includes(value)) onChange(values.filter((item) => item !== value));
+    else onChange([...values, value]);
+  };
+
+  const addDraft = () => {
+    const additions = draft.split(/[،,]/).map((value) => value.trim()).filter(Boolean);
+    if (!additions.length) return;
+    const next = [...values];
+    for (const value of additions) {
+      if (!next.includes(value) && !next.some((item) => item.toLocaleLowerCase("en") === value.toLocaleLowerCase("en"))) next.push(value);
+    }
+    onChange(next);
+    setDraft("");
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        disabled={disabled}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-2 rounded-card border border-fog bg-white px-3 py-2 text-right text-sm text-ink hover:bg-plaster disabled:cursor-not-allowed disabled:bg-plaster disabled:text-ash"
+      >
+        <span className="truncate">{values.length ? `${values.length} مورد انتخاب شده` : placeholder}</span>
+        <span aria-hidden="true" className="shrink-0 text-xs text-ash">▾</span>
+      </button>
+      {open ? (
+        <div role="listbox" aria-label={label} aria-multiselectable="true" className="absolute z-30 mt-1 max-h-64 w-full min-w-[220px] overflow-y-auto rounded-card border border-fog bg-white p-2 shadow-lg">
+          <label className="mb-1 flex cursor-pointer items-center gap-2 rounded-card px-2 py-1.5 text-xs font-semibold text-ink hover:bg-plaster">
+            <input type="checkbox" checked={values.length === 0} onChange={() => onChange([])} disabled={disabled} />
+            همه
+          </label>
+          {visibleOptions.map((option) => {
+            const checked = values.includes(option.value);
+            return (
+              <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-card px-2 py-1.5 text-sm text-ink hover:bg-plaster">
+                <input type="checkbox" checked={checked} onChange={() => toggle(option.value)} disabled={disabled} />
+                <span className="min-w-0 truncate">{option.label}</span>
+              </label>
+            );
+          })}
+          {allowCustom ? (
+            <div className="mt-1 border-t border-plaster pt-2">
+              <div className="flex gap-1.5">
+                <Input
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === ",") {
+                      event.preventDefault();
+                      addDraft();
+                    }
+                  }}
+                  placeholder="مقدار دلخواه؛ Enter یا کاما"
+                  aria-label={`افزودن مقدار ${label}`}
+                  disabled={disabled}
+                />
+                <Button type="button" variant="secondary" size="sm" onClick={addDraft} disabled={disabled}>افزودن</Button>
+              </div>
+            </div>
+          ) : null}
+          {selectedOptions.length > 0 ? <p className="mt-2 truncate px-2 text-[11px] text-ash" title={selectedOptions.map((option) => option.label).join("، ")}>انتخاب‌شده: {selectedOptions.map((option) => option.label).join("، ")}</p> : null}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function safeExternalUrl(value: string | undefined): string | null {
@@ -220,11 +337,11 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   const [downloadImages, setDownloadImages] = useState(true);
   const [priceLookup, setPriceLookup] = useState(true);
   const [scrapeSearch, setScrapeSearch] = useState("");
-  const [scrapeManufacturer, setScrapeManufacturer] = useState("");
-  const [scrapeWebsite, setScrapeWebsite] = useState("");
-  const [scrapeCategory, setScrapeCategory] = useState("all");
-  const [scrapeSubCategory, setScrapeSubCategory] = useState("all");
-  const [scrapeColor, setScrapeColor] = useState("all");
+  const [scrapeManufacturer, setScrapeManufacturer] = useState<string[]>([]);
+  const [scrapeWebsite, setScrapeWebsite] = useState<string[]>([]);
+  const [scrapeCategory, setScrapeCategory] = useState<string[]>([]);
+  const [scrapeSubCategory, setScrapeSubCategory] = useState<string[]>([]);
+  const [scrapeColor, setScrapeColor] = useState<string[]>([]);
   const [scrapePrice, setScrapePrice] = useState<"all" | "priced" | "missing">("all");
   const [scrapeContent, setScrapeContent] = useState<"all" | "with-images" | "without-images" | "with-specs">("all");
   const [scrapeSort, setScrapeSort] = useState<"all" | "newest" | "name" | "price-high" | "price-low">("all");
@@ -268,7 +385,8 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   }, [reviewCatalog, rootFilter]);
 
   const scrapeSubcategoryOptions = useMemo(() => {
-    return SCRAPE_SUB_LABELS[scrapeCategory] ?? Object.keys(SUB_LABELS);
+    const categories = scrapeCategory.length ? scrapeCategory : Object.keys(SCRAPE_SUB_LABELS);
+    return [...new Set(categories.flatMap((category) => SCRAPE_SUB_LABELS[category] ?? []))];
   }, [scrapeCategory]);
 
   const manufacturerOptions = useMemo(() => {
@@ -393,11 +511,11 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     try {
       const filters: ScrapeFilters = {
         search: scrapeSearch.trim() || undefined,
-        manufacturer: scrapeManufacturer.trim() || undefined,
-        website: scrapeWebsite.trim() || undefined,
-        category: scrapeCategory === "all" ? undefined : scrapeCategory,
-        subCategory: scrapeSubCategory === "all" ? undefined : scrapeSubCategory,
-        color: scrapeColor === "all" ? undefined : scrapeColor,
+        manufacturer: scrapeManufacturer.length ? scrapeManufacturer : undefined,
+        website: scrapeWebsite.length ? scrapeWebsite : undefined,
+        category: scrapeCategory.length ? scrapeCategory : undefined,
+        subCategory: scrapeSubCategory.length ? scrapeSubCategory : undefined,
+        color: scrapeColor.length ? scrapeColor : undefined,
         price: scrapePrice === "all" ? undefined : scrapePrice,
         content: scrapeContent === "all" ? undefined : scrapeContent,
         sort: scrapeSort === "all" ? undefined : scrapeSort,
@@ -519,11 +637,11 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
 
   function clearScrapeFilters() {
     setScrapeSearch("");
-    setScrapeManufacturer("");
-    setScrapeWebsite("");
-    setScrapeCategory("all");
-    setScrapeSubCategory("all");
-    setScrapeColor("all");
+    setScrapeManufacturer([]);
+    setScrapeWebsite([]);
+    setScrapeCategory([]);
+    setScrapeSubCategory([]);
+    setScrapeColor([]);
     setScrapePrice("all");
     setScrapeContent("all");
     setScrapeSort("all");
@@ -531,11 +649,11 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
 
   function copyReviewFiltersToScrape() {
     setScrapeSearch(query);
-    setScrapeManufacturer(manufacturerFilter === "all" ? "" : manufacturerFilter);
-    setScrapeWebsite(websiteFilter === "all" ? "" : websiteFilter);
-    setScrapeCategory(rootFilter);
-    setScrapeSubCategory(subFilter);
-    setScrapeColor(colorFilter);
+    setScrapeManufacturer(manufacturerFilter === "all" ? [] : [manufacturerFilter]);
+    setScrapeWebsite(websiteFilter === "all" ? [] : [websiteFilter]);
+    setScrapeCategory(rootFilter === "all" ? [] : [rootFilter]);
+    setScrapeSubCategory(subFilter === "all" ? [] : [subFilter]);
+    setScrapeColor(colorFilter === "all" ? [] : [colorFilter]);
     setScrapePrice(priceFilter);
     setScrapeContent(contentFilter);
     setScrapeSort(sortOrder === "newest" ? "all" : sortOrder);
@@ -667,34 +785,25 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                   <Button type="button" variant="ghost" size="sm" onClick={clearScrapeFilters} disabled={active}>پاک کردن</Button>
                 </div>
               </div>
-              <p className="mt-1 text-xs leading-5 text-ash">فیلتر دسته و منبع قبل از خواندن صفحه محصول اعمال می‌شود؛ بقیه فیلترها بعد از استخراج داده اعمال می‌شوند.</p>
+              <p className="mt-1 text-xs leading-5 text-ash">فیلتر دسته و منبع قبل از خواندن صفحه محصول اعمال می‌شود؛ بقیه فیلترها بعد از استخراج داده اعمال می‌شوند. چند مقدار در یک فیلد OR و ترکیب فیلدهای مختلف AND است.</p>
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="جستجو" className="mb-0">
                   <Input type="search" value={scrapeSearch} onChange={(event) => setScrapeSearch(event.target.value)} placeholder="نام، مدل یا توضیح…" disabled={active} />
                 </Field>
-                <Field label="سازنده" className="mb-0">
-                  <Input value={scrapeManufacturer} onChange={(event) => setScrapeManufacturer(event.target.value)} placeholder="مثلاً Datees" dir="ltr" disabled={active} />
+                <Field label="سازنده" className="mb-0" hint="می‌توانید چند سازنده انتخاب کنید.">
+                  <MultiSelectField label="سازنده" values={scrapeManufacturer} options={manufacturerOptions.map((value) => ({ value, label: value }))} onChange={setScrapeManufacturer} disabled={active} placeholder="همه سازنده‌ها" allowCustom />
                 </Field>
-                <Field label="وب‌سایت منبع" className="mb-0">
-                  <Input value={scrapeWebsite} onChange={(event) => setScrapeWebsite(event.target.value)} placeholder="مثلاً datees.ir" dir="ltr" disabled={active} />
+                <Field label="وب‌سایت منبع" className="mb-0" hint="می‌توانید چند وب‌سایت انتخاب کنید.">
+                  <MultiSelectField label="وب‌سایت منبع" values={scrapeWebsite} options={websiteOptions.map(([value, label]) => ({ value, label }))} onChange={setScrapeWebsite} disabled={active} placeholder="همه وب‌سایت‌ها" allowCustom />
                 </Field>
-                <Field label="دسته اصلی" className="mb-0">
-                  <Select value={scrapeCategory} onChange={(event) => { setScrapeCategory(event.target.value); setScrapeSubCategory("all"); }} disabled={active}>
-                    <option value="all">همه دسته‌ها</option>
-                    {Object.entries(ROOT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                  </Select>
+                <Field label="دسته اصلی" className="mb-0" hint="انتخاب چند دسته، نتایج را با OR ترکیب می‌کند.">
+                  <MultiSelectField label="دسته اصلی" values={scrapeCategory} options={Object.entries(ROOT_LABELS).map(([value, label]) => ({ value, label }))} onChange={(values) => { setScrapeCategory(values); setScrapeSubCategory([]); }} disabled={active} placeholder="همه دسته‌ها" />
                 </Field>
-                <Field label="زیر‌دسته" className="mb-0">
-                  <Select value={scrapeSubCategory} onChange={(event) => setScrapeSubCategory(event.target.value)} disabled={active}>
-                    <option value="all">همه زیر‌دسته‌ها</option>
-                    {scrapeSubcategoryOptions.map((value) => <option key={value} value={value}>{SUB_LABELS[value] ?? value}</option>)}
-                  </Select>
+                <Field label="زیر‌دسته" className="mb-0" hint="انتخاب چند زیر‌دسته مجاز است.">
+                  <MultiSelectField label="زیر‌دسته" values={scrapeSubCategory} options={scrapeSubcategoryOptions.map((value) => ({ value, label: SUB_LABELS[value] ?? value }))} onChange={setScrapeSubCategory} disabled={active} placeholder="همه زیر‌دسته‌ها" />
                 </Field>
-                <Field label="رنگ" className="mb-0">
-                  <Select value={scrapeColor} onChange={(event) => setScrapeColor(event.target.value)} disabled={active}>
-                    <option value="all">همه رنگ‌ها</option>
-                    {Object.entries(COLOR_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                  </Select>
+                <Field label="رنگ" className="mb-0" hint="می‌توانید چند رنگ انتخاب کنید.">
+                  <MultiSelectField label="رنگ" values={scrapeColor} options={Object.entries(COLOR_LABELS).map(([value, label]) => ({ value, label }))} onChange={setScrapeColor} disabled={active} placeholder="همه رنگ‌ها" />
                 </Field>
                 <Field label="وضعیت قیمت" className="mb-0">
                   <Select value={scrapePrice} onChange={(event) => setScrapePrice(event.target.value as typeof scrapePrice)} disabled={active}>
