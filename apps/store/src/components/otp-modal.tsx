@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/schema/format";
 import { Button, InputOTP, REGEXP_ONLY_DIGITS, Spinner } from "@heroui/react";
 import { StatusNotice } from "./status-notice";
 

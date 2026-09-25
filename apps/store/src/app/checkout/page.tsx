@@ -1,6 +1,6 @@
 import { zarinpalConfigFromEnv } from "@kmodern/adapters";
 import { getSetting } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import CheckoutClient from "./checkout-client";
 
 export const dynamic = "force-dynamic";

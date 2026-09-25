@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db, Prisma } from "@kmodern/db";
-import { addressSchema, settingKeys } from "@kmodern/schema";
+import { addressSchema } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { currentCustomer } from "@/lib/auth";
 import { buildOrderContext, assertStock, nextOrderNumber, computeOrderTotals, reserveStock, recordOrderEvent } from "@/lib/orders";
 import { getSettingOrDefault } from "@/lib/settings";

@@ -1,5 +1,5 @@
 import { db } from "@kmodern/db";
-import { settingKeys, type SettingKey } from "@kmodern/schema";
+import { settingKeys, type SettingKey } from "@kmodern/schema/setting-keys";
 
 // Typed settings accessor for the admin panel (011/017). Serves the exact
 // values the save forms read back; cast JSON scalars into the expected shape.

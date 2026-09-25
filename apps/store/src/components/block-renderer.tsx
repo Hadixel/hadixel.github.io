@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { db } from "@kmodern/db";
 import type { Block, ComponentProps } from "@kmodern/schema";
+import { sanitizeAdminHtml } from "@kmodern/schema/sanitize";
 import { hrefFor } from "@/lib/nav";
 import { getPublishedPosts, getPublishedProducts } from "@/lib/queries";
 import { RankNumeral, SectionHeader } from "@kmodern/ui";
@@ -300,7 +301,7 @@ async function BlockNode({ block }: { block: Block }) {
       const p = props as ComponentProps["richText"];
       return (
         <Section>
-          <div className="mx-auto max-w-3xl leading-9 text-ink [&_a]:text-flame-700 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-black [&_p]:mb-4" dangerouslySetInnerHTML={{ __html: p.html }} />
+          <div className="mx-auto max-w-3xl leading-9 text-ink [&_a]:text-flame-700 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-2xl [&_h2]:font-black [&_p]:mb-4" dangerouslySetInnerHTML={{ __html: sanitizeAdminHtml(p.html) }} />
         </Section>
       );
     }
@@ -463,7 +464,7 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "customHtml": {
       const p = props as ComponentProps["customHtml"];
-      return <Section id={p.anchorId}><div className="mx-auto max-w-3xl leading-8 text-ink" dangerouslySetInnerHTML={{ __html: p.html }} /></Section>;
+      return <Section id={p.anchorId}><div className="mx-auto max-w-3xl leading-8 text-ink" dangerouslySetInnerHTML={{ __html: sanitizeAdminHtml(p.html) }} /></Section>;
     }
 
     case "spacer":

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Skeleton } from "@heroui/react";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/schema/format";
 
 interface Hit {
   slug: string;

@@ -31,6 +31,13 @@ export interface MediaItem {
   key: string;
 }
 
+const MEDIA_FILE_PATTERN = /^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:jpe?g|png|webp|gif|avif|mp4|webm|pdf)$/i;
+const MAX_LISTED_MEDIA = 1000;
+
+function isSafeMediaKey(key: string): boolean {
+  return !key.includes("..") && !key.startsWith("/") && MEDIA_FILE_PATTERN.test(key);
+}
+
 export async function saveMediaFile(
   key: string,
   body: Buffer,
@@ -52,20 +59,26 @@ export async function listMedia(): Promise<MediaItem[]> {
   if (storage) {
     const keys = await storage.list("media/");
     return keys
-      .filter((k) => /\.(jpe?g|png|webp|gif|svg|avif|mp4|webm|pdf)$/i.test(k))
-      .map((k) => ({ key: stripPrefix(k), url: storage.getUrl(stripPrefix(k)) }));
+      .map(stripPrefix)
+      .filter(isSafeMediaKey)
+      .slice(0, MAX_LISTED_MEDIA)
+      .map((key) => ({ key, url: storage.getUrl(key) }));
   }
   const items: MediaItem[] = [];
-  const walk = async (dir: string, prefix: string) => {
+  const walk = async (dir: string, prefix: string): Promise<boolean> => {
+    if (items.length >= MAX_LISTED_MEDIA) return false;
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const e of entries) {
+      if (items.length >= MAX_LISTED_MEDIA) return false;
       const full = path.join(dir, e.name);
       if (e.isDirectory()) {
-        await walk(full, `${prefix}${e.name}/`);
-      } else if (/\.(jpe?g|png|webp|gif|svg|avif|mp4|webm|pdf)$/i.test(e.name)) {
-        items.push({ key: `${prefix}${e.name}`, url: `/media/${prefix}${e.name}` });
+        if (!(await walk(full, `${prefix}${e.name}/`))) return false;
+      } else if (/\.(jpe?g|png|webp|gif|avif|mp4|webm|pdf)$/i.test(e.name)) {
+        const key = `${prefix}${e.name}`;
+        if (isSafeMediaKey(key)) items.push({ key, url: `/media/${key}` });
       }
     }
+    return true;
   };
   try {
     await walk(PUBLIC_MEDIA_DIR, "");
@@ -83,6 +96,7 @@ function stripPrefix(key: string): string {
 
 /** delete by the key as displayed by listMedia() */
 export async function deleteMediaFile(key: string): Promise<void> {
+  if (!isSafeMediaKey(key)) throw new Error("مسیر یا نوع فایل نامعتبر است");
   const storage = mediaStorage();
   if (storage) {
     await storage.delete(key);

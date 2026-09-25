@@ -56,7 +56,8 @@ async function workbook(path: string, rows: Array<[string, number]>, header = ["
   const book = XLSX.utils.book_new();
   const sheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
   XLSX.utils.book_append_sheet(book, sheet, "Prices");
-  XLSX.writeFile(book, path);
+  const bytes = XLSX.write(book, { type: "buffer", bookType: "xlsx" });
+  await writeFile(path, bytes as Buffer);
 }
 
 describe("price-list application", () => {

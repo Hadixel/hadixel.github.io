@@ -1,5 +1,6 @@
 import { db, $Enums } from "@kmodern/db";
-import { jalaliYear, type AddressInput, settingKeys } from "@kmodern/schema";
+import { jalaliYear, type AddressInput } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import type { CartItemInput } from "./cart";
 import { getSettingOrDefault } from "./settings";
 import { applyDiscounts, type DiscountContext } from "./discounts";

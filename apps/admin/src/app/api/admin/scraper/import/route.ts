@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@kmodern/db";
-import { getAdminUser } from "@/lib/auth";
+import { requireAdminApi } from "@/lib/auth";
 import { scraperJobs } from "@/lib/scraper-jobs";
 import { importScrapedCatalog, applyScraperCatalogEdits } from "@/lib/scraper-import";
 
@@ -25,8 +25,9 @@ function sameOrigin(request: Request): boolean {
 }
 
 export async function POST(request: Request) {
-  const ctx = await getAdminUser();
-  if (!ctx) return errorResponse("unauthorized", 401);
+  const auth = await requireAdminApi();
+  if (!auth.ok) return errorResponse(auth.status === 401 ? "unauthorized" : "password_change_required", auth.status);
+  const ctx = auth.ctx;
   if (ctx.admin.role !== "OWNER") return errorResponse("forbidden", 403);
   if (!sameOrigin(request)) return errorResponse("invalid_origin", 403);
 

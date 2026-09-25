@@ -1,5 +1,5 @@
 import type { Category } from "@kmodern/db";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/schema/format";
 import type { PublishedProduct } from "@/lib/queries";
 import { CategorySidebar } from "./category-sidebar";
 import { MobileCategoryFilter } from "./mobile-category-filter";

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@kmodern/db";
-import { formatToman } from "@kmodern/schema";
+import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardBody, CardHeader, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
-import { StatusBadge } from "@/components/status";
+import { STATUS_LABELS, StatusBadge } from "@/components/status";
 import { OrderStatusTransitions } from "./transitions";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +33,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div className="space-y-5 lg:col-span-2">
           {/* status transitions */}
           <Card>
-            <CardHeader title="وضعیت و انتقال" subtitle={`اجرا: ${order.fulfillmentStatus} • پرداخت: ${order.paymentStatus}`} />
+            <CardHeader title="وضعیت و انتقال" subtitle={`اجرا: ${STATUS_LABELS[order.fulfillmentStatus] ?? order.fulfillmentStatus} • پرداخت: ${STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}`} />
             <CardBody>
               <OrderStatusTransitions orderId={order.id} fulfilled={order.fulfillmentStatus} paid={order.paymentStatus} />
             </CardBody>

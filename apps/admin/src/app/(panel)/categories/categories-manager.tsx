@@ -74,7 +74,7 @@ function AddCategoryForm({ roots }: { roots: CategorySeed[] }) {
           </Field>
           <div className="md:col-span-5 flex items-center justify-end gap-2">
             <input type="hidden" name="specFields" value="[]" />
-            {state.error && <span className="text-sm text-red-700">{state.error}</span>}
+            {state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
             {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
             <Button type="submit" disabled={pending}>{pending ? "…" : "افزودن"}</Button>
           </div>
@@ -90,7 +90,7 @@ function CategoryCard({ category, childrenCats }: { category: CategorySeed; chil
     <Card>
       <CardHeader
         title={
-          <button type="button" onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
+          <button type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
             <span className="text-ash">{expanded ? "▾" : "▴"}</span>
             <span>{category.name}</span>
             {category.productCount > 0 && <Badge>{faDigits(category.productCount)} محصول</Badge>}
@@ -130,7 +130,8 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
     setSpecFields((fs) => fs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
 
   return (
-    <form action={formAction} className={nested ? "space-y-3" : "space-y-3"}>
+    <>
+      <form action={formAction} className="space-y-3">
       <input type="hidden" name="id" value={category.id} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Field label="نام"><Input name="name" defaultValue={category.name} required /></Field>
@@ -154,18 +155,18 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
         <div className="space-y-2">
           {specFields.map((f, i) => (
             <div key={i} className="grid grid-cols-2 gap-2 md:grid-cols-5">
-              <Input placeholder="نام فیلد" value={f.name} onChange={(e) => updateField(i, { name: e.target.value })} />
-              <Select value={f.type} onChange={(e) => updateField(i, { type: e.target.value })}>
+              <Input aria-label={`نام فیلد ${i + 1}`} placeholder="نام فیلد" value={f.name} onChange={(e) => updateField(i, { name: e.target.value })} />
+              <Select aria-label={`نوع فیلد ${i + 1}`} value={f.type} onChange={(e) => updateField(i, { type: e.target.value })}>
                 <option value="string">متن</option>
                 <option value="number">عدد</option>
                 <option value="boolean">بله/خیر</option>
                 <option value="enum">گزینه‌ای</option>
               </Select>
-              <Input placeholder="واحد" value={f.unit ?? ""} onChange={(e) => updateField(i, { unit: e.target.value })} />
+              <Input aria-label={`واحد فیلد ${i + 1}`} placeholder="واحد" value={f.unit ?? ""} onChange={(e) => updateField(i, { unit: e.target.value })} />
               <div className="flex items-center gap-2 px-1 text-sm text-ink">
                 <Checkbox label="قابل فیلتر" checked={f.filterable} onChange={(e) => updateField(i, { filterable: e.target.checked })} />
               </div>
-              <button type="button" onClick={() => setSpecFields((fs) => fs.filter((_, idx) => idx !== i))} className="text-sm text-ink hover:text-flame-700">
+              <button type="button" aria-label={`حذف فیلد ${i + 1}`} onClick={() => setSpecFields((fs) => fs.filter((_, idx) => idx !== i))} className="text-sm text-ink hover:text-flame-700">
                 حذف
               </button>
             </div>
@@ -182,13 +183,16 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        <DeleteCategoryButton id={category.id} />
         <span className="flex-1" />
-        {state.error && <span className="text-sm text-red-700">{state.error}</span>}
+        {state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
         {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
         <Button type="submit" disabled={pending}>{pending ? "…" : "ذخیره"}</Button>
       </div>
-    </form>
+      </form>
+      <div className="mt-3 flex justify-start">
+        <DeleteCategoryButton id={category.id} />
+      </div>
+    </>
   );
 }
 
@@ -202,7 +206,7 @@ function DeleteCategoryButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این دسته؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span className="mr-2 text-xs text-red-700">{state.error}</span>}
+      {state.error && <span role="alert" className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

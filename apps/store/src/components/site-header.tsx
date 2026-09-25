@@ -3,7 +3,7 @@ import Image from "next/image";
 import { currentCustomer } from "@/lib/auth";
 import { getNavMenu } from "@/lib/nav";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import AccountButton from "./account-button";
 import { CartButton } from "./cart-button";
 import MobileMenu from "./mobile-menu";

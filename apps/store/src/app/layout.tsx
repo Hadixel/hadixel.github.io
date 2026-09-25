@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { CartProvider } from "@/components/cart-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";

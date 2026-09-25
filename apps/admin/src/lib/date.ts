@@ -81,5 +81,8 @@ export function toDateTimeLocal(date: Date): string {
 
 /** parse <input type="datetime-local"> value as a Date (wall-clock preserved) */
 export function fromDateTimeLocal(value: string): Date {
-  return new Date(value);
+  // datetime-local has no offset. Admin values are Tehran wall-clock time;
+  // Iran is UTC+03:30 year-round in the current deployment.
+  const normalized = value.endsWith("Z") ? value : value.length === 16 ? `${value}:00+03:30` : value.includes("+") ? value : `${value}+03:30`;
+  return new Date(normalized);
 }

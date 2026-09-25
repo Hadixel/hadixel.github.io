@@ -236,6 +236,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
     <form action={formAction} className="space-y-5">
       <input type="hidden" name="id" value={post.id ?? ""} />
       <input type="hidden" name="body" value={JSON.stringify({ type: "doc", content: nodes.map(nodeToJson) })} />
+      <input type="hidden" name="tags" value={JSON.stringify(tags.split(/[،,]/).map((tag) => tag.trim()).filter(Boolean))} />
 
       <Card>
         <CardHeader title="مشخصات پست" />
@@ -262,7 +263,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
               <Input type="datetime-local" name="publishAt" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} />
             </Field>
             <Field label="برچسب‌ها (با ویرگول جدا کنید)">
-              <Input name="tags" value={tags} onChange={(e) => setTags(e.target.value)} />
+              <Input name="tagsText" value={tags} onChange={(e) => setTags(e.target.value)} />
             </Field>
             <div className="flex items-end gap-4 pb-1">
               <Checkbox label="ویژه" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
@@ -314,7 +315,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
         </CardBody>
       </Card>
 
-      {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره پست"}</Button>
       </div>
@@ -346,9 +347,9 @@ function NodeCard({
       <div className="mb-2 flex items-center gap-2">
         <span className="rounded bg-ink px-2 py-0.5 text-xs font-medium text-white">{NODE_LABELS[node.kind]}</span>
         <span className="flex-1" />
-        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↑</button>
-        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↓</button>
-        <button type="button" onClick={onRemove} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
+        <button type="button" aria-label="انتقال بند به بالا" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↑</button>
+        <button type="button" aria-label="انتقال بند به پایین" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↓</button>
+        <button type="button" aria-label={`حذف ${NODE_LABELS[node.kind]}`} onClick={onRemove} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
       </div>
 
       {node.kind === "paragraph" && <Input value={node.text} onChange={(e) => onChange({ text: e.target.value })} />}
@@ -365,7 +366,7 @@ function NodeCard({
           {node.items.map((it, k) => (
             <div key={k} className="flex gap-1.5">
               <Input value={it} onChange={(e) => onChange({ items: node.items.map((x, xk) => (xk === k ? e.target.value : x)) })} />
-              <button type="button" onClick={() => onChange({ items: node.items.filter((_, xk) => xk !== k) })} className="text-sm text-red-600">−</button>
+              <button type="button" aria-label="حذف مورد" onClick={() => onChange({ items: node.items.filter((_, xk) => xk !== k) })} className="text-sm text-red-600">−</button>
             </div>
           ))}
           <Button type="button" variant="secondary" size="sm" onClick={() => onChange({ items: [...node.items, ""] })}>+ مورد</Button>
@@ -412,7 +413,7 @@ function NodeCard({
             <div key={k} className="flex gap-1.5">
               <Input placeholder="آدرس تصویر" dir="ltr" value={im.src} onChange={(e) => onChange({ images: node.images.map((x, xk) => (xk === k ? { ...x, src: e.target.value } : x)) })} />
               <Input placeholder="متن جایگزین" value={im.alt} onChange={(e) => onChange({ images: node.images.map((x, xk) => (xk === k ? { ...x, alt: e.target.value } : x)) })} />
-              <button type="button" onClick={() => onChange({ images: node.images.filter((_, xk) => xk !== k) })} className="text-sm text-red-600">−</button>
+              <button type="button" aria-label="حذف تصویر" onClick={() => onChange({ images: node.images.filter((_, xk) => xk !== k) })} className="text-sm text-red-600">−</button>
             </div>
           ))}
           <Button type="button" variant="secondary" size="sm" onClick={() => onChange({ images: [...node.images, { src: "", alt: "" }] })}>+ تصویر</Button>

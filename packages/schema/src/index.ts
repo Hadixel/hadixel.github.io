@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { settingKeys, type SettingKey } from "./setting-keys";
+
+export { settingKeys };
+export type { SettingKey };
 
 // ------------------------------------------------------------
 // LinkRef (006) — polymorphic target used by nav items, promos,
@@ -6,13 +10,25 @@ import { z } from "zod";
 // ------------------------------------------------------------
 
 export const linkRefSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("CATEGORY"), targetId: z.string() }),
-  z.object({ type: z.literal("PAGE"), targetId: z.string() }),
+  z.object({ type: z.literal("CATEGORY"), targetId: z.string().min(1) }),
+  z.object({ type: z.literal("PAGE"), targetId: z.string().min(1) }),
   z.object({ type: z.literal("BLOG_INDEX") }),
-  z.object({ type: z.literal("BLOG_POST"), targetId: z.string() }),
-  z.object({ type: z.literal("COLLECTION"), targetId: z.string() }),
+  z.object({ type: z.literal("BLOG_POST"), targetId: z.string().min(1) }),
+  z.object({ type: z.literal("COLLECTION"), targetId: z.string().min(1) }),
   // url may be site-relative ("/products") — the storefront renders it verbatim
-  z.object({ type: z.literal("EXTERNAL"), url: z.string().min(1), newTab: z.boolean().default(true) }),
+  z.object({
+    type: z.literal("EXTERNAL"),
+    url: z.string().min(1).refine((value) => {
+      if (value.startsWith("/")) return !value.startsWith("//") && !/[\u0000-\u001f]/.test(value);
+      try {
+        const url = new URL(value);
+        return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password;
+      } catch {
+        return false;
+      }
+    }, "لینک خارجی باید نسبی یا HTTP(S) باشد"),
+    newTab: z.boolean().default(true),
+  }),
   z.object({ type: z.literal("NONE") }),
 ]);
 
@@ -226,18 +242,6 @@ export const pageBlocksSchema = z.array(blockSchema);
 // Nav (006)
 // ------------------------------------------------------------
 
-export const menuItemSchema = z.object({
-  id: z.string().optional(),
-  label: z.string().min(1),
-  target: linkRefSchema,
-  childSource: z.enum(["STATIC", "CATEGORY"]).default("STATIC"),
-  categoryId: z.string().optional(),
-  display: z.enum(["DROPDOWN", "MEGA"]).default("DROPDOWN"),
-  visible: z.boolean().default(true),
-  mobileVisible: z.boolean().default(true),
-  sortOrder: z.number().int().default(0),
-});
-
 export const menuPromoSchema = z.object({
   imageUrl: z.string(),
   alt: z.string().default(""),
@@ -247,10 +251,38 @@ export const menuPromoSchema = z.object({
   mobileVisible: z.boolean().default(false),
 });
 
+export type MenuItemValue = {
+  id?: string;
+  label: string;
+  target: z.infer<typeof linkRefSchema>;
+  childSource: "STATIC" | "CATEGORY";
+  categoryId?: string;
+  display: "DROPDOWN" | "MEGA";
+  visible: boolean;
+  mobileVisible: boolean;
+  sortOrder: number;
+  children: MenuItemValue[];
+  promos: Array<z.infer<typeof menuPromoSchema>>;
+};
+
+export const menuItemSchema: z.ZodType<MenuItemValue> = z.lazy(() => z.object({
+  id: z.string().optional(),
+  label: z.string().min(1).max(200),
+  target: linkRefSchema,
+  childSource: z.enum(["STATIC", "CATEGORY"]).default("STATIC"),
+  categoryId: z.string().optional(),
+  display: z.enum(["DROPDOWN", "MEGA"]).default("DROPDOWN"),
+  visible: z.boolean().default(true),
+  mobileVisible: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  children: z.array(menuItemSchema).max(20).default([]),
+  promos: z.array(menuPromoSchema).max(8).default([]),
+}));
+
 export const menuSchema = z.object({
   location: z.enum(["HEADER", "FOOTER", "MOBILE"]),
-  name: z.string().min(1),
-  items: z.array(menuItemSchema),
+  name: z.string().min(1).max(200),
+  items: z.array(menuItemSchema).max(50),
 });
 
 // ------------------------------------------------------------
@@ -335,51 +367,48 @@ export const discountSchema = z.object({
   type: z.enum(["PERCENT", "FIXED", "FREE_DELIVERY"]),
   scope: z.enum(["ALL", "PRODUCTS", "CATEGORIES", "COLLECTIONS"]),
   mode: z.enum(["COUPON", "AUTOMATIC"]),
-  code: z
-    .string()
-    .regex(/^[A-Za-z0-9_-]{3,32}$/, "کد تخفیف ۳ تا ۳۲ حرف/رقم")
-    .optional(),
-  value: z.number().positive(),
-  maxAmount: z.number().positive().optional(),
+  code: z.preprocess(
+    (value) => value === "" ? undefined : value,
+    z.string().regex(/^[A-Za-z0-9_-]{3,32}$/, "کد تخفیف ۳ تا ۳۲ حرف/رقم").optional(),
+  ),
+  value: z.number().finite().nonnegative(),
+  maxAmount: z.number().finite().nonnegative().optional(),
   productIds: z.array(z.string()).default([]),
   categoryIds: z.array(z.string()).default([]),
   collectionIds: z.array(z.string()).default([]),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime().optional(),
-  minOrderSubtotal: z.number().positive().optional(),
+  minOrderSubtotal: z.number().finite().nonnegative().optional(),
   maxUsesTotal: z.number().int().positive().optional(),
   maxUsesPerCustomer: z.number().int().positive().optional(),
   status: z.enum(["ACTIVE", "DISABLED"]).default("ACTIVE"),
+}).superRefine((data, ctx) => {
+  if (data.type === "PERCENT" && (data.value <= 0 || data.value > 100)) {
+    ctx.addIssue({ code: "custom", path: ["value"], message: "درصد تخفیف باید بین ۱ تا ۱۰۰ باشد" });
+  }
+  if (data.type === "FIXED" && data.value <= 0) {
+    ctx.addIssue({ code: "custom", path: ["value"], message: "مبلغ تخفیف باید بزرگ‌تر از صفر باشد" });
+  }
+  if (data.type === "FREE_DELIVERY" && data.value !== 0) {
+    ctx.addIssue({ code: "custom", path: ["value"], message: "ارسال رایگان مقدار نامعتبر دارد" });
+  }
+  if (data.scope === "PRODUCTS" && data.productIds.length === 0) {
+    ctx.addIssue({ code: "custom", path: ["productIds"], message: "حداقل یک محصول انتخاب کنید" });
+  }
+  if (data.scope === "CATEGORIES" && data.categoryIds.length === 0) {
+    ctx.addIssue({ code: "custom", path: ["categoryIds"], message: "حداقل یک دسته انتخاب کنید" });
+  }
+  if (data.scope === "COLLECTIONS" && data.collectionIds.length === 0) {
+    ctx.addIssue({ code: "custom", path: ["collectionIds"], message: "حداقل یک مجموعه انتخاب کنید" });
+  }
+  if (data.endsAt && Date.parse(data.endsAt) <= Date.parse(data.startsAt)) {
+    ctx.addIssue({ code: "custom", path: ["endsAt"], message: "زمان پایان باید بعد از زمان شروع باشد" });
+  }
 });
 
 // ------------------------------------------------------------
 // Settings keys (011/017) — typed accessor contract
 // ------------------------------------------------------------
-
-export const settingKeys = {  storeName: "store.name",
-  storeLogo: "store.logo",
-  storeTagline: "store.tagline",
-  storeContact: "store.contact",
-  blogDefaultByline: "blog.defaultByline",
-  seoDefaultTitle: "seo.defaultTitle",
-  seoDefaultDescription: "seo.defaultDescription",
-  shippingLocalFeeMode: "shipping.localFeeMode", // FREE|FLAT|FREIGHT_COLLECT
-  shippingLocalFlatFee: "shipping.localFlatFee", // TOMAN
-  shippingPostWeightCap: "shipping.postWeightCap", // kg, 0 = off
-  shippingPostFallbackFee: "shipping.postFallbackFee", // TOMAN, 0 = unavailable
-  shippingMaxCodTotal: "shipping.maxCodTotal", // TOMAN
-  shippingBarberiNote: "shipping.barberiNote",
-  paymentC2cCardNumber: "payment.c2cCardNumber",
-  paymentC2cCardHolder: "payment.c2cCardHolder",
-  paymentC2cBankName: "payment.c2cBankName",
-  inventoryLowStockThreshold: "inventory.lowStockThreshold",
-  checkoutOnlineReserveMinutes: "checkout.onlineReserveMinutes",
-  checkoutC2cReserveHours: "checkout.c2cReserveHours",
-  smsProviderConfigured: "sms.providerConfigured",
-  adminAlertMobile: "admin.alertMobile", // reserved, unused
-} as const;
-
-export type SettingKey = (typeof settingKeys)[keyof typeof settingKeys];
 
 export {
   iranProvinces,

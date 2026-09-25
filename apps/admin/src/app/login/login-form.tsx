@@ -25,7 +25,7 @@ export function LoginForm() {
             <Input type="password" name="password" autoComplete="current-password" dir="ltr" required />
           </Field>
           {state.error && (
-            <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+            <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
           )}
           <Button type="submit" disabled={pending} className="w-full">
             {pending ? "در حال ورود…" : "ورود"}

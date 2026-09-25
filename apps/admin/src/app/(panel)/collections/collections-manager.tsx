@@ -49,7 +49,7 @@ function CollectionCard({ collection, products }: { collection: CollectionSeed; 
     <Card>
       <CardHeader
         title={
-          <button type="button" onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
+          <button type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)} className="flex items-center gap-2 text-right">
             <span className="text-ash">{expanded ? "▾" : "▴"}</span>
             <span>{collection.name}</span>
             <span className="text-xs font-normal text-ash">{faDigits(collection.items.length)} محصول</span>
@@ -95,7 +95,8 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
     });
 
   return (
-    <form action={formAction} className="space-y-4">
+    <>
+      <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={seed.id} />
       {title && <h3 className="text-base font-semibold text-ink">{title}</h3>}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -107,7 +108,7 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
       <div>
         <p className="mb-2 text-sm font-semibold text-ink">محصولات مجموعه</p>
         <div className="mb-2 flex items-center gap-2">
-          <select value={picker} onChange={(e) => setPicker(e.target.value)} className="flex-1 rounded-card border border-fog px-3 py-2 text-sm">
+          <select aria-label="انتخاب محصول برای مجموعه" value={picker} onChange={(e) => setPicker(e.target.value)} className="flex-1 rounded-card border border-fog px-3 py-2 text-sm">
             {products.filter((p) => !hasProduct(p.id)).map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -120,9 +121,9 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
               <li key={it.productId} className="flex items-center justify-between px-3 py-2 text-sm">
                 <span>{it.productName ?? it.productId}</span>
                 <span className="flex items-center gap-1">
-                  <button type="button" onClick={() => moveItem(i, -1)} className="rounded px-1.5 text-ash hover:bg-plaster" disabled={i === 0}>↑</button>
-                  <button type="button" onClick={() => moveItem(i, 1)} className="rounded px-1.5 text-ash hover:bg-plaster" disabled={i === items.length - 1}>↓</button>
-                  <button type="button" onClick={() => setItems((is) => is.filter((_, k) => k !== i))} className="rounded px-1.5 text-red-700 hover:bg-red-50">حذف</button>
+                  <button type="button" aria-label={`انتقال محصول ${i + 1} به بالا`} onClick={() => moveItem(i, -1)} className="rounded px-1.5 text-ash hover:bg-plaster" disabled={i === 0}>↑</button>
+                  <button type="button" aria-label={`انتقال محصول ${i + 1} به پایین`} onClick={() => moveItem(i, 1)} className="rounded px-1.5 text-ash hover:bg-plaster" disabled={i === items.length - 1}>↓</button>
+                  <button type="button" aria-label={`حذف محصول ${i + 1}`} onClick={() => setItems((is) => is.filter((_, k) => k !== i))} className="rounded px-1.5 text-red-700 hover:bg-red-50">حذف</button>
                 </span>
               </li>
             ))}
@@ -132,15 +133,18 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        {isEdit && (
-          <DeleteCollectionButton id={seed.id} />
-        )}
         <span className="flex-1" />
-        {state.error && <span className="text-sm text-red-700">{state.error}</span>}
+        {state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
         {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
         <Button type="submit" disabled={pending}>{pending ? "…" : isEdit ? "ذخیره" : "افزودن"}</Button>
       </div>
-    </form>
+      </form>
+      {isEdit && (
+        <div className="mt-3 flex justify-start">
+          <DeleteCollectionButton id={seed.id} />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -154,7 +158,7 @@ function DeleteCollectionButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این مجموعه؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span className="mr-2 text-xs text-red-700">{state.error}</span>}
+      {state.error && <span role="alert" className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

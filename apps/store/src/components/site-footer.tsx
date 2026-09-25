@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { db } from "@kmodern/db";
 import { getSettingOrDefault } from "@/lib/settings";
-import { jalaliYear, settingKeys, toFaDigits } from "@kmodern/schema";
+import { jalaliYear, toFaDigits } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { getNavMenu } from "@/lib/nav";
 
 export async function SiteFooter() {

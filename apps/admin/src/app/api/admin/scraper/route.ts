@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ScrapeFilters } from "@kmodern/scraper";
 import { db } from "@kmodern/db";
-import { getAdminUser } from "@/lib/auth";
+import { requireAdminApi } from "@/lib/auth";
 import { scraperJobs } from "@/lib/scraper-jobs";
 
 export const runtime = "nodejs";
@@ -12,12 +12,19 @@ function errorResponse(message: string, status: number): NextResponse {
 }
 
 async function authorize() {
-  const ctx = await getAdminUser();
-  if (!ctx) return { response: errorResponse("unauthorized", 401) } as const;
-  if (ctx.admin.role !== "OWNER") {
+  const auth = await requireAdminApi();
+  if (!auth.ok) {
+    return {
+      response: errorResponse(
+        auth.status === 401 ? "unauthorized" : "password_change_required",
+        auth.status,
+      ),
+    } as const;
+  }
+  if (auth.ctx.admin.role !== "OWNER") {
     return { response: errorResponse("forbidden", 403) } as const;
   }
-  return { ctx } as const;
+  return { ctx: auth.ctx } as const;
 }
 
 function sameOrigin(request: Request): boolean {

@@ -1,5 +1,5 @@
 import { db, type Prisma } from "@kmodern/db";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { getSettingOrDefault } from "./settings";
 
 // 018 discount application. Rules:
@@ -66,15 +66,15 @@ function usable(d: Prisma.DiscountGetPayload<Record<string, never>>, ctx: Discou
   return true;
 }
 
-function amountOff(
-  d: Prisma.DiscountGetPayload<Record<string, never>>,
-  subtotal: number,
-): number {
+type DbDiscount = Prisma.DiscountGetPayload<Record<string, never>>;
+
+function amountOff(d: DbDiscount, subtotal: number): number {
   if (d.type === "PERCENT") {
-    const off = (subtotal * d.value) / 100;
-    return d.maxAmount ? Math.min(off, d.maxAmount) : off;
+    const off = (Math.max(subtotal, 0) * Math.min(Math.max(d.value, 0), 100)) / 100;
+    return d.maxAmount !== null ? Math.min(off, Math.max(d.maxAmount, 0)) : off;
   }
-  return d.value; // FIXED
+  if (d.type === "FREE_DELIVERY") return 0;
+  return Math.min(Math.max(d.value, 0), Math.max(subtotal, 0)); // FIXED
 }
 
 export async function applyDiscounts(
@@ -88,8 +88,9 @@ export async function applyDiscounts(
   };
   const all = await db().discount.findMany({ where });
 
-  // usage limits (total + per customer) — counted in JS over matching orders
-  async function underLimit(d: Prisma.DiscountGetPayload<Record<string, never>>): Promise<boolean> {
+  // Usage limits (total + per customer) are checked for automatic discounts
+  // as well as coupons; otherwise an automatic discount can bypass its cap.
+  async function underLimit(d: DbDiscount): Promise<boolean> {
     const countByDiscount = async (customerId?: string) => {
       const orders = await db().order.findMany({
         where: customerId ? { customerId } : {},
@@ -113,32 +114,30 @@ export async function applyDiscounts(
 
   const coupons = all.filter((d) => d.mode === "COUPON" && d.code && usable(d, ctx));
   const automatics = all.filter((d) => d.mode === "AUTOMATIC" && usable(d, ctx));
+  const usableAutomatics = (await Promise.all(automatics.map(async (d) => (await underLimit(d) ? d : null)))).filter((d): d is DbDiscount => Boolean(d));
 
-  let coupon: Prisma.DiscountGetPayload<Record<string, never>> | null = null;
+  let coupon: DbDiscount | null = null;
+  let couponError: string | undefined;
   if (couponCode) {
     const normalizedCode = couponCode.trim().toLowerCase();
     coupon = coupons.find((d) => d.code?.trim().toLowerCase() === normalizedCode) ?? null;
-    if (!coupon) {
-      // still allow automatic discounts, but report coupon error
-      const auto = bestAutomatic(automatics, ctx);
-      return buildResult(auto, ctx, { couponError: "کد تخفیف نامعتبر است" });
-    }
-    if (!(await underLimit(coupon))) {
-      return { discountAmount: 0, freeDelivery: false, applied: [], couponError: "کد تخفیف منقضی یا استفاده شده است" };
-    }
+    if (!coupon) couponError = "کد تخفیف نامعتبر است";
+    else if (!(await underLimit(coupon))) couponError = "کد تخفیف منقضی یا استفاده شده است";
   }
 
-  // coupon wins merch; else best single automatic
-  let merch: Prisma.DiscountGetPayload<Record<string, never>> | null = coupon;
-  if (!merch) merch = bestAutomatic(automatics, ctx);
+  const freeAutomatic = usableAutomatics.find((d) => d.type === "FREE_DELIVERY") ?? null;
+  const freeCoupon = !couponError && coupon?.type === "FREE_DELIVERY" ? coupon : null;
+  const merchCoupon = coupon && coupon.type !== "FREE_DELIVERY" && !couponError ? coupon : null;
+  const merch = merchCoupon ?? bestAutomatic(usableAutomatics, ctx);
+  const freeDelivery = freeCoupon ?? freeAutomatic;
 
-  return buildResult(merch, ctx);
+  return buildResult(merch, ctx, { couponError, freeDeliveryDiscount: freeDelivery });
 }
 
 function bestAutomatic(
-  list: Prisma.DiscountGetPayload<Record<string, never>>[],
+  list: DbDiscount[],
   ctx: DiscountContext,
-): Prisma.DiscountGetPayload<Record<string, never>> | null {
+): DbDiscount | null {
   let best: Prisma.DiscountGetPayload<Record<string, never>> | null = null;
   for (const d of list) {
     if (d.type === "FREE_DELIVERY") continue; // handled separately
@@ -149,9 +148,9 @@ function bestAutomatic(
 }
 
 async function buildResult(
-  merch: Prisma.DiscountGetPayload<Record<string, never>> | null,
+  merch: DbDiscount | null,
   ctx: DiscountContext,
-  extra: Partial<DiscountResult> = {},
+  extra: { couponError?: string; freeDeliveryDiscount?: DbDiscount | null } = {},
 ): Promise<DiscountResult> {
   const applied: AppliedDiscount[] = [];
   let discountAmount = 0;
@@ -169,6 +168,18 @@ async function buildResult(
       freeDelivery: false,
     });
   }
+  const freeDeliveryDiscount = extra.freeDeliveryDiscount;
+  if (freeDeliveryDiscount) {
+    freeDelivery = true;
+    applied.push({
+      discountId: freeDeliveryDiscount.id,
+      title: freeDeliveryDiscount.code ?? "ارسال رایگان",
+      code: freeDeliveryDiscount.code,
+      type: "FREE_DELIVERY",
+      amountOff: 0,
+      freeDelivery: true,
+    });
+  }
 
-  return { discountAmount, freeDelivery, applied, ...extra };
+  return { discountAmount, freeDelivery, applied, couponError: extra.couponError };
 }

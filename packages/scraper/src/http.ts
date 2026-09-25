@@ -2,6 +2,9 @@
 // Manufacturer sites are small; courtesy beats speed here.
 
 import { createHash } from "node:crypto";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
+import * as ipaddr from "ipaddr.js";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -14,6 +17,7 @@ export interface FetchOptions {
   userAgent?: string;
   signal?: AbortSignal; // cooperative cancellation for interactive clients
   maxBytes?: number; // binary download guard
+  allowedContentTypes?: string[]; // e.g. image/ for binary assets
   onError?: (error: Error, url: string) => void; // final request failure hook
 }
 
@@ -25,6 +29,86 @@ const DEFAULTS = {
   userAgent:
     "Mozilla/5.0 (compatible; kmodern-scraper/0.1; catalog ingestion)",
 };
+
+function isPrivateIp(address: string): boolean {
+  try {
+    const parsed = ipaddr.parse(address);
+    if (parsed.kind() === "ipv6") {
+      const ipv6 = parsed as ipaddr.IPv6;
+      if (ipv6.isIPv4MappedAddress()) return isPrivateIp(ipv6.toIPv4Address().toString());
+    }
+    // `range()` identifies loopback, private, link-local, multicast,
+    // documentation, benchmarking and other non-unicast ranges for both
+    // families. Only globally routable unicast addresses are allowed.
+    return parsed.range() !== "unicast";
+  } catch {
+    return true;
+  }
+}
+
+/** Reject URLs that could make the scraper reach local/internal services. */
+export async function assertSafeRemoteUrl(value: string): Promise<URL> {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Invalid remote URL");
+  }
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password) {
+    throw new Error("Remote URL must be an unauthenticated HTTP(S) URL");
+  }
+  if (url.port && url.port !== "80" && url.port !== "443") throw new Error("Remote URL port is not allowed");
+  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
+    throw new Error("Local remote host is not allowed");
+  }
+  const addresses = isIP(hostname)
+    ? [{ address: hostname }]
+    : await lookup(hostname, { all: true, verbatim: true });
+  if (!addresses.length || addresses.some(({ address }) => isPrivateIp(address))) {
+    throw new Error("Private or unresolvable remote host is not allowed");
+  }
+  return url;
+}
+
+async function fetchWithRedirects(url: string, init: RequestInit, maxRedirects = 4): Promise<Response> {
+  let current = url;
+  for (let redirect = 0; ; redirect++) {
+    const safeUrl = await assertSafeRemoteUrl(current);
+    const response = await fetch(safeUrl, { ...init, redirect: "manual" });
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+    const location = response.headers.get("location");
+    await response.body?.cancel().catch(() => undefined);
+    if (!location || redirect >= maxRedirects) throw new Error("Too many redirects");
+    current = new URL(location, safeUrl).toString();
+  }
+}
+
+async function readResponseBytes(response: Response, maxBytes: number): Promise<Buffer> {
+  const declaredSize = Number(response.headers.get("content-length") ?? 0);
+  if (declaredSize > maxBytes) throw new Error(`Response exceeds ${maxBytes} bytes`);
+  if (!response.body) {
+    const body = Buffer.from(await response.arrayBuffer());
+    if (body.byteLength > maxBytes) throw new Error(`Response exceeds ${maxBytes} bytes`);
+    return body;
+  }
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) throw new Error(`Response exceeds ${maxBytes} bytes`);
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks);
+}
 
 const lastHit = new Map<string, number>(); // host -> epoch ms
 
@@ -102,7 +186,7 @@ export async function fetchHtml(
     o.signal?.addEventListener("abort", onAbort, { once: true });
     const timer = setTimeout(() => ctrl.abort(), o.timeoutMs!);
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithRedirects(url, {
         headers: {
           "User-Agent": o.userAgent!,
           "Accept-Language": "fa-IR,fa;q=0.9,en;q=0.5",
@@ -111,7 +195,7 @@ export async function fetchHtml(
         signal: ctrl.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-      const html = await res.text();
+      const html = (await readResponseBytes(res, o.maxBytes ?? 8 * 1024 * 1024)).toString("utf8");
       if (dir) {
         mkdirSync(dir, { recursive: true });
         writeFileSync(file!, html);
@@ -153,7 +237,7 @@ export async function fetchBuffer(
     o.signal?.addEventListener("abort", onAbort, { once: true });
     const timer = setTimeout(() => ctrl.abort(), o.timeoutMs!);
     try {
-      const response = await fetch(url, {
+      const response = await fetchWithRedirects(url, {
         headers: {
           "User-Agent": o.userAgent!,
           Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -161,15 +245,11 @@ export async function fetchBuffer(
         signal: ctrl.signal,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
-      const declaredSize = Number(response.headers.get("content-length") ?? 0);
-      if (o.maxBytes && declaredSize > o.maxBytes) {
-        throw new Error(`Image exceeds ${o.maxBytes} bytes: ${url}`);
+      const contentType = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase();
+      if (o.allowedContentTypes?.length && (!contentType || !o.allowedContentTypes.some((type) => contentType.startsWith(type)))) {
+        throw new Error(`Unexpected content type for ${url}`);
       }
-      const body = new Uint8Array(await response.arrayBuffer());
-      if (o.maxBytes && body.byteLength > o.maxBytes) {
-        throw new Error(`Image exceeds ${o.maxBytes} bytes: ${url}`);
-      }
-      return body;
+      return new Uint8Array(await readResponseBytes(response, o.maxBytes ?? 10 * 1024 * 1024));
     } catch (error) {
       if (o.signal?.aborted) throw abortError();
       lastErr = error;

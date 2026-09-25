@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatToman, toFaDigits } from "@kmodern/schema";
+import { formatToman, toFaDigits } from "@kmodern/schema/format";
 
 export type OrderStatusKey = "awaiting" | "delivered" | "progress" | "cancelled";
 

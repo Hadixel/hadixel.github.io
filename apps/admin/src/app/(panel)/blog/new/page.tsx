@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@kmodern/db";
 import { BlogEditor } from "@/components/blog-editor";
 
@@ -7,7 +8,7 @@ export default async function NewPost() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center gap-3">
-        <a href="/blog" className="text-sm text-ash hover:underline">وبلاگ</a>
+        <Link href="/blog" className="text-sm text-ash hover:underline">وبلاگ</Link>
         <h1 className="text-xl font-bold text-ink">نوشته جدید</h1>
       </div>
       <BlogEditor

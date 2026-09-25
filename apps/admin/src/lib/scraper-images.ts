@@ -30,6 +30,13 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
+function scraperImagesRoot(): string {
+  const cwd = resolve(/* turbopackIgnore: true */ process.cwd());
+  return cwd.endsWith(`${sep}apps${sep}admin`)
+    ? resolve(cwd, "../../packages/scraper/out/images")
+    : resolve(cwd, "packages/scraper/out/images");
+}
+
 function storePublicDir(): string {
   const configured = process.env.SCRAPER_STORE_PUBLIC_DIR;
   if (configured) return resolve(configured);
@@ -101,9 +108,13 @@ async function materializeEntry(
   let body: Buffer | undefined;
   if (entry.local && !isHttpUrl(entry.local)) {
     try {
-      body = await readFile(resolve(entry.local));
+      const localPath = resolve(entry.local);
+      const imagesRoot = scraperImagesRoot();
+      if (localPath === imagesRoot || localPath.startsWith(`${imagesRoot}${sep}`)) {
+        body = await readFile(localPath);
+      }
     } catch {
-      // A stale local path can still be recovered from the remote original.
+      // A stale or untrusted local path can still be recovered from the remote original.
     }
   }
 
@@ -115,6 +126,7 @@ async function materializeEntry(
       timeoutMs: 20_000,
       minIntervalMs: 100,
       maxBytes: 10 * 1024 * 1024,
+      allowedContentTypes: ["image/"],
     }));
   }
 

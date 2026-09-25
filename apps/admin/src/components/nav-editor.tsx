@@ -8,10 +8,11 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveNav } from "@/lib/actions/content";
+import type { LinkRef } from "@kmodern/schema";
 import type { ActionState } from "@/lib/actions/auth";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 
-type TargetType = "PAGE" | "CATEGORY" | "COLLECTION" | "PRODUCT" | "EXTERNAL" | "SECTION";
+type TargetType = "PAGE" | "CATEGORY" | "COLLECTION" | "BLOG_INDEX" | "BLOG_POST" | "EXTERNAL" | "NONE";
 
 interface PromoState {
   imageUrl: string;
@@ -41,9 +42,10 @@ const TARGET_LABELS: Record<TargetType, string> = {
   PAGE: "صفحه داخلی",
   CATEGORY: "دسته‌بندی",
   COLLECTION: "مجموعه",
-  PRODUCT: "محصول",
+  BLOG_INDEX: "فهرست وبلاگ",
+  BLOG_POST: "نوشته وبلاگ",
   EXTERNAL: "لینک خارجی",
-  SECTION: "بخش صفحه",
+  NONE: "بدون لینک",
 };
 
 export interface NavSeed {
@@ -57,7 +59,7 @@ export interface NavSeed {
 
 interface ItemInput {
   label: string;
-  target: { type: string; value: string };
+  target: LinkRef;
   childSource: "STATIC" | "CATEGORY";
   categoryId?: string;
   display: "DROPDOWN" | "MEGA";
@@ -67,17 +69,24 @@ interface ItemInput {
   promos: Array<{
     imageUrl: string;
     alt: string;
-    link: { type: string; value: string };
+    link: LinkRef;
     heading?: string;
     subtext?: string;
     mobileVisible: boolean;
   }>;
 }
 
+function toLinkRef(type: TargetType, value: string): LinkRef {
+  if (type === "EXTERNAL") return { type, url: value, newTab: true };
+  if (type === "BLOG_INDEX") return { type };
+  if (type === "NONE") return { type };
+  return { type, targetId: value } as LinkRef;
+}
+
 function itemToInput(item: ItemState): ItemInput {
   return {
     label: item.label,
-    target: { type: item.targetType, value: item.targetValue },
+    target: toLinkRef(item.targetType, item.targetValue),
     childSource: item.childSource,
     categoryId: item.categoryId || undefined,
     display: item.display,
@@ -87,7 +96,7 @@ function itemToInput(item: ItemState): ItemInput {
     promos: item.promos.map((p) => ({
       imageUrl: p.imageUrl,
       alt: p.alt,
-      link: { type: p.linkType, value: p.linkValue },
+      link: toLinkRef(p.linkType, p.linkValue),
       heading: p.heading || undefined,
       subtext: p.subtext || undefined,
       mobileVisible: p.mobileVisible,
@@ -224,7 +233,7 @@ export function NavEditor({ seed }: { seed: NavSeed }) {
         </CardBody>
       </Card>
 
-      {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره منو"}</Button>
@@ -259,7 +268,7 @@ function ItemEditor({
   const isCategory = item.childSource === "CATEGORY";
 
   return (
-    <div className={`rounded-card border bg-white ${depth > 0 ? "ml-6 border-plaster" : "border-fog"}`}>
+    <div className={`rounded-card border bg-white ${depth > 0 ? "ms-6 border-plaster" : "border-fog"}`}>
       <div className="space-y-3 p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Field label="عنوان"><Input value={item.label} onChange={(e) => patchItem(path, { label: e.target.value })} /></Field>
@@ -350,14 +359,14 @@ function ItemEditor({
               {item.promos.map((p, k) => (
                 <div key={k} className="rounded-card border border-plaster bg-white p-3">
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-                    <Input placeholder="آدرس تصویر" dir="ltr" value={p.imageUrl} onChange={(e) => patchPromo(path, k, { imageUrl: e.target.value })} />
-                    <Input placeholder="متن جایگزین" value={p.alt} onChange={(e) => patchPromo(path, k, { alt: e.target.value })} />
-                    <Select value={p.linkType} onChange={(e) => patchPromo(path, k, { linkType: e.target.value as TargetType })}>
+                    <Input aria-label={`آدرس تصویر تبلیغ ${k + 1}`} placeholder="آدرس تصویر" dir="ltr" value={p.imageUrl} onChange={(e) => patchPromo(path, k, { imageUrl: e.target.value })} />
+                    <Input aria-label={`متن جایگزین تبلیغ ${k + 1}`} placeholder="متن جایگزین" value={p.alt} onChange={(e) => patchPromo(path, k, { alt: e.target.value })} />
+                    <Select aria-label={`نوع لینک تبلیغ ${k + 1}`} value={p.linkType} onChange={(e) => patchPromo(path, k, { linkType: e.target.value as TargetType })}>
                       {Object.entries(TARGET_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </Select>
-                    <Input placeholder="مقدار لینک" dir="ltr" value={p.linkValue} onChange={(e) => patchPromo(path, k, { linkValue: e.target.value })} />
-                    <Input placeholder="عنوان" value={p.heading} onChange={(e) => patchPromo(path, k, { heading: e.target.value })} />
-                    <Input placeholder="زیرعنوان" value={p.subtext} onChange={(e) => patchPromo(path, k, { subtext: e.target.value })} />
+                    <Input aria-label={`مقدار لینک تبلیغ ${k + 1}`} placeholder="مقدار لینک" dir="ltr" value={p.linkValue} onChange={(e) => patchPromo(path, k, { linkValue: e.target.value })} />
+                    <Input aria-label={`عنوان تبلیغ ${k + 1}`} placeholder="عنوان" value={p.heading} onChange={(e) => patchPromo(path, k, { heading: e.target.value })} />
+                    <Input aria-label={`زیرعنوان تبلیغ ${k + 1}`} placeholder="زیرعنوان" value={p.subtext} onChange={(e) => patchPromo(path, k, { subtext: e.target.value })} />
                     <Checkbox label="نمایش در موبایل" checked={p.mobileVisible} onChange={(e) => patchPromo(path, k, { mobileVisible: e.target.checked })} />
                   </div>
                   <button type="button" className="mt-2 text-xs text-red-600" onClick={() => removePromo(path, k)}>حذف تبلیغ</button>

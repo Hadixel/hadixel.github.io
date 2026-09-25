@@ -1,5 +1,5 @@
 import { db } from "@kmodern/db";
-import { settingKeys, type SettingKey } from "@kmodern/schema";
+import { settingKeys, type SettingKey } from "@kmodern/schema/setting-keys";
 
 // Typed settings accessor (011/017). Values stored as JSON in Setting.
 const CAST: Partial<Record<SettingKey, "number" | "boolean" | "string">> = {

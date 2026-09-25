@@ -21,6 +21,7 @@ export function AdjustStockRow({ variantId }: { variantId: string }) {
       <input type="hidden" name="variantId" value={variantId} />
       <input
         type="number"
+        aria-label="مقدار تغییر موجودی"
         name="delta"
         required
         placeholder="+/−"
@@ -29,12 +30,13 @@ export function AdjustStockRow({ variantId }: { variantId: string }) {
       />
       <input
         type="text"
+        aria-label="یادداشت تعدیل موجودی"
         name="note"
         placeholder="یادداشت"
         className="w-24 rounded-card border border-fog px-2 py-1 text-sm"
       />
       <Button type="submit" variant="secondary" size="sm" disabled={pending}>ثبت</Button>
-      {state.error && <span className="text-xs text-red-700">{state.error}</span>}
+      {state.error && <span role="alert" className="text-xs text-red-700">{state.error}</span>}
       {state.ok && <span className="text-xs text-emerald-600">✓</span>}
     </form>
   );

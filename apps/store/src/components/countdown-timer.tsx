@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/schema/format";
 
 function remaining(to: number) {
   const diff = Math.max(0, to - Date.now());

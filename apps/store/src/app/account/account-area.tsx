@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/schema/format";
 import { OrderRow, type OrderRowData } from "@/components/order-row";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";

@@ -1,16 +1,20 @@
 import { db } from "@kmodern/db";
 import { NavEditor, type ItemState, type NavSeed } from "@/components/nav-editor";
 
-async function seedFor(location: string): Promise<NavSeed | null> {
+interface SharedNavData {
+  pages: Array<{ id: string; slug: string; title: string }>;
+  categories: Array<{ id: string; name: string; slug: string }>;
+  collections: Array<{ id: string; name: string }>;
+}
+
+async function seedFor(location: string, shared: SharedNavData): Promise<NavSeed | null> {
   const menu = await db().menu.findUnique({
     where: { location: location as never },
     include: { items: { include: { promos: true } } },
   });
   if (!menu) return null;
 
-  const pages = await db().page.findMany({ select: { id: true, slug: true, title: true } });
-  const categories = await db().category.findMany({ select: { id: true, name: true, slug: true }, where: { parentId: null } });
-  const collections = await db().collection.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" }, take: 200 });
+  const { pages, categories, collections } = shared;
 
   const itemsByParent = new Map<string | null, (typeof menu.items)[number][]>();
   for (const it of menu.items) {
@@ -24,12 +28,14 @@ async function seedFor(location: string): Promise<NavSeed | null> {
 
   const build = (parentId: string | null): ItemState[] =>
     sorted(itemsByParent.get(parentId)).map((it) => {
-      const t = (it.target ?? { type: "PAGE", value: "" }) as { type?: string; value?: unknown };
+      const t = (it.target ?? { type: "PAGE", targetId: "" }) as { type?: string; targetId?: unknown; url?: unknown; value?: unknown };
+      const rawType = t.type ?? "PAGE";
+      const targetType = (["PAGE", "CATEGORY", "COLLECTION", "BLOG_INDEX", "BLOG_POST", "EXTERNAL", "NONE"].includes(rawType) ? rawType : "NONE") as ItemState["targetType"];
       return {
         key: it.id,
         label: it.label,
-        targetType: (t.type as ItemState["targetType"]) || "PAGE",
-        targetValue: String(t.value ?? ""),
+        targetType,
+        targetValue: String(targetType === "EXTERNAL" ? t.url ?? t.value ?? "" : t.targetId ?? t.value ?? ""),
         childSource: it.childSource as "STATIC" | "CATEGORY",
         categoryId: it.categoryId ?? "",
         display: it.display as "DROPDOWN" | "MEGA",
@@ -37,12 +43,14 @@ async function seedFor(location: string): Promise<NavSeed | null> {
         mobileVisible: it.mobileVisible,
         children: build(it.id),
         promos: (it.promos ?? []).map((p) => {
-          const pl = (p.link ?? { type: "EXTERNAL", value: "" }) as { type?: string; value?: unknown };
+          const pl = (p.link ?? { type: "EXTERNAL", url: "" }) as { type?: string; targetId?: unknown; url?: unknown; value?: unknown };
+          const rawPromoType = pl.type ?? "EXTERNAL";
+          const linkType = (["PAGE", "CATEGORY", "COLLECTION", "BLOG_INDEX", "BLOG_POST", "EXTERNAL", "NONE"].includes(rawPromoType) ? rawPromoType : "NONE") as ItemState["promos"][number]["linkType"];
           return {
             imageUrl: p.imageUrl,
             alt: p.alt ?? "",
-            linkType: (pl.type as ItemState["promos"][number]["linkType"]) || "EXTERNAL",
-            linkValue: String(pl.value ?? ""),
+            linkType,
+            linkValue: String(linkType === "EXTERNAL" ? pl.url ?? pl.value ?? "" : pl.targetId ?? pl.value ?? ""),
             heading: p.heading ?? "",
             subtext: p.subtext ?? "",
             mobileVisible: p.mobileVisible,
@@ -55,7 +63,13 @@ async function seedFor(location: string): Promise<NavSeed | null> {
 }
 
 export default async function NavigationPage() {
-  const seeds = (await Promise.all([seedFor("HEADER"), seedFor("FOOTER"), seedFor("MOBILE")])).filter(
+  const [pages, categories, collections] = await Promise.all([
+    db().page.findMany({ select: { id: true, slug: true, title: true } }),
+    db().category.findMany({ select: { id: true, name: true, slug: true }, where: { parentId: null } }),
+    db().collection.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" }, take: 200 }),
+  ]);
+  const shared: SharedNavData = { pages, categories, collections };
+  const seeds = (await Promise.all([seedFor("HEADER", shared), seedFor("FOOTER", shared), seedFor("MOBILE", shared)])).filter(
     (s): s is NavSeed => s !== null,
   );
 

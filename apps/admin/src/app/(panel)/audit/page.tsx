@@ -1,6 +1,7 @@
 import { db } from "@kmodern/db";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardHeader, EmptyState, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { pageParam } from "@/lib/pagination";
 
 const PAGE_SIZE = 50;
 
@@ -58,7 +59,7 @@ export default async function AuditPage({
   const params = await searchParams;
   const action = params.action && params.action !== "ALL" ? params.action : undefined;
   const adminId = params.admin && params.admin !== "ALL" ? params.admin : undefined;
-  const page = Math.max(1, Number(params.page) || 1);
+  const page = pageParam(params.page);
 
   const where = {
     ...(action ? { action } : {}),
@@ -87,7 +88,7 @@ export default async function AuditPage({
           <form action="/audit" method="get" className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs text-ash">رویداد</label>
-              <Select name="action" defaultValue={action ?? "ALL"}>
+              <Select aria-label="فیلتر رویداد" name="action" defaultValue={action ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {Object.keys(ACTION_LABELS).map((a) => (
                   <option key={a} value={a}>{ACTION_LABELS[a]}</option>
@@ -96,7 +97,7 @@ export default async function AuditPage({
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">مدیر</label>
-              <Select name="admin" defaultValue={adminId ?? "ALL"}>
+              <Select aria-label="فیلتر مدیر" name="admin" defaultValue={adminId ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {admins.map((a) => (
                   <option key={a.id} value={a.id}>{a.name || a.email}</option>

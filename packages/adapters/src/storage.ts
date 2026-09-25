@@ -90,10 +90,18 @@ class S3Storage implements Storage {
   }
 
   async list(prefix: string): Promise<string[]> {
-    const out = await this.client.send(
-      new ListObjectsV2Command({ Bucket: this.cfg.bucket, Prefix: this.fullKey(prefix) }),
-    );
-    return (out.Contents ?? []).map((o) => o.Key ?? "");
+    const out: string[] = [];
+    let continuationToken: string | undefined;
+    do {
+      const page = await this.client.send(new ListObjectsV2Command({
+        Bucket: this.cfg.bucket,
+        Prefix: this.fullKey(prefix),
+        ...(continuationToken ? { ContinuationToken: continuationToken } : {}),
+      }));
+      out.push(...(page.Contents ?? []).map((o) => o.Key ?? ""));
+      continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+    } while (continuationToken);
+    return out;
   }
 }
 

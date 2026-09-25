@@ -47,7 +47,10 @@ export function OrderStatusTransitions({
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
       <div>
         <h3 className="mb-2 text-sm font-semibold text-ink">وضعیت اجرا (فعلی: {STATUS_LABELS[fulfilled] ?? fulfilled})</h3>
-        <form action={formAction} className="space-y-2">
+        <form action={formAction} className="space-y-2" onSubmit={(event) => {
+          const target = String(new FormData(event.currentTarget).get("to") ?? "");
+          if (["CANCELLED", "RETURNED", "REFUNDED"].includes(target) && !window.confirm("این عملیات وضعیت سفارش و موجودی را تغییر می‌دهد. ادامه می‌دهید؟")) event.preventDefault();
+        }}>
           <input type="hidden" name="orderId" value={orderId} />
           <input type="hidden" name="dimension" value="FULFILLMENT" />
           {FULFILLMENT_NEXT[fulfilled]?.length ? (
@@ -70,7 +73,10 @@ export function OrderStatusTransitions({
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-ink">وضعیت پرداخت (فعلی: {STATUS_LABELS[paid] ?? paid})</h3>
-        <form action={formAction} className="space-y-2">
+        <form action={formAction} className="space-y-2" onSubmit={(event) => {
+          const target = String(new FormData(event.currentTarget).get("to") ?? "");
+          if (["CANCELLED", "RETURNED", "REFUNDED"].includes(target) && !window.confirm("این عملیات وضعیت سفارش و موجودی را تغییر می‌دهد. ادامه می‌دهید؟")) event.preventDefault();
+        }}>
           <input type="hidden" name="orderId" value={orderId} />
           <input type="hidden" name="dimension" value="PAYMENT" />
           {PAYMENT_NEXT[paid]?.length ? (
@@ -91,8 +97,8 @@ export function OrderStatusTransitions({
         </form>
       </div>
 
-      {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-      {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+      {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && <p role="status" aria-live="polite" className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
     </div>
   );
 }

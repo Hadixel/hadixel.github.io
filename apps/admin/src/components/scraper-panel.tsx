@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { formatToman } from "@kmodern/schema";
+import { formatToman } from "@kmodern/schema/format";
 import { formatJalaliDateTime } from "@/lib/date";
 import type { PriceListReport, ScrapeFilters, ScraperCatalogEdit, ScraperCatalogItem, ScraperJobSnapshot, ScraperJobStatus } from "@/lib/scraper-types";
 import {
@@ -365,6 +365,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
   }, [active, catalogJobId, job?.id]);
 
   async function start() {
+    setLoading(true);
     setBusy(true);
     setStarting(true);
     setNotice(null);
@@ -780,6 +781,13 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
               <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-ash">
                 <Spinner /> در حال دریافت وضعیت…
               </div>
+            ) : !job && notice?.kind === "error" ? (
+              <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-center" role="alert">
+                <p className="text-sm text-red-700">{notice.text}</p>
+                <Button type="button" variant="secondary" onClick={() => void refresh()}>تلاش دوباره</Button>
+              </div>
+            ) : !job ? (
+              <p className="py-10 text-center text-sm text-ash">هنوز اجرایی آغاز نشده است.</p>
             ) : (
               <div className="space-y-5">
                 {job && formatScrapeFilters(job.filters) ? (
@@ -792,7 +800,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                       {progressTotal ? `${faDigits(progressCurrent)} / ${faDigits(progressTotal)}` : "—"}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-[30px] bg-plaster" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+                  <div className="h-2 overflow-hidden rounded-[30px] bg-plaster" role="progressbar" aria-label="پیشرفت اجرای اسکرپ" aria-valuetext={progressTotal ? `${faDigits(progressCurrent)} از ${faDigits(progressTotal)}` : "در حال آماده‌سازی"} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
                     <div className="h-full rounded-[30px] bg-flame-700 transition-[width] duration-200" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
@@ -981,7 +989,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
                         </THead>
                         <TBody>
                           {filteredCatalog.map((item) => (
-                            <TR key={item.slug} onClick={() => setDetail(item)} className={selected.has(item.slug) ? "bg-flame-50" : undefined}>
+                            <TR key={item.slug} onClick={() => setDetail(item)} aria-label={`جزئیات ${item.name}`} className={selected.has(item.slug) ? "bg-flame-50" : undefined}>
                               <TD>
                                 <input
                                   type="checkbox"
@@ -1109,7 +1117,7 @@ function PriceListCard({
             اعمال روی خروجی بررسی
           </Button>
         </div>
-        {notice ? <p className="mt-3 rounded-card bg-plaster px-3 py-2 text-sm leading-6 text-ink">{notice}</p> : null}
+        {notice ? <p role="status" aria-live="polite" className="mt-3 rounded-card bg-plaster px-3 py-2 text-sm leading-6 text-ink">{notice}</p> : null}
         {report ? (
           <div className="mt-4 rounded-card border border-plaster p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">

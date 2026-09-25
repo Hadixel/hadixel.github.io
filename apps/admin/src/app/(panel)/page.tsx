@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { db } from "@kmodern/db";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys, formatToman } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
+import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardBody, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";

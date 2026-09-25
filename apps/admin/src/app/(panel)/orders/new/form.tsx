@@ -8,7 +8,7 @@ import { useActionState, useMemo, useState } from "react";
 import { createManualOrder } from "@/lib/actions/orders";
 import type { ActionState } from "@/lib/actions/auth";
 import { Button, Card, CardBody, CardHeader, Field, Input, Textarea } from "@/components/ui";
-import { formatToman } from "@kmodern/schema";
+import { formatToman } from "@kmodern/schema/format";
 
 interface CustomerLite {
   id: string;
@@ -36,14 +36,17 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
     postalCode: "",
   });
   const [deliveryFee, setDeliveryFee] = useState("0");
+  const [deliveryFeeMode, setDeliveryFeeMode] = useState("FLAT");
 
   const variantById = useMemo(() => new Map(variants.map((v) => [v.id, v])), [variants]);
   const subtotal = lines.reduce((s, l) => s + (variantById.get(l.variantId)?.price ?? 0) * l.qty, 0);
-  const total = subtotal + (Number(deliveryFee) || 0);
+  const total = subtotal + (deliveryFeeMode === "FREE" ? 0 : (Number(deliveryFee) || 0));
 
   const addLine = () => {
     if (!variants.length) return;
-    setLines((ls) => [...ls, { variantId: variants[0].id, qty: 1 }]);
+    const used = new Set(lines.map((line) => line.variantId));
+    const next = variants.find((variant) => !used.has(variant.id));
+    if (next) setLines((ls) => [...ls, { variantId: next.id, qty: 1 }]);
   };
   const updateLine = (i: number, patch: Partial<{ variantId: string; qty: number }>) => {
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -64,14 +67,14 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
             </select>
           </Field>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="نام گیرنده"><Input name="address.recipientName" value={address.recipientName} onChange={(e) => setAddress({ ...address, recipientName: e.target.value })} /></Field>
-            <Field label="موبایل گیرنده"><Input name="address.recipientPhone" dir="ltr" value={address.recipientPhone} onChange={(e) => setAddress({ ...address, recipientPhone: e.target.value })} /></Field>
-            <Field label="استان"><Input name="address.province" value={address.province} onChange={(e) => setAddress({ ...address, province: e.target.value })} /></Field>
-            <Field label="شهر"><Input name="address.city" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} /></Field>
+            <Field label="نام گیرنده" required><Input name="address.recipientName" value={address.recipientName} onChange={(e) => setAddress({ ...address, recipientName: e.target.value })} required /></Field>
+            <Field label="موبایل گیرنده" required><Input name="address.recipientPhone" dir="ltr" inputMode="tel" pattern="09[0-9]{9}" value={address.recipientPhone} onChange={(e) => setAddress({ ...address, recipientPhone: e.target.value })} required /></Field>
+            <Field label="استان" required><Input name="address.province" value={address.province} onChange={(e) => setAddress({ ...address, province: e.target.value })} required /></Field>
+            <Field label="شهر" required><Input name="address.city" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} required /></Field>
             <div className="md:col-span-2">
-              <Field label="آدرس"><Textarea name="address.addressLine" value={address.addressLine} onChange={(e) => setAddress({ ...address, addressLine: e.target.value })} /></Field>
+              <Field label="آدرس" required><Textarea name="address.addressLine" value={address.addressLine} onChange={(e) => setAddress({ ...address, addressLine: e.target.value })} required minLength={5} /></Field>
             </div>
-            <Field label="کد پستی"><Input name="address.postalCode" dir="ltr" value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} /></Field>
+            <Field label="کد پستی" required><Input name="address.postalCode" dir="ltr" inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} required /></Field>
           </div>
         </CardBody>
       </Card>
@@ -86,6 +89,7 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
                 <div key={i} className="flex flex-wrap items-center gap-2 rounded-card border border-plaster p-2">
                   <select
                     className="min-w-56 flex-1 rounded-card border border-fog px-3 py-2 text-sm"
+                    aria-label={`انتخاب تنوع ردیف ${i + 1}`}
                     value={l.variantId}
                     onChange={(e) => updateLine(i, { variantId: e.target.value })}
                   >
@@ -96,7 +100,7 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
                     ))}
                   </select>
                   <input
-                    type="number" min={1} className="w-20 rounded-card border border-fog px-2 py-2 text-sm"
+                    type="number" min={1} aria-label={`تعداد ردیف ${i + 1}`} className="w-20 rounded-card border border-fog px-2 py-2 text-sm"
                     value={l.qty} onChange={(e) => updateLine(i, { qty: Number(e.target.value) || 1 })}
                   />
                   <span className="text-sm text-ash">{v ? formatToman(v.price * l.qty) : ""}</span>
@@ -133,7 +137,7 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
               </select>
             </Field>
             <Field label="نحوه دریافت هزینه ارسال">
-              <select name="deliveryFeeMode" className="w-full rounded-card border border-fog px-3 py-2 text-sm" defaultValue="FLAT">
+              <select name="deliveryFeeMode" value={deliveryFeeMode} onChange={(e) => setDeliveryFeeMode(e.target.value)} className="w-full rounded-card border border-fog px-3 py-2 text-sm">
                 <option value="FREE">رایگان</option>
                 <option value="FLAT">مبلغ ثابت</option>
                 <option value="API_QUOTE">استعلام آنلاین</option>
@@ -142,13 +146,13 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
               </select>
             </Field>
             <Field label="هزینه ارسال (تومان)">
-              <Input name="deliveryFee" dir="ltr" type="number" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
+              <Input name="deliveryFee" dir="ltr" type="number" min={0} disabled={deliveryFeeMode === "FREE"} value={deliveryFeeMode === "FREE" ? "0" : deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
             </Field>
             <div className="md:col-span-2">
               <Field label="یادداشت ادمین"><Textarea name="adminNote" /></Field>
             </div>
           </div>
-          {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+          {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
           <div className="flex justify-end">
             <Button type="submit" disabled={pending}>{pending ? "در حال ثبت…" : "ثبت سفارش"}</Button>
           </div>

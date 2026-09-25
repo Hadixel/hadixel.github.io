@@ -25,7 +25,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
             <Input type="password" name="confirm" dir="ltr" required />
           </Field>
           {state.error && (
-            <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+            <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
           )}
           {state.ok && (
             <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>

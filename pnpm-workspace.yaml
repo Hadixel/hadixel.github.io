@@ -2,6 +2,12 @@ packages:
   - "apps/*"
   - "packages/*"
 
+overrides:
+  deepmerge-ts: ^8.0.2
+  fast-uri: ^4.2.1
+  mysql2: ^3.24.4
+  nanoid: ^5.1.16
+
 allowBuilds:
   '@prisma/engines': true
   esbuild: true

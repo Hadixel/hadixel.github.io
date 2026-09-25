@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { ProductGallery, cn } from "@kmodern/ui";
-import { formatToman, toFaDigits } from "@kmodern/schema";
+import { formatToman, toFaDigits } from "@kmodern/schema/format";
 import { useCart } from "./cart-provider";
 import { QuantityStepper } from "./quantity-stepper";
 

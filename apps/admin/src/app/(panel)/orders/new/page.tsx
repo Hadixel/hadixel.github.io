@@ -6,10 +6,12 @@ export default async function NewOrderPage() {
     db().customer.findMany({
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true, phone: true },
+      take: 500,
     }),
     db().variant.findMany({
       orderBy: { product: { name: "asc" } },
       include: { product: { select: { name: true } } },
+      take: 500,
     }),
   ]);
   return (

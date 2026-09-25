@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { db } from "@kmodern/db";
-import { formatToman } from "@kmodern/schema";
+import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliLong } from "@/lib/date";
-import { Badge, Button, Card, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, EmptyState, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { pageParam } from "@/lib/pagination";
 import { DeleteDiscountButton } from "./delete-discount";
 
 const TYPE_LABELS: Record<string, string> = { PERCENT: "درصدی", FIXED: "مبلغ ثابت", FREE_DELIVERY: "ارسال رایگان" };
@@ -14,9 +15,17 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 const MODE_LABELS: Record<string, string> = { COUPON: "کوپن", AUTOMATIC: "خودکار" };
 
-export default async function DiscountsPage() {
-  const discounts = await db().discount.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
-  const active = discounts.filter((d) => d.status === "ACTIVE").length;
+const PAGE_SIZE = 25;
+
+export default async function DiscountsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams;
+  const page = pageParam(params.page);
+  const [discounts, total, active] = await Promise.all([
+    db().discount.findMany({ orderBy: { createdAt: "desc" }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+    db().discount.count(),
+    db().discount.count({ where: { status: "ACTIVE" } }),
+  ]);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-4">
@@ -24,7 +33,11 @@ export default async function DiscountsPage() {
         <CardHeader
           title="تخفیف‌ها"
           subtitle={`${faDigits(active)} تخفیف فعال`}
-          actions={<Link href="/discounts/new"><Button>تخفیف جدید</Button></Link>}
+          actions={
+            <Button asChild>
+              <Link href="/discounts/new">تخفیف جدید</Link>
+            </Button>
+          }
         />
         {discounts.length === 0 ? (
           <EmptyState text="تخفیفی ثبت نشده است" />
@@ -66,7 +79,9 @@ export default async function DiscountsPage() {
                   </TD>
                   <TD>
                     <div className="flex gap-2">
-                      <Link href={`/discounts/${d.id}`}><Button size="sm" variant="secondary">ویرایش</Button></Link>
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/discounts/${d.id}`}>ویرایش</Link>
+                      </Button>
                       <DeleteDiscountButton id={d.id} />
                     </div>
                   </TD>
@@ -76,6 +91,7 @@ export default async function DiscountsPage() {
           </Table>
         )}
       </Card>
+      <Pagination page={page} totalPages={totalPages} basePath="/discounts" />
     </div>
   );
 }

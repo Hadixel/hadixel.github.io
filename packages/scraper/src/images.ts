@@ -65,6 +65,7 @@ export async function downloadProductImages(
           signal,
           minIntervalMs: options.minIntervalMs ?? 100,
           maxBytes: options.maxBytes ?? 10 * 1024 * 1024,
+          allowedContentTypes: ["image/"],
         });
         await writeFile(destination, bytes);
         localImages.push(destination);

@@ -4,23 +4,23 @@ import { db } from "@kmodern/db";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardBody, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
-import { formatToman } from "@kmodern/schema";
+import { formatToman } from "@kmodern/schema/format";
 
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const customer = await db().customer.findUnique({
-    where: { id },
-    include: {
-      addresses: { orderBy: { isDefault: "desc" } },
-      orders: { include: { _count: { select: { items: true } } }, orderBy: { createdAt: "desc" }, take: 50 },
-    },
-  });
+  const [customer, totals] = await Promise.all([
+    db().customer.findUnique({
+      where: { id },
+      include: {
+        addresses: { orderBy: { isDefault: "desc" } },
+        orders: { orderBy: { createdAt: "desc" }, take: 50 },
+      },
+    }),
+    db().order.aggregate({ where: { customerId: id }, _count: { _all: true }, _sum: { total: true } }),
+  ]);
   if (!customer) notFound();
-
-  const totals = customer.orders.reduce(
-    (acc, o) => ({ count: acc.count + 1, sum: acc.sum + o.total }),
-    { count: 0, sum: 0 },
-  );
+  const totalCount = totals._count._all;
+  const totalSpend = totals._sum.total ?? 0;
 
   return (
     <div className="space-y-4">
@@ -38,7 +38,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               <div className="flex justify-between"><dt className="text-ash">ایمیل</dt><dd>{customer.email || faDigits("—")}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">عضویت</dt><dd>{formatJalaliDateTime(customer.createdAt)}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">بازاریابی پیامکی</dt><dd>{customer.smsMarketingConsent ? "فعال" : "غیرفعال"}</dd></div>
-              <div className="flex justify-between"><dt className="text-ash">مجموع خرید</dt><dd className="font-semibold">{formatToman(totals.sum)}</dd></div>
+              <div className="flex justify-between"><dt className="text-ash">مجموع خرید</dt><dd className="font-semibold">{formatToman(totalSpend)}</dd></div>
             </dl>
           </CardBody>
         </Card>
@@ -68,8 +68,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       </div>
 
       <Card>
-        <CardHeader title="سفارش‌ها" subtitle={`${faDigits(totals.count)} سفارش`} />
-        <Table>
+        <CardHeader title="سفارش‌ها" subtitle={`${faDigits(totalCount)} سفارش${customer.orders.length < totalCount ? ` (نمایش ${faDigits(customer.orders.length)} سفارش آخر)` : ""}`} />
+        {customer.orders.length === 0 ? (
+          <EmptyState text="سفارشی ثبت نشده است" />
+        ) : (
+          <Table>
           <THead>
             <TR>
               <TH>شماره</TH>
@@ -92,7 +95,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
               </TR>
             ))}
           </TBody>
-        </Table>
+          </Table>
+        )}
       </Card>
     </div>
   );

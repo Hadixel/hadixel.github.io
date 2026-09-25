@@ -11,6 +11,7 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
   const [q, setQ] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(deleteMediaAction, {});
   useEffect(() => {
     if (state.ok) router.refresh();
@@ -23,9 +24,10 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
     <Card>
       <CardBody>
         <div className="mb-4">
-          <Input placeholder="جستجوی فایل…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input aria-label="جستجوی فایل‌های رسانه" placeholder="جستجوی فایل…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        {err && <p className="mb-3 rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
+        {err && <p role="alert" className="mb-3 rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
+        {copied && <p role="status" aria-live="polite" className="mb-3 rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">آدرس کپی شد.</p>}
         {filtered.length === 0 ? (
           <EmptyState text="فایلی یافت نشد" />
         ) : (
@@ -37,7 +39,7 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
                 <div key={it.key} className="overflow-hidden rounded-card border border-plaster">
                   <div className="flex h-28 items-center justify-center bg-plaster">
                     {isImage ? (
-                      <img src={it.url} alt={it.key} className="h-full w-full object-cover" />
+                      <img src={it.url} alt={it.key} loading="lazy" className="h-full w-full object-cover" />
                     ) : isVideo ? (
                       <span className="text-xs text-ash">ویدیو</span>
                     ) : (
@@ -51,8 +53,15 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
                         type="button"
                         className="text-[11px] text-flame-700 hover:underline"
                         onClick={async () => {
-                          await navigator.clipboard.writeText(it.url);
-                          alert("آدرس کپی شد");
+                          try {
+                            if (!navigator.clipboard) throw new Error("clipboard unavailable");
+                            await navigator.clipboard.writeText(it.url);
+                            setCopied(it.key);
+                            setErr(null);
+                          } catch {
+                            setCopied(null);
+                            setErr("کپی آدرس ممکن نشد؛ آدرس را دستی کپی کنید.");
+                          }
                         }}
                       >
                         کپی لینک

@@ -1,6 +1,6 @@
 import { db } from "@kmodern/db";
 import { isKermanCity } from "@kmodern/schema";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { getSettingOrDefault } from "./settings";
 import { postexConfigFromEnv, fetchQuotes } from "@kmodern/adapters";
 

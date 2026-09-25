@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { SOURCES } from "@kmodern/scraper";
+import { SCRAPER_SOURCE_OPTIONS } from "@kmodern/scraper/source-options";
 import { ScraperPanel } from "@/components/scraper-panel";
 import { getAdminUser } from "@/lib/auth";
 
@@ -18,10 +18,7 @@ export default async function ScraperPage() {
     );
   }
 
-  const sources = Object.values(SOURCES).map((source) => ({
-    id: source.id,
-    label: source.brand === "Datees" ? "داتیس" : source.brand === "Schuffle" ? "شافل" : source.brand,
-  }));
+  const sources = SCRAPER_SOURCE_OPTIONS;
 
   return <ScraperPanel sources={sources} />;
 }

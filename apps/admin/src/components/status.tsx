@@ -1,5 +1,3 @@
-"use client";
-
 // Status → Persian label + badge color maps for every enum in the schema,
 // so lists/chips render consistently across the panel.
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/react";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/schema/format";
 
 export function QuantityStepper({
   value,

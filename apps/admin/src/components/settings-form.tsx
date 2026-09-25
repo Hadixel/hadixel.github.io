@@ -40,11 +40,12 @@ export function SettingsForm({
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[240px_1fr]">
-      <nav className="space-y-1">
+      <nav aria-label="بخش‌های تنظیمات" className="space-y-1">
         {Object.entries(sections).map(([key, s]) => (
           <button
             key={key}
             type="button"
+            aria-pressed={section === key}
             onClick={() => setSection(key)}
             className={`block w-full rounded-card px-3 py-2 text-right text-sm ${
               section === key ? "bg-ink font-medium text-white" : "text-ink hover:bg-plaster"
@@ -74,7 +75,7 @@ export function SettingsForm({
                     <Input
                       name={f.key}
                       type={f.type}
-                      dir={f.type === "text" ? undefined : "ltr"}
+                      dir={["shippingLocalFlatFee", "shippingPostWeightCap", "shippingPostFallbackFee", "shippingMaxCodTotal", "inventoryLowStockThreshold", "checkoutOnlineReserveMinutes", "checkoutC2cReserveHours", "paymentC2cCardNumber", "adminAlertMobile"].includes(f.key) ? "ltr" : f.type === "text" ? "auto" : "ltr"}
                       value={values[f.key] ?? ""}
                       onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                     />
@@ -83,7 +84,7 @@ export function SettingsForm({
               ))}
             </div>
 
-            {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+            {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
             {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
             <div className="flex justify-end">
               <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره تنظیمات"}</Button>

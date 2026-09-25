@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { StatusNotice } from "@/components/status-notice";
-import { formatToman } from "@kmodern/schema";
+import { formatToman } from "@kmodern/schema/format";
 
 interface Line {
   variantId: string;

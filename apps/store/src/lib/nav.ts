@@ -17,31 +17,46 @@ async function dbCollection(id: string) {
   return db().collection.findUnique({ where: { id }, select: { slug: true } });
 }
 
+function normalizeLinkRef(ref: LinkRef | undefined | null): LinkRef | undefined | null {
+  if (!ref || typeof ref !== "object") return ref;
+  const legacy = ref as unknown as { type?: unknown; value?: unknown; targetId?: unknown; url?: unknown };
+  if (legacy.value !== undefined && legacy.targetId === undefined && legacy.url === undefined) {
+    if (legacy.type === "EXTERNAL") return { type: "EXTERNAL", url: String(legacy.value), newTab: true };
+    if (legacy.type === "PAGE" || legacy.type === "CATEGORY" || legacy.type === "COLLECTION" || legacy.type === "BLOG_POST") {
+      return { type: legacy.type, targetId: String(legacy.value) } as LinkRef;
+    }
+  }
+  return ref;
+}
+
 export async function hrefFor(ref: LinkRef | undefined | null): Promise<{ href: string; newTab: boolean }> {
-  if (!ref) return { href: "#", newTab: false };
-  switch (ref.type) {
+  const normalized = normalizeLinkRef(ref);
+  if (!normalized) return { href: "#", newTab: false };
+  switch (normalized.type) {
     case "EXTERNAL":
-      return { href: ref.url, newTab: ref.newTab };
+      return { href: normalized.url, newTab: normalized.newTab };
     case "BLOG_INDEX":
       return { href: "/blog", newTab: false };
     case "CATEGORY": {
-      const c = await dbCat(ref.targetId);
+      const c = await dbCat(normalized.targetId);
       return { href: c?.slug ? `/category/${c.slug}` : "/", newTab: false };
     }
     case "PAGE": {
-      const p = await dbPage(ref.targetId);
+      const p = await dbPage(normalized.targetId);
       return { href: p?.slug ? `/${p.slug}` : "/", newTab: false };
     }
     case "BLOG_POST": {
-      const p = await dbPost(ref.targetId);
+      const p = await dbPost(normalized.targetId);
       return { href: p?.slug ? `/blog/${p.slug}` : "/blog", newTab: false };
     }
     case "COLLECTION": {
-      const c = await dbCollection(ref.targetId);
+      const c = await dbCollection(normalized.targetId);
       return { href: c?.slug ? `/collection/${c.slug}` : "/", newTab: false };
     }
     case "NONE":
       return { href: "#", newTab: false };
+    default:
+      return { href: "/", newTab: false };
   }
 }
 

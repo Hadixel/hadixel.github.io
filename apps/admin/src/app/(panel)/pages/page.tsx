@@ -4,6 +4,7 @@ import { faDigits } from "@/lib/date";
 import { Badge, Button, Card, CardHeader, EmptyState, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
 import { DeletePageButton } from "./delete-page";
+import { enumParam } from "@/lib/pagination";
 
 export default async function PagesPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function PagesPage({
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const params = await searchParams;
-  const status = params.status && params.status !== "ALL" ? params.status : undefined;
+  const status = enumParam(params.status, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
   const q = params.q?.trim();
 
   const where = {
@@ -46,26 +47,26 @@ export default async function PagesPage({
           title="صفحات"
           subtitle="صفحات سیستمی همیشه بالا و غیرقابل حذف"
           actions={
-            <Link href="/pages/new">
-              <Button>صفحه جدید</Button>
-            </Link>
+            <Button asChild>
+              <Link href="/pages/new">صفحه جدید</Link>
+            </Button>
           }
         />
         <div className="border-b border-plaster px-5 py-3">
           <form action="/pages" method="get" className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs text-ash">جستجو</label>
-              <Input name="q" defaultValue={q} className="w-56" />
+              <Input aria-label="جستجوی صفحات" name="q" defaultValue={q} className="w-56" />
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">وضعیت</label>
-              <Select name="status" defaultValue={status ?? "ALL"}>
+              <Select aria-label="فیلتر وضعیت صفحه" name="status" defaultValue={status ?? "ALL"}>
                 <option value="ALL">همه</option>
                 <option value="DRAFT">پیش‌نویس</option>
                 <option value="PUBLISHED">منتشر شده</option>
               </Select>
             </div>
-            <Button variant="secondary">اعمال</Button>
+            <Button type="submit" variant="secondary">اعمال</Button>
           </form>
         </div>
 

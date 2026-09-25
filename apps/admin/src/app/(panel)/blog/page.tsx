@@ -4,6 +4,7 @@ import { Badge, Button, Card, CardHeader, EmptyState, Input, Select, Table, TBod
 import { StatusBadge } from "@/components/status";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { DeletePostButton } from "./delete-post";
+import { enumParam } from "@/lib/pagination";
 
 export default async function BlogPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function BlogPage({
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const params = await searchParams;
-  const status = params.status && params.status !== "ALL" ? params.status : undefined;
+  const status = enumParam(params.status, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
   const q = params.q?.trim();
 
   const where = {
@@ -30,24 +31,28 @@ export default async function BlogPage({
         <CardHeader
           title="وبلاگ"
           subtitle="نوشته‌ها و اخبار"
-          actions={<Link href="/blog/new"><Button>نوشته جدید</Button></Link>}
+          actions={
+            <Button asChild>
+              <Link href="/blog/new">نوشته جدید</Link>
+            </Button>
+          }
         />
         <div className="border-b border-plaster px-5 py-3">
           <form action="/blog" method="get" className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs text-ash">جستجو</label>
-              <Input name="q" defaultValue={q} className="w-56" />
+              <Input aria-label="جستجوی نوشته‌ها" name="q" defaultValue={q} className="w-56" />
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">وضعیت</label>
-              <Select name="status" defaultValue={status ?? "ALL"}>
+              <Select aria-label="فیلتر وضعیت نوشته" name="status" defaultValue={status ?? "ALL"}>
                 <option value="ALL">همه</option>
                 <option value="DRAFT">پیش‌نویس</option>
                 <option value="PUBLISHED">منتشر شده</option>
                 <option value="ARCHIVED">بایگانی</option>
               </Select>
             </div>
-            <Button variant="secondary">اعمال</Button>
+            <Button type="submit" variant="secondary">اعمال</Button>
           </form>
         </div>
 
@@ -84,7 +89,9 @@ export default async function BlogPage({
                   </TD>
                   <TD>
                     <div className="flex gap-2">
-                      <Link href={`/blog/${p.id}`}><Button size="sm" variant="secondary">ویرایش</Button></Link>
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/blog/${p.id}`}>ویرایش</Link>
+                      </Button>
                       <DeletePostButton id={p.id} title={p.title} />
                     </div>
                   </TD>

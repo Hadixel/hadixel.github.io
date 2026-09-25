@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveDiscount } from "@/lib/actions/settings";
 import type { ActionState } from "@/lib/actions/auth";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select } from "@/components/ui";
+import { fromDateTimeLocal } from "@/lib/date";
 
 export interface DiscountSeed {
   id?: string;
@@ -45,6 +46,8 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
     minOrderSubtotal: d.minOrderSubtotal === null ? undefined : Number(d.minOrderSubtotal) || 0,
     maxUsesTotal: d.maxUsesTotal === null ? undefined : Number(d.maxUsesTotal) || 0,
     maxUsesPerCustomer: d.maxUsesPerCustomer === null ? undefined : Number(d.maxUsesPerCustomer) || 0,
+    startsAt: d.startsAt ? fromDateTimeLocal(d.startsAt).toISOString() : "",
+    endsAt: d.endsAt ? fromDateTimeLocal(d.endsAt).toISOString() : undefined,
   });
 
   return (
@@ -57,7 +60,10 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
         <CardBody>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="نوع تخفیف" required>
-              <Select value={d.type} onChange={(e) => set({ type: e.target.value as DiscountSeed["type"] })}>
+              <Select value={d.type} onChange={(e) => {
+                const type = e.target.value as DiscountSeed["type"];
+                set({ type, value: type === "FREE_DELIVERY" ? 0 : d.value });
+              }}>
                 <option value="PERCENT">درصدی</option>
                 <option value="FIXED">مبلغ ثابت (تومان)</option>
                 <option value="FREE_DELIVERY">ارسال رایگان</option>
@@ -74,8 +80,16 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
                 <Input dir="ltr" value={d.code} onChange={(e) => set({ code: e.target.value })} placeholder="SAVE10" />
               </Field>
             )}
-            <Field label={d.type === "PERCENT" ? "درصد تخفیف" : "مبلغ (تومان)"}>
-              <Input type="number" dir="ltr" value={d.value} onChange={(e) => set({ value: Number(e.target.value) })} />
+            <Field label={d.type === "PERCENT" ? "درصد تخفیف" : d.type === "FIXED" ? "مبلغ (تومان)" : "مقدار"}>
+              <Input
+                type="number"
+                dir="ltr"
+                min={d.type === "PERCENT" ? 1 : 0}
+                max={d.type === "PERCENT" ? 100 : undefined}
+                disabled={d.type === "FREE_DELIVERY"}
+                value={d.type === "FREE_DELIVERY" ? 0 : d.value}
+                onChange={(e) => set({ value: Number(e.target.value) })}
+              />
             </Field>
             <Field label="سقف تخفیف (درصدی، اختیاری)">
               <Input type="number" dir="ltr" value={d.maxAmount ?? ""} onChange={(e) => set({ maxAmount: e.target.value === "" ? null : Number(e.target.value) })} />
@@ -128,7 +142,7 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
         </CardBody>
       </Card>
 
-      {state.error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره تخفیف"}</Button>

@@ -7,13 +7,17 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { componentSchemas } from "@kmodern/schema";
+import type { ComponentType } from "@kmodern/schema";
 import { savePage } from "@/lib/actions/content";
 import type { ActionState } from "@/lib/actions/auth";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { MediaPickerButton } from "./media-picker-button";
 
-const BLOCK_TYPES = Object.keys(componentSchemas) as Array<keyof typeof componentSchemas>;
+const BLOCK_TYPES: ComponentType[] = [
+  "hero", "productGrid", "productSlider", "richText", "banner", "bannerPair", "bannerTrio", "uspRow",
+  "categoryTiles", "spacer", "imageTextSplit", "slidingStrip", "testimonials", "faqAccordion", "video",
+  "countdown", "blogTeaser", "trustBadges", "newsletter", "statsRow", "comparisonTable", "beforeAfter", "map", "customHtml",
+];
 
 const TYPE_LABELS: Record<string, string> = {
   hero: "هیرو (بنر اصلی)",
@@ -137,7 +141,7 @@ const BLOCK_FIELDS: Record<string, FieldDef[]> = {
 
 interface BlockState {
   id: string;
-  type: keyof typeof componentSchemas;
+  type: ComponentType;
   props: Record<string, unknown>;
 }
 
@@ -155,8 +159,9 @@ export function PageBuilder({ page }: { page: PageSeed }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(savePage, {});
   useEffect(() => {
-    if (state.ok) router.refresh();
-  }, [state, router]);
+    if (state.ok && state.id && !page.id) router.push(`/pages/${state.id}`);
+    else if (state.ok) router.refresh();
+  }, [page.id, router, state]);
 
   const [blocks, setBlocks] = useState<BlockState[]>(page.blocks);
   const [title, setTitle] = useState(page.title);
@@ -165,11 +170,8 @@ export function PageBuilder({ page }: { page: PageSeed }) {
   const [addType, setAddType] = useState<string>(BLOCK_TYPES[0]);
 
   const addBlock = () => {
-    const type = addType as keyof typeof componentSchemas;
-    const schema = componentSchemas[type];
-    const parsed = schema.safeParse({});
-    const props = parsed.success ? (parsed.data as Record<string, unknown>) : {};
-    setBlocks((bs) => [...bs, { id: `b-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, type, props }]);
+    const type = addType as ComponentType;
+    setBlocks((bs) => [...bs, { id: `b-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, type, props: {} }]);
   };
 
   const move = (i: number, dir: -1 | 1) =>
@@ -187,17 +189,16 @@ export function PageBuilder({ page }: { page: PageSeed }) {
   return (
     <form action={formAction}>
       <input type="hidden" name="id" value={page.id ?? ""} />
-      <input type="hidden" name="action" value="draft" />
       <div className="space-y-4">
         <Card>
           <CardHeader title="مشخصات صفحه" />
           <CardBody>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="عنوان">
-                <Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={isSystem} />
+                <Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required readOnly={isSystem} />
               </Field>
               <Field label="اسلاگ">
-                <Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required disabled={isSystem} />
+                <Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required readOnly={isSystem} />
               </Field>
             </div>
             <input type="hidden" name="status" value={page.status ?? "DRAFT"} />
@@ -239,8 +240,8 @@ export function PageBuilder({ page }: { page: PageSeed }) {
           </CardBody>
         </Card>
 
-        {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-        {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+        {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {state.ok && <p role="status" aria-live="polite" className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
 
         <div className="sticky bottom-4 flex justify-end gap-3">
           <Button type="submit" name="action" value="draft" disabled={pending}>ذخیره پیش‌نویس</Button>
@@ -272,6 +273,7 @@ function BlockCard({
   const fields = BLOCK_FIELDS[block.type] ?? [];
   const [props, setProps] = useState(block.props);
   const [jsonDraft, setJsonDraft] = useState(JSON.stringify(block.props, null, 2));
+  const [fieldJsonDrafts, setFieldJsonDrafts] = useState<Record<string, string>>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
 
   const summary = typeof props.title === "string" && props.title ? props.title : "";
@@ -285,8 +287,10 @@ function BlockCard({
   const setField = (key: string, value: unknown) => applyProps({ ...props, [key]: value });
 
   const setJsonField = (key: string, raw: string) => {
+    setFieldJsonDrafts((drafts) => ({ ...drafts, [key]: raw }));
     try {
       const parsed = JSON.parse(raw);
+      setJsonError(null);
       setField(key, parsed);
     } catch {
       setJsonError(`JSON نامعتبر برای ${key}`);
@@ -308,13 +312,13 @@ function BlockCard({
   return (
     <div className="rounded-card border border-plaster bg-plaster/50">
       <div className="flex items-center gap-2 px-4 py-3">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="text-ash">{open ? "▾" : "▴"}</button>
+        <button type="button" aria-label={open ? "بستن بلوک" : "باز کردن بلوک"} aria-expanded={open} onClick={() => setOpen((v) => !v)} className="text-ash">{open ? "▾" : "▴"}</button>
         <span className="rounded bg-ink px-2 py-0.5 text-xs font-medium text-white">{TYPE_LABELS[block.type] ?? block.type}</span>
         {summary && <span className="text-sm text-ash">{summary}</span>}
         <span className="flex-1" />
-        <button type="button" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↑</button>
-        <button type="button" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↓</button>
-        <button type="button" onClick={onRemove} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
+        <button type="button" aria-label="انتقال بلوک به بالا" onClick={() => onMove(-1)} disabled={index === 0} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↑</button>
+        <button type="button" aria-label="انتقال بلوک به پایین" onClick={() => onMove(1)} disabled={index === total - 1} className="rounded px-1.5 text-ash hover:bg-plaster disabled:opacity-30">↓</button>
+        <button type="button" aria-label={`حذف ${TYPE_LABELS[block.type] ?? block.type}`} onClick={onRemove} className="rounded px-1.5 text-red-600 hover:bg-red-50">حذف</button>
       </div>
       {open && (
         <div className="border-t border-plaster p-4">
@@ -340,7 +344,7 @@ function BlockCard({
           <div className="grid grid-cols-2 gap-3">
             {fields.map((f) => (
               <Field key={f.key} label={f.label} className={f.kind === "json" || f.kind === "textarea" ? "col-span-2" : undefined}>
-                {f.kind === "text" && <Input value={(props[f.key] as string) ?? ""} dir="ltr" onChange={(e) => setField(f.key, e.target.value)} />}
+                {f.kind === "text" && <Input value={(props[f.key] as string) ?? ""} dir="auto" onChange={(e) => setField(f.key, e.target.value)} />}
                 {f.kind === "media" && (
                   <div className="flex items-center gap-2">
                     <Input
@@ -365,7 +369,7 @@ function BlockCard({
                   <Textarea
                     className="min-h-[90px] font-mono text-xs"
                     dir="ltr"
-                    value={JSON.stringify(props[f.key] ?? null, null, 2)}
+                    value={fieldJsonDrafts[f.key] ?? JSON.stringify(props[f.key] ?? null, null, 2)}
                     onChange={(e) => setJsonField(f.key, e.target.value)}
                   />
                 )}

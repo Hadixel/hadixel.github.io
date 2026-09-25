@@ -235,7 +235,7 @@ export function ProductForm({ product, categories }: ProductSeed) {
           </CardBody>
         </Card>
 
-        {state.error && <p className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
         <div className="flex justify-end gap-3">
           <Button type="button" variant="secondary" onClick={() => router.back()}>انصراف</Button>
           <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره محصول"}</Button>

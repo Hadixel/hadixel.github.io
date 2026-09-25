@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { db } from "@kmodern/db";
 import { getAdminUser } from "@/lib/auth";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema";
-import { Sidebar, Topbar } from "@/components/shell";
+import { settingKeys } from "@kmodern/schema/setting-keys";
+import { AdminShell } from "@/components/shell";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getAdminUser();
@@ -19,16 +19,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   ]);
 
   return (
-    <div className="min-h-screen bg-plaster">
-      <Sidebar
-        ordersAwaiting={ordersAwaiting}
-        lowStock={lowStock}
-        isOwner={ctx.admin.role === "OWNER"}
-      />
-      <div className="mr-64">
-        <Topbar name={ctx.admin.name} email={ctx.admin.email} />
-        <main className="p-6">{children}</main>
-      </div>
-    </div>
+    <AdminShell
+      ordersAwaiting={ordersAwaiting}
+      lowStock={lowStock}
+      isOwner={ctx.admin.role === "OWNER"}
+      name={ctx.admin.name}
+      email={ctx.admin.email}
+    >
+      {children}
+    </AdminShell>
   );
 }

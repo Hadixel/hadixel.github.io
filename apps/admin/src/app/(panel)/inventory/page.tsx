@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { db } from "@kmodern/db";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { faDigits } from "@/lib/date";
 import { Badge, Card, CardHeader, EmptyState, Input, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { AdjustStockRow } from "./adjust-form";
+import { pageParam } from "@/lib/pagination";
 
 export default async function InventoryPage({
   searchParams,
@@ -12,7 +13,7 @@ export default async function InventoryPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const page = Math.max(1, Number(params.page) || 1);
+  const page = pageParam(params.page);
   const q = params.q?.trim();
   const threshold = await getSettingOrDefault<number>(settingKeys.inventoryLowStockThreshold, 3);
   const PAGE_SIZE = 50;
@@ -52,9 +53,9 @@ export default async function InventoryPage({
           <form action="/inventory" method="get" className="flex items-end gap-3">
             <div>
               <label className="mb-1 block text-xs text-ash">جستجو (SKU یا نام محصول)</label>
-              <Input name="q" defaultValue={q} className="w-64" />
+              <Input aria-label="جستجوی SKU یا نام محصول" name="q" defaultValue={q} className="w-64" />
             </div>
-            <button className="rounded-card border border-fog px-4 py-2 text-sm hover:bg-plaster">جستجو</button>
+            <button type="submit" className="rounded-card border border-fog px-4 py-2 text-sm hover:bg-plaster">جستجو</button>
           </form>
         </div>
 

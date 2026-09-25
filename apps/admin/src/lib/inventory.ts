@@ -1,5 +1,5 @@
-import { db, $Enums } from "@kmodern/db";
-import { settingKeys } from "@kmodern/schema";
+import { db, $Enums, Prisma } from "@kmodern/db";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 import { getSettingOrDefault } from "./settings";
 
 // 009/011 inventory lifecycle, mirroring apps/store/src/lib/orders.ts so the
@@ -8,77 +8,128 @@ import { getSettingOrDefault } from "./settings";
 //   restock (cancel/refund of a COMMITTED/paid order)
 // Manual admin adjustments go through adjustVariantStock with an audit trail.
 
-/** reserve stock on place; COD commits at place (same rule as store) */
-export async function reserveStock(
+type InventoryClient = Pick<Prisma.TransactionClient, "variant" | "stockReservation">;
+
+type StockLine = { variantId: string; qty: number; allowBackorder?: boolean };
+
+async function reserveStockInClient(
+  client: InventoryClient,
   orderId: string,
-  lines: Array<{ variantId: string; qty: number }>,
-  paymentMethod: $Enums.PaymentMethod,
+  lines: StockLine[],
+  expiresAt: Date,
 ): Promise<void> {
-  const reserveMins = await getSettingOrDefault<number>(settingKeys.checkoutOnlineReserveMinutes, 30);
-  const c2cHours = await getSettingOrDefault<number>(settingKeys.checkoutC2cReserveHours, 48);
-  const now = new Date();
   for (const line of lines) {
-    const expiresAt =
-      paymentMethod === "ONLINE"
-        ? new Date(now.getTime() + reserveMins * 60_000)
-        : new Date(now.getTime() + c2cHours * 3_600_000);
-    await db().variant.update({
-      where: { id: line.variantId },
+    const variant = await client.variant.findUnique({ where: { id: line.variantId } });
+    if (!variant) throw new Error(`VARIANT_NOT_FOUND:${line.variantId}`);
+    if (!Number.isInteger(line.qty) || line.qty <= 0) throw new Error("INVALID_STOCK_QUANTITY");
+    if (!line.allowBackorder && variant.stock - variant.reserved < line.qty) {
+      throw new Error(`INSUFFICIENT_STOCK:${line.variantId}`);
+    }
+    const updated = await client.variant.updateMany({
+      where: { id: line.variantId, stock: variant.stock, reserved: variant.reserved },
       data: { reserved: { increment: line.qty } },
     });
-    await db().stockReservation.create({
+    if (updated.count !== 1) throw new Error(`STOCK_CHANGED:${line.variantId}`);
+    await client.stockReservation.create({
       data: { orderId, variantId: line.variantId, qty: line.qty, status: "ACTIVE", expiresAt },
     });
   }
 }
 
-/** commit on PAID: stock -= qty, reserved -= qty */
-export async function commitStock(orderId: string): Promise<void> {
-  const reservations = await db().stockReservation.findMany({ where: { orderId } });
-  for (const r of reservations) {
-    if (r.status !== "ACTIVE") continue;
-    await db().variant.update({
-      where: { id: r.variantId },
-      data: { stock: { decrement: r.qty }, reserved: { decrement: r.qty } },
-    });
-    await db().stockReservation.update({ where: { id: r.id }, data: { status: "COMMITTED" } });
+/** Reserve stock on place; COD commits at place (same rule as store). */
+export async function reserveStock(
+  orderId: string,
+  lines: StockLine[],
+  paymentMethod: $Enums.PaymentMethod,
+  client?: InventoryClient,
+  expiresAt?: Date,
+): Promise<void> {
+  let expiry = expiresAt;
+  if (!expiry) {
+    const reserveMins = await getSettingOrDefault<number>(settingKeys.checkoutOnlineReserveMinutes, 30);
+    const c2cHours = await getSettingOrDefault<number>(settingKeys.checkoutC2cReserveHours, 48);
+    expiry = new Date(Date.now() + (paymentMethod === "ONLINE"
+      ? reserveMins * 60_000
+      : c2cHours * 3_600_000));
   }
+  if (client) {
+    await reserveStockInClient(client, orderId, lines, expiry);
+    return;
+  }
+  await db().$transaction((tx) => reserveStockInClient(tx, orderId, lines, expiry!));
 }
 
-/** release on failure/expiry/cancel of an AWAITING order: reserved -= qty */
-export async function releaseStock(orderId: string): Promise<void> {
-  const reservations = await db().stockReservation.findMany({ where: { orderId } });
-  for (const r of reservations) {
-    if (r.status !== "ACTIVE") continue;
-    await db().variant.update({
-      where: { id: r.variantId },
-      data: { reserved: { decrement: r.qty } },
-    });
-    await db().stockReservation.update({ where: { id: r.id }, data: { status: "RELEASED" } });
-  }
-}
-
-/** restock on cancelling/refunding a COMMITTED (paid) order */
-export async function restock(orderId: string): Promise<void> {
-  const reservations = await db().stockReservation.findMany({ where: { orderId } });
-  for (const r of reservations) {
-    if (r.status === "COMMITTED") {
-      await db().variant.update({
-        where: { id: r.variantId },
-        data: { stock: { increment: r.qty } },
+/** Commit on PAID: stock -= qty, reserved -= qty. */
+export async function commitStock(orderId: string, client?: InventoryClient): Promise<void> {
+  const run = async (tx: InventoryClient) => {
+    const reservations = await tx.stockReservation.findMany({ where: { orderId } });
+    for (const reservation of reservations) {
+      const claimed = await tx.stockReservation.updateMany({
+        where: { id: reservation.id, status: "ACTIVE" },
+        data: { status: "COMMITTED" },
+      });
+      if (claimed.count !== 1) continue;
+      await tx.variant.update({
+        where: { id: reservation.variantId },
+        data: { stock: { decrement: reservation.qty }, reserved: { decrement: reservation.qty } },
       });
     }
-    await db().stockReservation.update({ where: { id: r.id }, data: { status: "RELEASED" } });
-  }
+  };
+  if (client) await run(client);
+  else await db().$transaction((tx) => run(tx));
 }
 
-export function recordOrderEvent(input: {
-  orderId: string;
-  dimension: $Enums.OrderEventDimension;
-  from: string;
-  to: string;
-  actor: string;
-  note?: string;
-}) {
-  return db().orderStatusEvent.create({ data: input });
+/** Release on failure/expiry/cancel of an AWAITING order. */
+export async function releaseStock(orderId: string, client?: InventoryClient): Promise<void> {
+  const run = async (tx: InventoryClient) => {
+    const reservations = await tx.stockReservation.findMany({ where: { orderId } });
+    for (const reservation of reservations) {
+      const claimed = await tx.stockReservation.updateMany({
+        where: { id: reservation.id, status: "ACTIVE" },
+        data: { status: "RELEASED" },
+      });
+      if (claimed.count !== 1) continue;
+      const updated = await tx.variant.updateMany({
+        where: { id: reservation.variantId, reserved: { gte: reservation.qty } },
+        data: { reserved: { decrement: reservation.qty } },
+      });
+      if (updated.count !== 1) throw new Error(`INVENTORY_INCONSISTENT:${reservation.variantId}`);
+    }
+  };
+  if (client) await run(client);
+  else await db().$transaction((tx) => run(tx));
+}
+
+/** Restock on cancelling/refunding a COMMITTED (paid) order. */
+export async function restock(orderId: string, client?: InventoryClient): Promise<void> {
+  const run = async (tx: InventoryClient) => {
+    const reservations = await tx.stockReservation.findMany({ where: { orderId } });
+    for (const reservation of reservations) {
+      const claimed = await tx.stockReservation.updateMany({
+        where: { id: reservation.id, status: "COMMITTED" },
+        data: { status: "RELEASED" },
+      });
+      if (claimed.count !== 1) continue;
+      await tx.variant.update({
+        where: { id: reservation.variantId },
+        data: { stock: { increment: reservation.qty } },
+      });
+    }
+  };
+  if (client) await run(client);
+  else await db().$transaction((tx) => run(tx));
+}
+
+export function recordOrderEvent(
+  input: {
+    orderId: string;
+    dimension: $Enums.OrderEventDimension;
+    from: string;
+    to: string;
+    actor: string;
+    note?: string;
+  },
+  client?: Pick<Prisma.TransactionClient, "orderStatusEvent">,
+) {
+  return (client ?? db()).orderStatusEvent.create({ data: input });
 }

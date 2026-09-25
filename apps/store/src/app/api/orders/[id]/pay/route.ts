@@ -3,7 +3,7 @@ import { db } from "@kmodern/db";
 import { zarinpalConfigFromEnv, requestPayment } from "@kmodern/adapters";
 import { currentCustomer } from "@/lib/auth";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema";
+import { settingKeys } from "@kmodern/schema/setting-keys";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const me = await currentCustomer();

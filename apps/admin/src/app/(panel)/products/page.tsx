@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { db } from "@kmodern/db";
 import { faDigits } from "@/lib/date";
-import { Button, Card, CardHeader, EmptyState, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Button, Card, CardHeader, EmptyState, Input, Pagination, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
+import { enumParam, pageParam } from "@/lib/pagination";
 
 const PAGE_SIZE = 25;
 
@@ -12,10 +13,10 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string; status?: string; category?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const page = Math.max(1, Number(params.page) || 1);
+  const page = pageParam(params.page);
   const q = params.q?.trim();
-  const status = params.status && params.status !== "ALL" ? params.status : undefined;
-  const category = params.category && params.category !== "ALL" ? params.category : undefined;
+  const status = enumParam(params.status, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
+  const category = params.category && params.category !== "ALL" && /^[a-z0-9_-]{1,64}$/i.test(params.category) ? params.category : undefined;
 
   const where = {
     ...(status ? { status: status as never } : {}),
@@ -62,20 +63,20 @@ export default async function ProductsPage({
           title="محصولات"
           subtitle={total ? `${faDigits(total)} محصول` : undefined}
           actions={
-            <Link href="/products/new">
-              <Button>محصول جدید</Button>
-            </Link>
+            <Button asChild>
+              <Link href="/products/new">محصول جدید</Link>
+            </Button>
           }
         />
         <div className="border-b border-plaster px-5 py-3">
           <form action="/products" method="get" className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs text-ash">جستجو</label>
-              <Input name="q" defaultValue={q} placeholder="نام، مدل، برند، اسلاگ" className="w-56" />
+              <Input aria-label="جستجوی محصولات" name="q" defaultValue={q} placeholder="نام، مدل، برند، اسلاگ" className="w-56" />
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">وضعیت</label>
-              <Select name="status" defaultValue={status ?? "ALL"}>
+              <Select aria-label="فیلتر وضعیت محصول" name="status" defaultValue={status ?? "ALL"}>
                 <option value="ALL">همه</option>
                 <option value="DRAFT">پیش‌نویس</option>
                 <option value="PUBLISHED">منتشر شده</option>
@@ -84,14 +85,14 @@ export default async function ProductsPage({
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">دسته‌بندی</label>
-              <Select name="category" defaultValue={category ?? "ALL"}>
+              <Select aria-label="فیلتر دسته‌بندی" name="category" defaultValue={category ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </Select>
             </div>
-            <Button variant="secondary">اعمال</Button>
+            <Button type="submit" variant="secondary">اعمال</Button>
             {hasFilters && (
               <Link href="/products" className="px-3 py-2 text-sm text-ash hover:underline">حذف فیلترها</Link>
             )}
@@ -131,22 +132,11 @@ export default async function ProductsPage({
         )}
       </Card>
 
-      {totalPages > 1 && (
-        <footer className="flex items-center justify-center gap-1.5">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={`/products?${baseQs.toString()}${baseQs.size ? "&" : ""}page=${p}`}
-              className={
-                "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm " +
-                (p === page ? "border-flame-700 bg-flame-700 text-white" : "border-fog text-ink hover:bg-plaster")
-              }
-            >
-              {faDigits(p)}
-            </Link>
-          ))}
-        </footer>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        basePath={`/products${baseQs.size ? `?${baseQs.toString()}` : ""}`}
+      />
     </div>
   );
 }
