@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { db, Prisma } from "@kmodern/db";
+import { commitStock, db, Prisma, recordOrderEvent, reserveStock } from "@kmodern/db";
 import { addressSchema } from "@kmodern/schema";
 import { settingKeys } from "@kmodern/schema/setting-keys";
 import { currentCustomer } from "@/lib/auth";
-import { buildOrderContext, assertStock, nextOrderNumber, computeOrderTotals, reserveStock, recordOrderEvent } from "@/lib/orders";
+import { buildOrderContext, assertStock, nextOrderNumber, computeOrderTotals } from "@/lib/orders";
 import { getSettingOrDefault } from "@/lib/settings";
 import { kavenegarConfigFromEnv, sendLookup } from "@kmodern/adapters";
 import { cartItemSchema } from "@/lib/cart";
@@ -102,12 +102,31 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // reserve (COD commits at place)
-    if (paymentMethod === "COD") {
-      await commitCodStock(order.id, lines);
-    } else {
-      await reserveStock(order.id, lines, paymentMethod);
-    }
+    // Every payment method goes through the one lifecycle in the data tier. Cash on delivery
+    // reserves and commits in the same transaction as the order-status change, so a COD order
+    // can no longer leave stock decremented for some lines and not others — and it no longer
+    // hardcodes a 48-hour window instead of reading the merchant's setting.
+    await db().$transaction(async (tx) => {
+      await reserveStock(order.id, lines, paymentMethod, undefined, tx);
+      if (paymentMethod === "COD") {
+        await commitStock(order.id, tx);
+        await tx.order.update({
+          where: { id: order.id },
+          data: { fulfillmentStatus: "CONFIRMED" },
+        });
+        await recordOrderEvent(
+          {
+            orderId: order.id,
+            dimension: "FULFILLMENT",
+            from: "PENDING",
+            to: "CONFIRMED",
+            actor: "SYSTEM",
+            note: "پرداخت هنگام تحویل — تایید خودکار",
+          },
+          tx,
+        );
+      }
+    });
 
     await recordOrderEvent({
       orderId: order.id,
@@ -137,35 +156,4 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
-}
-
-/** COD commits at placement (011): stock -= qty directly, no reserve phase */
-async function commitCodStock(orderId: string, lines: Awaited<ReturnType<typeof buildOrderContext>>) {
-  for (const line of lines) {
-    await db().variant.update({
-      where: { id: line.variantId },
-      data: { stock: { decrement: line.qty } },
-    });
-    await db().stockReservation.create({
-      data: {
-        orderId,
-        variantId: line.variantId,
-        qty: line.qty,
-        status: "COMMITTED",
-        expiresAt: new Date(Date.now() + 48 * 3600_000),
-      },
-    });
-  }
-  await db().order.update({
-    where: { id: orderId },
-    data: { fulfillmentStatus: "CONFIRMED" },
-  });
-  await recordOrderEvent({
-    orderId,
-    dimension: "FULFILLMENT",
-    from: "PENDING",
-    to: "CONFIRMED",
-    actor: "SYSTEM",
-    note: "پرداخت هنگام تحویل — تایید خودکار",
-  });
 }

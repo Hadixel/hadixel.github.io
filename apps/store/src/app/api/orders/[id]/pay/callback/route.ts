@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@kmodern/db";
+import { commitStock, db, recordOrderEvent, releaseStock } from "@kmodern/db";
 import { zarinpalConfigFromEnv, verifyPayment } from "@kmodern/adapters";
-import { commitStock, releaseStock, recordOrderEvent } from "@/lib/orders";
 import { kavenegarConfigFromEnv, sendLookup } from "@kmodern/adapters";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

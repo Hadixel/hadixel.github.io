@@ -1,14 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { db, $Enums } from "@kmodern/db";
+import { commitStock, db, releaseStock, reserveStock, restock, $Enums } from "@kmodern/db";
 import { addressSchema } from "@kmodern/schema";
 import { settingKeys } from "@kmodern/schema/setting-keys";
 import { actionContext } from "./ctx";
 import { field, intField, jsonParse } from "./form-helpers";
 import { getSettingOrDefault } from "@/lib/settings";
 import { nextOrderNumber } from "@/lib/order-number";
-import { commitStock, releaseStock, reserveStock, restock } from "@/lib/inventory";
 import type { ActionState } from "./auth";
 
 const FULFILLMENT_NEXT: Record<string, string[]> = {
@@ -204,7 +203,7 @@ export async function createManualOrder(_prev: ActionState, formData: FormData):
         include: { items: true },
       });
       const stockLines = lines.map(({ variant, qty }) => ({ variantId: variant.id, qty, allowBackorder: variant.allowBackorder }));
-      await reserveStock(created.id, stockLines, paymentMethod, tx, reservationExpiry);
+      await reserveStock(created.id, stockLines, paymentMethod, { expiresAt: reservationExpiry }, tx);
       if (cod) await commitStock(created.id, tx);
       await tx.adminAuditLog.create({
         data: {

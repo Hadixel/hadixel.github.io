@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./manufacturers": "./seed/iranian-manufacturers.ts"
   },
   "scripts": {
     "generate": "prisma generate",
@@ -15,7 +16,12 @@
     "db:seed": "tsx seed/seed.ts",
     "db:images": "tsx seed/images.ts",
     "db:bootstrap": "tsx seed/bootstrap.ts",
-    "typecheck": "tsc --noEmit"
+    "db:home-manufacturers": "tsx seed/update-home-manufacturers.ts",
+    "db:blog": "tsx seed/blog-import.ts",
+    "typecheck": "tsc --noEmit",
+    "db:home-deals": "tsx seed/update-home-deals.ts",
+    "db:editorial-images": "tsx seed/generate-editorial-images.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@kmodern/schema": "workspace:*",

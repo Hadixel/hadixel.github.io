@@ -68,6 +68,20 @@ n=$(ls .env.example apps/*/.env.example packages/db/.env.example 2>/dev/null | w
 [ "$n" -ge 4 ] && ok "example environment files present at the root, both apps and the data tier ($n)" \
   || bad "expected example environment files at the root, both apps and the data tier, found $n — every variable and its tier must be documented (§12)"
 
+head_ "Data tier"
+# §8 / §15.1: "re-export the generated client through one index. No other file imports a
+# generated/ path." The rule protects against a consumer reaching past the index, so that is what
+# is checked — no file outside the data tier may name a generated path. Inside the data tier the
+# index and the client wrapper both legitimately do, and the count is reported rather than
+# asserted, because a data tier with a lifecycle module cannot have exactly one.
+n=$(grep -rln "generated/prisma" --include="*.ts" --include="*.tsx" apps packages 2>/dev/null \
+      | grep -v "^packages/db/src/" | wc -l)
+[ "$n" -eq 0 ] \
+  && ok "nothing outside the data tier reaches into generated/" \
+  || bad "$n file(s) outside the data tier import a generated/ path — go through the index (§8)"
+m=$(grep -rln "generated/prisma" --include="*.ts" packages/db/src 2>/dev/null | grep -v "/generated/" | wc -l)
+printf '  %-22s %s (index + client wrapper + lifecycle; target 1, one index)\n' "generated/ in data tier" "$m"
+
 head_ "Ratchet (observed, not yet a gate — seeds for the ratchet file)"
 printf '  %-22s store %s   admin %s\n' "colour literals" \
   "$(grep -rEoh '#[0-9a-fA-F]{3,8}' --include='*.ts' --include='*.tsx' apps/store/src | wc -l)" \

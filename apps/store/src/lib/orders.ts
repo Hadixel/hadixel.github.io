@@ -1,13 +1,12 @@
 import { db, $Enums } from "@kmodern/db";
 import { jalaliYear, type AddressInput } from "@kmodern/schema";
-import { settingKeys } from "@kmodern/schema/setting-keys";
 import type { CartItemInput } from "./cart";
-import { getSettingOrDefault } from "./settings";
 import { applyDiscounts, type DiscountContext } from "./discounts";
 import { assignShippingMethod } from "./shipping";
 
-// 009/011 order lifecycle: place (reserve) → PAID (commit) → fail/cancel
-// (release). COD commits at place. Cancelling a committed order restocks.
+// 009/011 order context and totals. The stock lifecycle (reserve / commit / release /
+// restock) is not here: it has one implementation in the data tier, and the two app-local
+// copies this replaces had different guarantees — see @kmodern/db.
 
 export interface PlaceOrderInput {
   customerId: string;
@@ -25,6 +24,8 @@ export interface LineContext {
   productId: string;
   categoryId: string;
   weightKg: number;
+  /** A backorder line may exceed free stock; the shared reserve rejects it unless this is true. */
+  allowBackorder: boolean;
 }
 
 export async function buildOrderContext(items: CartItemInput[]) {
@@ -44,6 +45,7 @@ export async function buildOrderContext(items: CartItemInput[]) {
       productId: v.productId,
       categoryId: v.product.categoryId,
       weightKg: v.product.category.weightKg,
+      allowBackorder: v.allowBackorder,
     });
   }
   return lines;
@@ -69,7 +71,7 @@ export function assertStock(lines: LineContext[], items: CartItemInput[], varian
 
 export async function nextOrderNumber(): Promise<string> {
   const year = jalaliYear();
-  let counter = await db().orderNumberCounter.upsert({
+  const counter = await db().orderNumberCounter.upsert({
     where: { jalaliYear: year },
     update: { lastNumber: { increment: 1 } },
     create: { jalaliYear: year, lastNumber: 1 },
@@ -131,86 +133,4 @@ export async function computeOrderTotals(
     shippingNote: shipping.note,
     couponError: discount.couponError,
   };
-}
-
-
-/** reserve stock on place (009/011); COD commits at place */
-export async function reserveStock(
-  orderId: string,
-  lines: LineContext[],
-  paymentMethod: $Enums.PaymentMethod,
-): Promise<void> {
-  const reserveMins = await getSettingOrDefault<number>(settingKeys.checkoutOnlineReserveMinutes, 30);
-  const c2cHours = await getSettingOrDefault<number>(settingKeys.checkoutC2cReserveHours, 48);
-  const now = new Date();
-  for (const line of lines) {
-    const expiresAt =
-      paymentMethod === "ONLINE"
-        ? new Date(now.getTime() + reserveMins * 60_000)
-        : new Date(now.getTime() + c2cHours * 3_600_000);
-    await db().variant.update({
-      where: { id: line.variantId },
-      data: { reserved: { increment: line.qty } },
-    });
-    await db().stockReservation.create({
-      data: {
-        orderId,
-        variantId: line.variantId,
-        qty: line.qty,
-        status: "ACTIVE",
-        expiresAt,
-      },
-    });
-  }
-}
-
-/** commit on PAID: stock -= qty, reserved -= qty (009) */
-export async function commitStock(orderId: string): Promise<void> {
-  const reservations = await db().stockReservation.findMany({ where: { orderId } });
-  for (const r of reservations) {
-    await db().variant.update({
-      where: { id: r.variantId },
-      data: { stock: { decrement: r.qty }, reserved: { decrement: r.qty } },
-    });
-    await db().stockReservation.update({
-      where: { id: r.id },
-      data: { status: "COMMITTED" },
-    });
-  }
-}
-
-/** release on failure/expiry/cancel of an AWAITING order: reserved -= qty */
-export async function releaseStock(orderId: string): Promise<void> {
-  const reservations = await db().stockReservation.findMany({ where: { orderId } });
-  for (const r of reservations) {
-    if (r.status === "COMMITTED") continue;
-    await db().variant.update({
-      where: { id: r.variantId },
-      data: { reserved: { decrement: r.qty } },
-    });
-    await db().stockReservation.update({ where: { id: r.id }, data: { status: "RELEASED" } });
-  }
-}
-
-/** restock on cancelling/refunding a COMMITTED (paid) order (009) */
-export async function restock(orderId: string): Promise<void> {
-  const reservations = await db().stockReservation.findMany({ where: { orderId } });
-  for (const r of reservations) {
-    await db().variant.update({
-      where: { id: r.variantId },
-      data: { stock: { increment: r.qty } },
-    });
-    await db().stockReservation.update({ where: { id: r.id }, data: { status: "RELEASED" } });
-  }
-}
-
-export async function recordOrderEvent(input: {
-  orderId: string;
-  dimension: $Enums.OrderEventDimension;
-  from: string;
-  to: string;
-  actor: string;
-  note?: string;
-}) {
-  await db().orderStatusEvent.create({ data: input });
 }
