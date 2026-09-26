@@ -10,7 +10,7 @@
 import "dotenv/config";
 import { db } from "../src/client.js";
 import { readFileSync } from "node:fs";
-import { dirname, join, basename, extname } from "node:path";
+import { dirname, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import slugifyPkg from "slugify";
 
@@ -88,7 +88,6 @@ const COLOR_HEX: Record<string, string> = {
   steel: "#A8AEB7",
 };
 
-const IMAGS_BASE = join(HERE, "../../../apps/legacy-store/src/assets");
 
 async function main() {
   const prisma = db();

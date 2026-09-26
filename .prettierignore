@@ -1,0 +1,18 @@
+# Dependencies and build output
+node_modules
+.next
+.turbo
+dist
+out
+
+# Generated or machine-written; not ours to format
+pnpm-lock.yaml
+packages/db/src/generated
+content
+
+# The blueprint kit is a foreign repo's artefacts, not repo source
+docs/blueprint
+
+# Agent scratch and tracking
+.scratch
+tracker

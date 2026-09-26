@@ -1,0 +1,6 @@
+# Build output and the framework's generated files. §5.1 allows these in an app root only as
+# untracked artefacts declared here — tracked, they make the app-root fence unholdable.
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo

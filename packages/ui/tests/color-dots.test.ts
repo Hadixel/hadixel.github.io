@@ -29,12 +29,12 @@ describe("deriveColorDots", () => {
 
   it("selects the requested variant", () => {
     const r = deriveColorDots([v({ id: "a" }), v({ id: "b", colorName: "استیل" })], "b");
-    expect(r.selected.id).toBe("b");
+    expect(r.selected?.id).toBe("b");
   });
 
   it("falls back to the first variant when selection is unknown", () => {
     const r = deriveColorDots([v({ id: "a" }), v({ id: "b", colorName: "استیل" })], "zzz");
-    expect(r.selected.id).toBe("a");
+    expect(r.selected?.id).toBe("a");
   });
 
   it("marks swappable only for variants that carry imagery", () => {

@@ -7,6 +7,9 @@ overrides:
   fast-uri: ^4.2.1
   mysql2: ^3.24.4
   nanoid: ^5.1.16
+  # The UI runtime must be a single instance across the repo: two copies break hooks.
+  react: ^19.2.6
+  react-dom: ^19.2.6
 
 allowBuilds:
   '@prisma/engines': true

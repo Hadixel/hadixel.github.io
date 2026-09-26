@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { discountSchema, linkRefSchema } from "@kmodern/schema";
 import { sanitizeAdminHtml } from "@kmodern/schema/sanitize";
-import { pageParam } from "../src/lib/pagination";
+import { pageParam } from "../lib/pagination";
 
 describe("admin input safety", () => {
   it("removes active HTML and unsafe URL protocols", () => {

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@11.20.0",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "turbo dev",
@@ -14,10 +14,24 @@
     "scrape": "pnpm --filter @kmodern/scraper scrape",
     "scrape:tui": "pnpm --filter @kmodern/scraper tui",
     "price-list": "pnpm --filter @kmodern/scraper price-list",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck"
+    "lint": "eslint .",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "audit": "bash scripts/audit.sh",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "turbo": "^2.5.6"
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.3.6",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "turbo": "^2.5.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.0"
   }
 }
