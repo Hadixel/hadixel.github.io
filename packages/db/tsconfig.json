@@ -1,9 +1,4 @@
 {
   "extends": "../config/tsconfig.node.json",
-  "include": [
-    "src/index.ts",
-    "prisma.config.ts",
-    "vitest.config.ts",
-    "tests"
-  ]
+  "include": ["src"]
 }

@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "db:generate": "pnpm --filter @kmodern/db generate",
-    "db:migrate": "pnpm --filter @kmodern/db db:migrate",
+    "db:generate": "pnpm --filter @kmodern/api generate",
+    "db:migrate": "pnpm --filter @kmodern/api migrate",
     "scrape": "pnpm --filter @kmodern/scraper scrape",
     "scrape:tui": "pnpm --filter @kmodern/scraper tui",
     "price-list": "pnpm --filter @kmodern/scraper price-list",

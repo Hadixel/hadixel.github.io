@@ -36,5 +36,5 @@ out
 # Scraper cache
 .scrape-cache
 
-# Generated Prisma client (packages/db/src/generated)
-packages/db/src/generated
+# Generated Prisma client (apps/api/src/generated)
+apps/api/src/generated

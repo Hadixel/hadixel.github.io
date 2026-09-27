@@ -5,9 +5,7 @@
     "brand": "Datees",
     "category": "sink",
     "subCategory": "double-bowl",
-    "colors": [
-      "steel"
-    ],
+    "colors": ["steel"],
     "price": 23797000,
     "bestSeller": false,
     "date": 1716621345448,
@@ -47,9 +45,7 @@
     "brand": "Datees",
     "category": "sink",
     "subCategory": "double-bowl",
-    "colors": [
-      "steel"
-    ],
+    "colors": ["steel"],
     "price": 27357000,
     "bestSeller": false,
     "date": 1716707745448,
@@ -126,9 +122,7 @@
     "brand": "Datees",
     "category": "air-fryer",
     "subCategory": "dual-basket",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 27162000,
     "bestSeller": true,
     "date": 1716794145448,
@@ -173,9 +167,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 2,
     "fuel": "gas",
     "price": 19118000,
@@ -261,9 +253,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 2,
     "fuel": "electric",
     "price": 40316000,
@@ -323,9 +313,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "steel",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 2,
     "fuel": "electric",
     "price": 25504000,
@@ -384,9 +372,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 2,
     "fuel": "electric",
     "price": 47534000,
@@ -445,9 +431,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 2,
     "fuel": "electric",
     "price": 40316000,
@@ -509,9 +493,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 2,
     "fuel": "gas",
     "price": 33073000,
@@ -607,9 +589,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 3,
     "fuel": "gas",
     "price": 37842000,
@@ -700,10 +680,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black",
-      "white"
-    ],
+    "colors": ["black", "white"],
     "burners": 5,
     "fuel": "gas",
     "price": 34768000,
@@ -801,12 +778,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black",
-      "white",
-      "gray",
-      "beige"
-    ],
+    "colors": ["black", "white", "gray", "beige"],
     "burners": 5,
     "fuel": "gas",
     "price": 60951000,
@@ -907,9 +879,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 5,
     "fuel": "gas",
     "price": 60106000,
@@ -1002,9 +972,7 @@
     "brand": "Datees",
     "category": "stove",
     "subCategory": "glass",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "burners": 5,
     "fuel": "gas",
     "price": 49437000,
@@ -1100,9 +1068,7 @@
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 60015000,
     "bestSeller": false,
     "date": 1717830945448,
@@ -1196,12 +1162,7 @@
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
-    "colors": [
-      "black",
-      "gray",
-      "white",
-      "beige"
-    ],
+    "colors": ["black", "gray", "white", "beige"],
     "price": 90399000,
     "bestSeller": true,
     "date": 1717917345448,
@@ -1313,10 +1274,7 @@
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
-    "colors": [
-      "black",
-      "white"
-    ],
+    "colors": ["black", "white"],
     "price": 69868000,
     "bestSeller": true,
     "date": 1718003745448,
@@ -1412,9 +1370,7 @@
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 92475000,
     "bestSeller": false,
     "date": 1718090145448,
@@ -1510,9 +1466,7 @@
     "brand": "Datees",
     "category": "oven",
     "subCategory": "built-in",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 102394000,
     "bestSeller": false,
     "date": 1718176545448,
@@ -1607,9 +1561,7 @@
     "brand": "Datees",
     "category": "hood",
     "subCategory": "built-in",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 35124000,
     "bestSeller": true,
     "date": 1718262945448,
@@ -1672,9 +1624,7 @@
     "brand": "Datees",
     "category": "hood",
     "subCategory": "built-in",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 33041000,
     "bestSeller": false,
     "date": 1718349345448,
@@ -1756,9 +1706,7 @@
     "brand": "Datees",
     "category": "hood",
     "subCategory": "built-in",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 28798000,
     "bestSeller": false,
     "date": 1718435745448,
@@ -1843,9 +1791,7 @@
     "brand": "Datees",
     "category": "hood",
     "subCategory": "chimney",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 23588000,
     "bestSeller": false,
     "date": 1718522145448,
@@ -1930,9 +1876,7 @@
     "brand": "Datees",
     "category": "hood",
     "subCategory": "chimney",
-    "colors": [
-      "black"
-    ],
+    "colors": ["black"],
     "price": 31117000,
     "bestSeller": false,
     "date": 1718608545448,

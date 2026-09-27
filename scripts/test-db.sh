@@ -52,14 +52,14 @@ case "${1:-start}" in
       || "$PGBIN/createdb" -h "$HOST" -p "$PORT" -U "$USER" "$DB"
     # Migrations run against the disposable database, named explicitly so it can never fall
     # through to the development DATABASE_URL.
-    (cd "$(dirname "$0")/../packages/db" && DATABASE_URL="$URL" ./node_modules/.bin/prisma migrate deploy >/dev/null)
+    (cd "$(dirname "$0")/../apps/api" && DATABASE_URL="$URL" ./node_modules/.bin/prisma migrate deploy >/dev/null)
     echo "test database ready: $URL"
     ;;
 
   reset)
     # Drop the public schema and replay every migration. This is the destructive part.
     "$PGBIN/psql" -h "$HOST" -p "$PORT" -U "$USER" -d "$DB" -qc 'drop schema public cascade; create schema public;' >/dev/null
-    (cd "$(dirname "$0")/../packages/db" && DATABASE_URL="$URL" ./node_modules/.bin/prisma migrate deploy >/dev/null)
+    (cd "$(dirname "$0")/../apps/api" && DATABASE_URL="$URL" ./node_modules/.bin/prisma migrate deploy >/dev/null)
     echo "test database reset: $URL"
     ;;
 

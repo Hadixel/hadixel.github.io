@@ -55,7 +55,7 @@ variant imports.
 Outputs are written to `packages/scraper/out/`:
 
 - `raw-scrape.json` — adapter records before refinement
-- `catalog.fragment.json` — shape consumed by `packages/db/seed/catalog.json`
+- `catalog.fragment.json` — shape consumed by `apps/api/seed/catalog.json`
 - `merge-report.json` — counts, conflicts, page errors, and image errors
 - `price-list-report.json` — price-row matches, raw-only rows, and rejected conflicts
 - `images/<product-slug>/` — downloaded image files when `--images` is enabled

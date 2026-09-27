@@ -4,8 +4,13 @@
 // that is the point — the two app-local copies this replaces had different answers to all of them.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { commitStock, releaseStock, reserveStock, restock } from "../src/inventory.js";
-import { $Enums, db } from "../src/index.js";
+import {
+  commitStock,
+  releaseStock,
+  reserveStock,
+  restock,
+} from "../src/inventory/inventory.service.js";
+import { $Enums, db } from "../src/prisma/index.js";
 import { makeOrder, makeVariant, readVariant, resetDatabase } from "./harness.js";
 
 const ONLINE = $Enums.PaymentMethod.ONLINE;

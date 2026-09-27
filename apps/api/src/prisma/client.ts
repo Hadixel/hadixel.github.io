@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "./generated/prisma/client";
+import { PrismaClient } from "../generated/prisma/client";
 
 // Prisma 7 requires a driver adapter. Server-side singleton shared by
 // store + admin; DATABASE_URL must be present at runtime.

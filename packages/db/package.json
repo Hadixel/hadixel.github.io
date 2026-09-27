@@ -3,36 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "description": "TEMPORARY. Forwards to the gateway's data tier so the clients keep compiling while they migrate. Delete me once the last import is gone (adoption plan P2, final step).",
   "exports": {
     ".": "./src/index.ts",
-    "./manufacturers": "./seed/iranian-manufacturers.ts"
+    "./manufacturers": "./src/manufacturers.ts"
   },
   "scripts": {
-    "generate": "prisma generate",
-    "migrate": "prisma migrate dev",
-    "deploy": "prisma migrate deploy",
-    "db:push": "prisma db push",
-    "studio": "prisma studio",
-    "db:seed": "tsx seed/seed.ts",
-    "db:images": "tsx seed/images.ts",
-    "db:bootstrap": "tsx seed/bootstrap.ts",
-    "db:home-manufacturers": "tsx seed/update-home-manufacturers.ts",
-    "db:blog": "tsx seed/blog-import.ts",
-    "typecheck": "tsc --noEmit",
-    "db:home-deals": "tsx seed/update-home-deals.ts",
-    "db:editorial-images": "tsx seed/generate-editorial-images.ts",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kmodern/schema": "workspace:*",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.10.0",
-    "slugify": "^1.6.9"
+    "@kmodern/api": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "dotenv": "^16.4.5",
-    "prisma": "^7.10.0",
-    "tsx": "^4.19.0"
+    "@types/node": "^24.0.0"
   }
 }

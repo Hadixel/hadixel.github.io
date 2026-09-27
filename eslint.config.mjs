@@ -17,7 +17,7 @@ export default tseslint.config(
       "**/dist/**",
       "**/out/**",
       // Generated code is not ours to lint.
-      "packages/db/src/generated/**",
+      "apps/api/src/generated/**",
       // The blueprint kit is a foreign repo's artefacts, not repo source.
       "docs/blueprint/**",
       ".scratch/**",
@@ -53,7 +53,7 @@ export default tseslint.config(
           // typescript-eslint caps allowDefaultProject at 8 files and hard-errors past that.
           // Eight seed scripts exist today, so this sits at the ceiling: the next one needs
           // either a tsconfig include or a split.
-          allowDefaultProject: ["packages/db/seed/*.ts"],
+          allowDefaultProject: ["apps/api/seed/*.ts"],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -121,7 +121,7 @@ export default tseslint.config(
 
   // The data tier: the client wrapper and the seeds, both Node-only.
   {
-    files: ["packages/db/**/*.{ts,tsx}"],
+    files: ["apps/api/**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.node },
     },

@@ -1,0 +1,35 @@
+// Curated from the dated public-source ledger in
+// iranian-manufacturers.sources.md. This is an editorial market strip, not a
+// claim that the store carries every listed manufacturer.
+
+export const IRANIAN_MANUFACTURERS = [
+  { title: "کن", text: "هود · سینک · فر · اجاق", image: "/brands/kan.png" },
+  { title: "اخوان", text: "هود · سینک · فر · اجاق", image: "/brands/akhavan.png" },
+  { title: "بیمکث", text: "هود · سینک · فر · اجاق", image: "/brands/bimax.svg", imageInvert: true },
+  { title: "استیل البرز", text: "هود · سینک · فر · اجاق", image: "/brands/steel-alborz.png" },
+  { title: "داتیس", text: "هود · سینک · فر · اجاق", image: "/brands/datees-color.png" },
+  { title: "آلتون", text: "هود · سینک · فر · اجاق", image: "/brands/alton.webp" },
+  { title: "ایلیا استیل", text: "هود · سینک · فر · اجاق", image: "/brands/ilia-steel.webp" },
+  { title: "آنامیس", text: "هود · سینک · فر · اجاق" },
+  { title: "پیکو", text: "هود · سینک · اجاق", image: "/brands/peiko.png" },
+  { title: "روبینا", text: "هود · فر · اجاق" },
+  { title: "تاکنو", text: "هود · فر · اجاق", image: "/brands/tacno.webp" },
+  { title: "سینجر", text: "هود · فر · اجاق" },
+  { title: "سانترا", text: "هود · فر · اجاق" },
+  { title: "آرویک", text: "هود · اجاق", image: "/brands/arvik.png" },
+  { title: "میلان گاز", text: "هود · اجاق" },
+  { title: "امرسان", text: "هود" },
+  { title: "درسا", text: "هود" },
+  { title: "مکاپا", text: "هود" },
+  { title: "سیمر", text: "هود" },
+  { title: "هادسون", text: "هود" },
+  { title: "بنس", text: "هود" },
+  { title: "جهان گاز", text: "هود" },
+  { title: "درخشان", text: "هود · سینک", image: "/brands/derakhshan.png" },
+  { title: "فرامکو", text: "سینک" },
+  { title: "نیک کالا", text: "اجاق" },
+  { title: "رابیتس", text: "فر" },
+  { title: "پرنیان استیل", text: "فر" },
+  { title: "تولیپس", text: "فر" },
+  { title: "ساتین", text: "فر" },
+] as const;

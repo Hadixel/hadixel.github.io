@@ -1,5 +1,5 @@
 // 013 migration + seed: catalog.json -> production schema.
-// Run: pnpm --filter @kmodern/db db:seed   (requires DATABASE_URL live)
+// Run: pnpm --filter @kmodern/api db:seed   (requires DATABASE_URL live)
 // Idempotent: upserts categories/products/variants by slug/sku.
 //
 // Image strategy: records the physical path from catalog.json. With ParsPack
@@ -8,7 +8,7 @@
 // from apps/store/public/products (copy step in prepare-images).
 
 import "dotenv/config";
-import { db } from "../src/client.js";
+import { db } from "../src/prisma/client.js";
 import { readFileSync } from "node:fs";
 import { dirname, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -88,7 +88,6 @@ const COLOR_HEX: Record<string, string> = {
   steel: "#A8AEB7",
 };
 
-
 async function main() {
   const prisma = db();
   try {
@@ -108,9 +107,11 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
     if (!(prod.category in roots)) {
       const slug = `${prod.category}-datees`;
       const existing = await prisma.category.findUnique({ where: { slug } });
-      const cat = existing ?? (await prisma.category.create({
-        data: { name: prod.category, slug, weightKg: WEIGHTS[prod.category] ?? 1, sortOrder: 0 },
-      }));
+      const cat =
+        existing ??
+        (await prisma.category.create({
+          data: { name: prod.category, slug, weightKg: WEIGHTS[prod.category] ?? 1, sortOrder: 0 },
+        }));
       roots[prod.category] = cat.id;
       await prisma.category.update({
         where: { id: cat.id },
@@ -126,7 +127,9 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
             update: {},
             create: { categoryId: cat.id, name: s.label, type: specType(s.value) },
           });
-        } catch { /* duplicate in same run */ }
+        } catch {
+          /* duplicate in same run */
+        }
       }
       // drop spec fields left over from a previous (e.g. English) labeling
       const stale = await prisma.categorySpecField.findMany({ where: { categoryId: cat.id } });
@@ -141,14 +144,16 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
     if (!(key in cats)) {
       const slug = slugify(`${prod.category}-${prod.subCategory}`);
       const exists = await prisma.category.findUnique({ where: { slug } });
-      const child = exists ?? (await prisma.category.create({
-        data: {
-          name: prod.subCategory,
-          slug,
-          parentId: roots[prod.category],
-          weightKg: WEIGHTS[prod.category] ?? 1,
-        },
-      }));
+      const child =
+        exists ??
+        (await prisma.category.create({
+          data: {
+            name: prod.subCategory,
+            slug,
+            parentId: roots[prod.category],
+            weightKg: WEIGHTS[prod.category] ?? 1,
+          },
+        }));
       await prisma.category.update({
         where: { id: child.id },
         data: { name: FA_SUBS[prod.subCategory] ?? prod.subCategory },
@@ -205,7 +210,13 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
       const sku = `${(prod.brand ?? "BRAND").toUpperCase()}-${prod._id}-${key.toUpperCase()}`;
       await prisma.variant.upsert({
         where: { sku },
-        update: { price: prod.price, images, allowBackorder: true, colorName: FA_COLORS[key] ?? color, colorCode: COLOR_HEX[key] ?? null },
+        update: {
+          price: prod.price,
+          images,
+          allowBackorder: true,
+          colorName: FA_COLORS[key] ?? color,
+          colorCode: COLOR_HEX[key] ?? null,
+        },
         create: {
           productId,
           colorName: FA_COLORS[key] ?? color,
@@ -235,11 +246,15 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
             update: { value: s.value },
             create: { productId, specFieldId: f.id, value: s.value },
           });
-        } catch { /* dup */ }
+        } catch {
+          /* dup */
+        }
       }
     }
   }
-  console.log(`seeded ${Object.keys(roots).length} roots, ${Object.keys(cats).length} subcats, ${catalog.length} products, ${variantCount} variants`);
+  console.log(
+    `seeded ${Object.keys(roots).length} roots, ${Object.keys(cats).length} subcats, ${catalog.length} products, ${variantCount} variants`,
+  );
 }
 
 function basenameStripped(p: string) {
@@ -253,4 +268,7 @@ function specType(v: string): string {
   return "string";
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

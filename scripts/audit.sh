@@ -34,6 +34,33 @@ head_ "Boundaries"
 n=$(grep -rn "boundaries-ignore" --include='*.ts' --include='*.tsx' apps packages 2>/dev/null | wc -l)
 [ "$n" -eq 0 ] && ok "no import suppressions ($n)" || bad "$n import suppression(s) — a suppression needs a stated reason on the same line, and the count must be zero"
 
+head_ "Data path"
+# §15.1 lists "no client imports the database client, including by type-only import" as a
+# MECHANICAL invariant and §4 marks that edge ❌. It is still false: the clients reach the data tier
+# through a temporary forwarding package while they migrate. It is reported here as a labelled known
+# violation, never as `ok` — §15.3 rule 3 says a ratchet covers counts, never a yes/no rule, and a
+# boolean invariant does not become true by being counted. The gate arrives in the phase that adds
+# the boundary rules; the shim and this line are deleted with it.
+shim=$(grep -rln "@kmodern/db" --include="*.ts" --include="*.tsx" apps packages 2>/dev/null \
+         | grep -v "^apps/api/" | wc -l)
+if [ "$shim" -eq 0 ]; then
+  ok "no workspace reaches the data tier through the shim"
+else
+  printf '  KNOWN  %s file(s) reach the data tier through the shim — a known violation of a §15.1\n' "$shim"
+  printf '        invariant (§4 ❌), decreasing as resources migrate. Not a pass and not a gate until\n'
+  printf '        the boundary rules land.\n'
+fi
+
+head_ "Imports"
+# A relative path that does not resolve is every project's job, including the ones no typecheck
+# project covers — the data scripts are deliberately outside one, and a rename there went unnoticed
+# until it was read.
+if node scripts/check-imports.mjs >/tmp/imports.out 2>&1; then
+  ok "every relative import resolves"
+else
+  bad "relative imports do not resolve:"; sed 's/^/        /' /tmp/imports.out >&2
+fi
+
 head_ "Build"
 n=$(find . -mindepth 2 \( -name '*lint.config.*' -o -name '.prettierrc*' -o -name 'prettier.config.*' -o -name 'biome.json*' -o -name '.editorconfig' \) \
       | grep -v node_modules | grep -v 'docs/blueprint' | wc -l)
@@ -64,7 +91,7 @@ head_ "Structure"
 n=$(grep -L '"extends"' $TSCONFIGS 2>/dev/null | wc -l)
 [ "$n" -eq 0 ] && ok "every workspace tsconfig extends the shared config ($n without)" || bad "$n workspace tsconfig(s) restate compiler options instead of extending packages/config (§5.3)"
 
-n=$(ls .env.example apps/*/.env.example packages/db/.env.example 2>/dev/null | wc -l)
+n=$(ls .env.example apps/*/.env.example 2>/dev/null | wc -l)
 [ "$n" -ge 4 ] && ok "example environment files present at the root, both apps and the data tier ($n)" \
   || bad "expected example environment files at the root, both apps and the data tier, found $n — every variable and its tier must be documented (§12)"
 
@@ -75,11 +102,11 @@ head_ "Data tier"
 # index and the client wrapper both legitimately do, and the count is reported rather than
 # asserted, because a data tier with a lifecycle module cannot have exactly one.
 n=$(grep -rln "generated/prisma" --include="*.ts" --include="*.tsx" apps packages 2>/dev/null \
-      | grep -v "^packages/db/src/" | wc -l)
+      | grep -v "^apps/api/src/" | wc -l)
 [ "$n" -eq 0 ] \
   && ok "nothing outside the data tier reaches into generated/" \
   || bad "$n file(s) outside the data tier import a generated/ path — go through the index (§8)"
-m=$(grep -rln "generated/prisma" --include="*.ts" packages/db/src 2>/dev/null | grep -v "/generated/" | wc -l)
+m=$(grep -rln "generated/prisma" --include="*.ts" apps/api/src 2>/dev/null | grep -v "/generated/" | wc -l)
 printf '  %-22s %s (index + client wrapper + lifecycle; target 1, one index)\n' "generated/ in data tier" "$m"
 
 head_ "Ratchet (observed, not yet a gate — seeds for the ratchet file)"

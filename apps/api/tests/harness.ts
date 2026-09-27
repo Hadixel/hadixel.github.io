@@ -4,7 +4,7 @@
 // here may truncate anything: by the time this loads, the target database is already known to be
 // the disposable one.
 
-import { $Enums, db } from "../src/index.js";
+import { $Enums, db } from "../src/prisma/index.js";
 
 // Truncate the four root tables and let CASCADE reach their dependents.
 //

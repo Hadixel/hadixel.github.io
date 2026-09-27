@@ -2,11 +2,11 @@ import { componentSchemas, pageBlocksSchema } from "@kmodern/schema";
 // Bootstrap: default Settings (011/016/017 defaults) + first AdminUser
 // (010: bootstrap credential forces password change on first login — never a
 // runtime default password).
-// Run: pnpm --filter @kmodern/db db:bootstrap
+// Run: pnpm --filter @kmodern/api db:bootstrap
 //   ADMIN_EMAIL=owner@kmodern.ir ADMIN_PASSWORD=<strong> pnpm db:bootstrap
 import "dotenv/config";
-import { createHash, randomBytes, scryptSync } from "node:crypto";
-import { db } from "../src/client.js";
+import { randomBytes, scryptSync } from "node:crypto";
+import { db } from "../src/prisma/client.js";
 import { settingKeys } from "@kmodern/schema";
 
 const DEFAULTS: Record<string, unknown> = {
@@ -59,7 +59,16 @@ async function main() {
         title: "خانه",
         kind: "SYSTEM",
         blocks: [
-          { id: "b-hero", type: "hero", props: { title: "خانه مدرن", subtitle: "لوازم خانگی باکیفیت", visible: true, mobileVisible: true } },
+          {
+            id: "b-hero",
+            type: "hero",
+            props: {
+              title: "خانه مدرن",
+              subtitle: "لوازم خانگی باکیفیت",
+              visible: true,
+              mobileVisible: true,
+            },
+          },
         ],
       },
       { slug: "about", title: "درباره ما", kind: "SYSTEM", blocks: [] },
@@ -115,7 +124,8 @@ async function main() {
     const mobileMenu = await prisma.menu.findUnique({ where: { location: "MOBILE" } });
     if (header && header.items.length === 0) {
       // MOBILE mirrors HEADER; decide once, before the first item lands
-      const seedMobile = Boolean(mobileMenu) &&
+      const seedMobile =
+        Boolean(mobileMenu) &&
         (await prisma.menuItem.count({ where: { menuId: mobileMenu!.id } })) === 0;
       const topKeys = ["oven", "stove", "hood", "sink", "air-fryer"] as const;
       for (const [i, key] of topKeys.entries()) {
@@ -130,14 +140,19 @@ async function main() {
           display: "MEGA" as const,
         };
         await prisma.menuItem.create({ data: { ...data, menuId: header.id } });
-        if (seedMobile && mobileMenu) await prisma.menuItem.create({ data: { ...data, menuId: mobileMenu.id } });
+        if (seedMobile && mobileMenu)
+          await prisma.menuItem.create({ data: { ...data, menuId: mobileMenu.id } });
       }
       console.log("HEADER/MOBILE menu items seeded");
     }
 
     // MOBILE empty but HEADER already populated (partial previous seed): copy over
-    if (mobileMenu && header && header.items.length > 0 &&
-        (await prisma.menuItem.count({ where: { menuId: mobileMenu.id } })) === 0) {
+    if (
+      mobileMenu &&
+      header &&
+      header.items.length > 0 &&
+      (await prisma.menuItem.count({ where: { menuId: mobileMenu.id } })) === 0
+    ) {
       for (const [i, src] of header.items.sort((a, b) => a.sortOrder - b.sortOrder).entries()) {
         await prisma.menuItem.create({
           data: {
@@ -162,10 +177,15 @@ async function main() {
       const aboutPage = await prisma.page.findUnique({ where: { slug: "about" } });
       const contactPage = await prisma.page.findUnique({ where: { slug: "contact" } });
       const links: Array<{ label: string; target: unknown }> = [];
-      if (aboutPage && aboutPage.publishedBlocks.length > 0) links.push({ label: "درباره ما", target: { type: "PAGE", targetId: aboutPage.id } });
-      if (contactPage && contactPage.publishedBlocks.length > 0) links.push({ label: "تماس با ما", target: { type: "PAGE", targetId: contactPage.id } });
+      if (aboutPage && aboutPage.publishedBlocks.length > 0)
+        links.push({ label: "درباره ما", target: { type: "PAGE", targetId: aboutPage.id } });
+      if (contactPage && contactPage.publishedBlocks.length > 0)
+        links.push({ label: "تماس با ما", target: { type: "PAGE", targetId: contactPage.id } });
       links.push({ label: "وبلاگ", target: { type: "BLOG_INDEX" } });
-      links.push({ label: "محصولات", target: { type: "EXTERNAL", url: "/products", newTab: false } });
+      links.push({
+        label: "محصولات",
+        target: { type: "EXTERNAL", url: "/products", newTab: false },
+      });
       for (const [i, l] of links.entries()) {
         await prisma.menuItem.create({
           data: { menuId: footer.id, sortOrder: i, label: l.label, target: l.target as never },
@@ -185,10 +205,7 @@ async function main() {
     const isScaffold =
       currentBlocks.length === 0 ||
       (currentBlocks.length === 1 && first?.id === "b-hero" && first?.type === "hero");
-    if (
-      homePage &&
-      isScaffold
-    ) {
+    if (homePage && isScaffold) {
       const catIds = {
         oven: await rootCatId("oven"),
         stove: await rootCatId("stove"),
@@ -204,8 +221,15 @@ async function main() {
           props: {
             title: "خانه مدرن",
             subtitle: "فروشگاه لوازم خانگی — فر، اجاق گاز، هود و سینک",
-            cta: { label: "مشاهده محصولات", link: { type: "EXTERNAL", url: "/products", newTab: false } },
-            image: { src: img("datees-built-in-electric-oven-666", "variant-black"), alt: "فر توکار برقی داتیس" },
+            cta: {
+              label: "مشاهده محصولات",
+              link: { type: "EXTERNAL", url: "/products", newTab: false },
+            },
+            // Editorial, not a product shot: the hero is the store, not one item.
+            image: {
+              src: "/editorial/hero-kitchen.jpg",
+              alt: "آشپزخانه مدرن با هود، اجاق گاز و فر توکار",
+            },
             overlay: true,
             padding: "md",
             visible: true,
@@ -213,16 +237,27 @@ async function main() {
           },
         },
         {
-          id: "home-usp",
+          id: "home-bestsellers",
           type: "uspRow",
           props: {
-            items: [
-              { title: "ارسال سراسری", text: "ارسال به تمام نقاط ایران" },
-              { title: "ضمانت اصالت", text: "کالای اورجینال با گارانتی معتبر" },
-              { title: "پرداخت امن", text: "درگاه پرداخت مطمئن" },
-              { title: "پشتیبانی", text: "پاسخ‌گویی در تمام روزهای هفته" },
-            ],
+            // Resolved per request from order lines, not frozen into the page.
+            source: "BESTSELLERS",
+            limit: 4,
+            items: [],
             padding: "sm",
+            visible: true,
+            mobileVisible: true,
+          },
+        },
+        {
+          id: "home-deals",
+          type: "dealGrid",
+          props: {
+            title: "تخفیف ویژه",
+            subtitle:
+              "پیشنهادهای محدود این هفته روی محصولات منتخب داتیس؛ تا پایان زمان باقی‌مانده.",
+            limit: 4,
+            padding: "md",
             visible: true,
             mobileVisible: true,
           },
@@ -233,11 +268,26 @@ async function main() {
           props: {
             title: "خرید بر اساس دسته‌بندی",
             categories: [
-              { categoryId: catIds.oven, image: img("datees-built-in-electric-oven-675", "variant-black") },
-              { categoryId: catIds.stove, image: img("datees-5-burner-gas-cooktop-551", "variant-black") },
-              { categoryId: catIds.hood, image: img("datees-volira-built-in-hood", "variant-black") },
-              { categoryId: catIds.sink, image: img("datees-stainless-steel-double-bowl-sink-180", "variant-steel") },
-              { categoryId: catIds.airFryer, image: img("datees-dual-basket-air-fryer-202", "variant-black") },
+              {
+                categoryId: catIds.oven,
+                image: img("datees-built-in-electric-oven-675", "variant-black"),
+              },
+              {
+                categoryId: catIds.stove,
+                image: img("datees-5-burner-gas-cooktop-551", "variant-black"),
+              },
+              {
+                categoryId: catIds.hood,
+                image: img("datees-volira-built-in-hood", "variant-black"),
+              },
+              {
+                categoryId: catIds.sink,
+                image: img("datees-stainless-steel-double-bowl-sink-180", "variant-steel"),
+              },
+              {
+                categoryId: catIds.airFryer,
+                image: img("datees-dual-basket-air-fryer-202", "variant-black"),
+              },
             ].filter((c) => c.categoryId),
             padding: "md",
             visible: true,
@@ -278,9 +328,24 @@ async function main() {
           props: {
             title: "نظر مشتریان",
             items: [
-              { quote: "فر توکاری که خریدم دقیقاً همون چیزی بود که توی سایت دیدم. بسته‌بندی عالی و تحویل سریع.", author: "مریم احمدی", role: "کرمان" },
-              { quote: "سینک استیل کیفیت خیلی خوبی داره و نصاب هم راحت نصبش کرد. ممنون از تیم کمدرن.", author: "علی رضایی", role: "تهران" },
-              { quote: "هود مخفی آشپزخانه رو واقعاً مدرن کرده. پشتیبانی هم برای سوالاتم سریع جواب داد.", author: "زهرا کریمی", role: "شیراز" },
+              {
+                quote:
+                  "فر توکاری که خریدم دقیقاً همون چیزی بود که توی سایت دیدم. بسته‌بندی عالی و تحویل سریع.",
+                author: "مریم احمدی",
+                role: "کرمان",
+              },
+              {
+                quote:
+                  "سینک استیل کیفیت خیلی خوبی داره و نصاب هم راحت نصبش کرد. ممنون از تیم کمدرن.",
+                author: "علی رضایی",
+                role: "تهران",
+              },
+              {
+                quote:
+                  "هود مخفی آشپزخانه رو واقعاً مدرن کرده. پشتیبانی هم برای سوالاتم سریع جواب داد.",
+                author: "زهرا کریمی",
+                role: "شیراز",
+              },
             ],
             padding: "lg",
             visible: true,
@@ -295,7 +360,7 @@ async function main() {
               { icon: "truck", label: "ارسال سریع" },
               { icon: "shield", label: "ضمانت اصالت کالا" },
               { icon: "credit-card", label: "پرداخت در محل" },
-              { icon: "headset", label: "۷ روز ضمانت بازگشت" },
+              { icon: "headset", label: "پشتیبانی تلفنی" },
             ],
             padding: "sm",
             visible: true,
@@ -350,4 +415,7 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

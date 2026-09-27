@@ -22,9 +22,9 @@
 //
 // Extensionless, like every other import in this package: the consuming bundler does not map a
 // .js specifier onto the .ts source, so `./client.js` type-checks and then fails to build.
-import { OrderEventDimension, PaymentMethod, ReservationStatus } from "./generated/prisma/enums";
-import type { Prisma } from "./generated/prisma/client";
-import { db } from "./client";
+import { OrderEventDimension, PaymentMethod, ReservationStatus } from "../generated/prisma/enums";
+import type { Prisma } from "../generated/prisma/client";
+import { db } from "../prisma/client";
 import { settingKeys } from "@kmodern/schema/setting-keys";
 
 type InventoryClient = Pick<Prisma.TransactionClient, "variant" | "stockReservation" | "setting">;
