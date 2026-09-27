@@ -46,7 +46,9 @@
     "baseUrl": ".",
     "paths": {
       "@kmodern/schema": ["../../packages/schema/src/index.ts"],
-      "@kmodern/schema/*": ["../../packages/schema/src/*"]
+      "@kmodern/schema/*": ["../../packages/schema/src/*"],
+      "@kmodern/adapters": ["../../packages/adapters/src/index.ts"],
+      "@kmodern/adapters/*": ["../../packages/adapters/src/*"]
     }
   },
   "include": ["src"],

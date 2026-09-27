@@ -98,6 +98,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@kmodern/adapters':
+        specifier: workspace:*
+        version: link:../../packages/adapters
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
