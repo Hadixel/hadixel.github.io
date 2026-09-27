@@ -1,0 +1,25 @@
+{
+  "extends": "../config/tsconfig.node.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+  "//": [
+    "The core is framework-free, and this package's own typecheck covers only the core.",
+    "src/next.ts is excluded on purpose: it is a thin adapter over next/headers, and making the",
+    "package depend on a framework to typecheck a few lines of adapter is the wrong direction. Each",
+    "consuming app typechecks it as part of itself, which is where the framework actually is."
+  ],
+  "include": [
+    "src/client.ts",
+    "src/index.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "src/next.ts"
+  ]
+}
