@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { settingKeys, type SettingKey } from "./setting-keys";
+import { normalizeIranPhone, normalizePostalCode } from "./normalize";
 
 export { settingKeys };
 export type { SettingKey };
@@ -331,20 +332,39 @@ export const postBodyWithEmbedsSchema = z.object({
 // Address + customer (009)
 // ------------------------------------------------------------
 
+/**
+ * A mobile number, normalised to the one stored spelling.
+ *
+ * Validating and normalising are the same step on purpose. A schema that only validated would leave
+ * every caller to decide whether to store what it was given, and the ones that did not normalise are
+ * how `+989121234567` and `09121234567` became two customers against a unique key. So the contract
+ * accepts every spelling a human actually types and yields the canonical one, and a value it refuses
+ * is refused here rather than stored.
+ */
+export const iranPhoneSchema = z
+  .string()
+  .refine((value) => normalizeIranPhone(value) !== null, "شماره موبایل نامعتبر است")
+  // Safe: refine above has already established this is non-null.
+  .transform((value) => normalizeIranPhone(value) as string);
+
+/** A postal code, normalised to ten Latin digits, for the same reason. */
+export const postalCodeSchema = z
+  .string()
+  .refine((value) => normalizePostalCode(value) !== null, "کد پستی باید ۱۰ رقم باشد")
+  .transform((value) => normalizePostalCode(value) as string);
+
 export const addressSchema = z.object({
   recipientName: z.string().min(1, "نام گیرنده الزامی است"),
-  recipientPhone: z.string().regex(/^09\d{9}$/, "شماره موبایل نامعتبر است"),
+  recipientPhone: iranPhoneSchema,
   province: z.string().min(1),
   city: z.string().min(1),
   addressLine: z.string().min(5, "آدرس کوتاه است"),
-  postalCode: z.string().regex(/^\d{10}$/, "کد پستی باید ۱۰ رقم باشد"),
+  postalCode: postalCodeSchema,
   isDefault: z.boolean().default(false),
   label: z.string().optional(),
 });
 
 export type AddressInput = z.infer<typeof addressSchema>;
-
-export const iranPhoneSchema = z.string().regex(/^09\d{9}$/, "شماره موبایل نامعتبر است");
 
 // ------------------------------------------------------------
 // SEO (014)
@@ -421,6 +441,13 @@ export {
 } from "./iran";
 
 export { toFaDigits, formatToman, formatRial, formatPrice, tomanToRial } from "./format";
+export {
+  latinDigits,
+  digitsOnly,
+  normalizeIranPhone,
+  isIranPhone,
+  normalizePostalCode,
+} from "./normalize";
 export { jalaliYear } from "./jalali";
 export {
   FULFILLMENT_LABELS,

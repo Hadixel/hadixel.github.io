@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuthModule } from "../auth/auth.module.js";
 import { CartController, CheckoutController } from "./checkout.controller.js";
 import { CheckoutService } from "./checkout.service.js";
 
@@ -10,6 +11,7 @@ import { CheckoutService } from "./checkout.service.js";
  * `if` away from a rule about what a basket contains.
  */
 @Module({
+  imports: [AuthModule],
   controllers: [CheckoutController, CartController],
   providers: [CheckoutService],
   exports: [CheckoutService],

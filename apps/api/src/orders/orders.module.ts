@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuthModule } from "../auth/auth.module.js";
 import { OrdersController } from "./orders.controller.js";
 import { OrdersService } from "./orders.service.js";
 
@@ -11,6 +12,8 @@ import { OrdersService } from "./orders.service.js";
  * container.
  */
 @Module({
+  // The controller resolves who is asking, so it needs the session implementation.
+  imports: [AuthModule],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

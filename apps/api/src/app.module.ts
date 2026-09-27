@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuthModule } from "./auth/auth.module.js";
 import { CheckoutModule } from "./checkout/checkout.module.js";
 import { ConfigModule } from "./config/config.module.js";
 import { ContentModule } from "./content/content.module.js";
@@ -23,6 +24,7 @@ import { DataModule } from "./prisma/prisma.module.js";
     ConfigModule,
     DataModule,
     HealthModule,
+    AuthModule,
     ContentModule,
     OrdersModule,
     CheckoutModule,

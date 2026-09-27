@@ -60,6 +60,22 @@ export class TransitionDimensionDto {
 }
 
 /**
+ * A payment outcome the storefront is reporting after the provider redirected the shopper back.
+ *
+ * The `refId` is optional because a failure has no reference to record. A success does, and it is what
+ * a later refund has to quote back to the provider, so it is bounded rather than free-form.
+ */
+export class SettlePaymentBodyDto {
+  @IsIn(["PAID", "FAILED"], { message: "نتیجه پرداخت معتبر نیست." })
+  outcome!: "PAID" | "FAILED";
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 200)
+  refId?: string;
+}
+
+/**
  * A requested status change.
  *
  * `to` is deliberately *not* validated against the transition table here. The table is the rule and it

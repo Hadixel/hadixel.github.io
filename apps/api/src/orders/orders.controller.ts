@@ -11,31 +11,22 @@
 
 import { Controller, Get, Param, Post, Query, Req, Body } from "@nestjs/common";
 import type { Request } from "express";
-import { UnauthorizedException } from "../common/exceptions/gateway.exception.js";
+import { ConflictException } from "../common/exceptions/gateway.exception.js";
+import { AuthService } from "../auth/auth.service.js";
+import { requireAdmin, requireCustomer } from "../auth/identity.js";
 import {
   OrderAdminQueryDto,
   OrderQueryDto,
+  SettlePaymentBodyDto,
   StatusChangeDto,
 } from "./dto/order-query.dto.js";
-import type { OrderDetail, OrderSummary } from "./dto/order.dto.js";
+import type { OrderDetail, OrderSummary, SettlementResponse } from "./dto/order.dto.js";
 import {
   OrderChangedException,
   OrderNotFoundException,
   TransitionNotAllowedException,
 } from "./exceptions/order.exception.js";
 import { OrdersService } from "./orders.service.js";
-
-/**
- * The customer a request is acting as, or null when that cannot be established.
- *
- * Ticket 10 builds the session layer that fills this in. Until it does, every customer-scoped route
- * answers 401. That is the safe direction to fail in: a read that treats "I could not tell who this is"
- * as "let them in" hands out order history, and the branch that does it would be the easiest line in
- * this file to add by accident and the hardest to notice in review.
- */
-function customerIdFromRequest(_req: Request): string | null {
-  return null;
-}
 
 export interface OrderListResponse {
   orders: OrderSummary[];
@@ -44,13 +35,17 @@ export interface OrderListResponse {
 
 @Controller("orders")
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly auth: AuthService,
+  ) {}
 
   // ---- shopper: their own orders, and nobody else's ----
 
   @Get("mine")
   async mine(@Req() req: Request, @Query() query: OrderQueryDto): Promise<OrderListResponse> {
-    return this.orders.listOrdersForCustomer(this.requireCustomer(req), {
+    const customer = await requireCustomer(this.auth, req);
+    return this.orders.listOrdersForCustomer(customer.id, {
       limit: query.limit,
       offset: query.offset,
     });
@@ -58,7 +53,8 @@ export class OrdersController {
 
   @Get("mine/:id")
   async oneOfMine(@Req() req: Request, @Param("id") id: string): Promise<OrderDetail> {
-    const detail = await this.orders.readOrderForCustomer(id, this.requireCustomer(req));
+    const customer = await requireCustomer(this.auth, req);
+    const detail = await this.orders.readOrderForCustomer(id, customer.id);
     // Someone else's order answers exactly as an absent one does. Distinguishing them would confirm an
     // order number to whoever guessed it.
     if (!detail) throw new OrderNotFoundException();
@@ -68,7 +64,8 @@ export class OrdersController {
   // ---- operator: any order ----
 
   @Get()
-  async list(@Query() query: OrderAdminQueryDto): Promise<OrderListResponse> {
+  async list(@Req() req: Request, @Query() query: OrderAdminQueryDto): Promise<OrderListResponse> {
+    await requireAdmin(this.auth, req);
     return this.orders.listOrdersForAdmin({
       limit: query.limit,
       offset: query.offset,
@@ -79,7 +76,8 @@ export class OrdersController {
   }
 
   @Get(":id")
-  async one(@Param("id") id: string): Promise<OrderDetail> {
+  async one(@Req() req: Request, @Param("id") id: string): Promise<OrderDetail> {
+    await requireAdmin(this.auth, req);
     const detail = await this.orders.readOrderForAdmin(id);
     if (!detail) throw new OrderNotFoundException();
     return detail;
@@ -93,7 +91,8 @@ export class OrdersController {
    * whole of what the two byte-identical tables in the panel used to be.
    */
   @Get(":id/transitions")
-  async transitions(@Param("id") id: string): Promise<{ fulfillment: string[]; payment: string[] }> {
+  async transitions(@Req() req: Request, @Param("id") id: string): Promise<{ fulfillment: string[]; payment: string[] }> {
+    await requireAdmin(this.auth, req);
     const found = await this.orders.transitionsFor(id);
     if (!found) throw new OrderNotFoundException();
     return found;
@@ -101,17 +100,18 @@ export class OrdersController {
 
   @Post(":id/status")
   async setStatus(
+    @Req() req: Request,
     @Param("id") id: string,
     @Body() body: StatusChangeDto,
   ): Promise<{ from: string }> {
+    // The operator's own identity, so the audit line names the person who made the change rather than
+    // a placeholder. An order's history is read by people deciding what to do next.
+    const admin = await requireAdmin(this.auth, req);
     const result = await this.orders.setStatus({
       orderId: id,
       dimension: body.dimension,
       to: body.to,
-      // Ticket 12 replaces this with the operator's own identity from the admin session. A fixed actor
-      // is honest about that: the audit line says SYSTEM rather than naming an operator who is not
-      // identified yet.
-      actor: "SYSTEM",
+      actor: admin.email,
       note: body.note,
     });
     if (result.ok) return { from: result.from };
@@ -120,9 +120,43 @@ export class OrdersController {
     throw new OrderChangedException();
   }
 
-  private requireCustomer(req: Request): string {
-    const customerId = customerIdFromRequest(req);
-    if (!customerId) throw new UnauthorizedException();
-    return customerId;
+  /**
+   * Apply a payment outcome to one of the caller's own orders.
+   *
+   * Reachable only by the storefront, identified by the customer's own session. The call arrives from the
+   * payment provider's redirect, so the gateway takes the storefront's report of what the authority
+   * said rather than verifying the authority itself. That is the right way round: the signature check
+   * belongs to whoever holds the merchant credentials, which is the storefront's process, and the
+   * gateway holds the order rules.
+   *
+   * This route is publishable now and was not before: with no session, anything that could mark an
+   * order paid was an unauthenticated route, so it was left off the gateway entirely rather than
+   * exposed.
+   */
+  @Post("mine/:id/payment")
+  async settle(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() body: SettlePaymentBodyDto,
+  ): Promise<SettlementResponse> {
+    const customer = await requireCustomer(this.auth, req);
+    // Scoped to the caller before anything is written: a settlement is about *this* shopper's order, and
+    // a guessable id in the path must not reach an order the caller does not own.
+    const owned = await this.orders.readOrderForCustomer(id, customer.id);
+    if (!owned) throw new OrderNotFoundException();
+
+    const result = await this.orders.settlePayment({
+      orderId: id,
+      outcome: body.outcome,
+      refId: body.refId ?? null,
+      actor: "SYSTEM",
+    });
+    if (result.kind === "not-found") throw new OrderNotFoundException();
+    if (result.kind === "hold-lost") {
+      // The money arrived for an order whose hold is gone. Refusing loudly is the only safe answer: the
+      // alternative is an order marked paid with nobody holding its stock.
+      throw new ConflictException("رزرو موجودی این سفارش منقضی شده است؛ با پشتیبانی تماس بگیرید.");
+    }
+    return result;
   }
 }
