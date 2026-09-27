@@ -5,6 +5,15 @@
 // DESTRUCTIVE. The suite truncates the schema it runs against. It refuses to run unless the
 // variable names the disposable database, because the cost of getting this wrong is real data.
 
+// The reflect-metadata polyfill, loaded here for the same reason `@nestjs/core` loads it for the
+// running server. A DTO's decorators run when the module is *imported*, and class-transformer's
+// `@Type` calls `Reflect.getMetadata` as it executes — so a test that imports a DTO directly, without
+// going anywhere near a Nest bootstrap, hits `Reflect.getMetadata is not a function` before a single
+// assertion runs. The app never sees this because `NestFactory` pulls the polyfill in first; a test
+// has to be told. It is a declared dependency of this package, so this is the app's own arrangement
+// rather than a new one.
+import "reflect-metadata";
+
 const DISPOSABLE_MARKER = "kmodern_test";
 
 const url = process.env.TEST_DATABASE_URL;

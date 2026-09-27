@@ -11,6 +11,8 @@
     "src/health",
     "src/common",
     "src/auth",
+    "src/categories",
+    "src/collections",
     "src/inventory",
     "src/orders",
     "src/checkout",

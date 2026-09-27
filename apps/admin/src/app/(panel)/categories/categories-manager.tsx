@@ -6,8 +6,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveCategory, deleteCategoryAction } from "@/lib/actions/catalog";
-import type { ActionState } from "@/lib/actions/auth";
+import { saveCategory, deleteCategory } from "@/lib/actions/category-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { faDigits } from "@/lib/date";
 import { Badge, Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select } from "@/components/ui";
 
@@ -48,7 +48,7 @@ export function CategoriesManager({ categories }: { categories: CategorySeed[] }
 }
 
 function AddCategoryForm({ roots }: { roots: CategorySeed[] }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveCategory, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveCategory, idle);
   const router = useRouter();
   useEffect(() => {
     if (state.ok) router.refresh();
@@ -74,7 +74,7 @@ function AddCategoryForm({ roots }: { roots: CategorySeed[] }) {
           </Field>
           <div className="md:col-span-5 flex items-center justify-end gap-2">
             <input type="hidden" name="specFields" value="[]" />
-            {state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
+            {!state.ok && state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
             {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
             <Button type="submit" disabled={pending}>{pending ? "…" : "افزودن"}</Button>
           </div>
@@ -119,7 +119,7 @@ function categoriesRoots(cat: CategorySeed): CategorySeed[] {
 }
 
 function CategoryForm({ category, rootOptions, nested }: { category: CategorySeed; rootOptions: CategorySeed[]; nested?: boolean }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveCategory, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveCategory, idle);
   const router = useRouter();
   useEffect(() => {
     if (state.ok) router.refresh();
@@ -184,7 +184,7 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
 
       <div className="flex items-center justify-end gap-3">
         <span className="flex-1" />
-        {state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
+        {!state.ok && state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
         {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
         <Button type="submit" disabled={pending}>{pending ? "…" : "ذخیره"}</Button>
       </div>
@@ -197,7 +197,7 @@ function CategoryForm({ category, rootOptions, nested }: { category: CategorySee
 }
 
 function DeleteCategoryButton({ id }: { id: string }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(deleteCategoryAction, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(deleteCategory, idle);
   const router = useRouter();
   useEffect(() => {
     if (state.ok) router.refresh();
@@ -206,7 +206,7 @@ function DeleteCategoryButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این دسته؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span role="alert" className="mr-2 text-xs text-red-700">{state.error}</span>}
+      {!state.ok && state.error && <span role="alert" className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }

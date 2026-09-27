@@ -190,10 +190,10 @@ export async function makeProduct(opts: {
   };
 }
 
-export async function makeCategory(slug?: string, name?: string) {
+export async function makeCategory(slug?: string, name?: string, parentId?: string) {
   const n = ++seq;
   return db().category.create({
-    data: { slug: slug ?? `cat-${n}`, name: name ?? `دسته ${n}`, weightKg: 1 },
+    data: { slug: slug ?? `cat-${n}`, name: name ?? `دسته ${n}`, weightKg: 1, parentId: parentId ?? null },
   });
 }
 

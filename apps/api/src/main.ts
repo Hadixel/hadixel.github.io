@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
 import { AppModule } from "./app.module.js";
 import { GatewayExceptionFilter } from "./common/filters/gateway-exception.filter.js";
+import { VALIDATION_PIPE_OPTIONS } from "./common/validation.js";
 import { OriginGuard } from "./common/guards/origin.guard.js";
 import { ConfigService } from "./config/config.service.js";
 
@@ -39,18 +40,15 @@ async function bootstrap(): Promise<void> {
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   });
 
-  // One validation pipe for every inbound body and query. `forbidNonWhitelisted` rejects a field
-  // the DTO does not declare, and `whitelist` strips one that is declared for the form but not for
-  // the wire. Both, because a silently ignored field is how a client ends up sending `isAdmin` and
-  // wondering why it does nothing.
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: false },
-    }),
-  );
+  // One validation pipe for every inbound body and query, configured in one place so the tests can
+  // run the same rules rather than a copy of them.
+  //
+  // `exceptionFactory` is what carries the DTO's own message out to the caller. Without it the pipe
+  // raises a plain Nest `BadRequestException`, the error filter does not trust a message it did not
+  // get from a `GatewayException`, and every Persian `message:` on every DTO in the gateway is
+  // discarded in favour of one generic sentence — so the decorators would be doing their work and
+  // nobody would ever read it.
+  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
   // The one error envelope. Registered after the pipe so it catches the pipe's own rejections.
   app.useGlobalFilters(new GatewayExceptionFilter());

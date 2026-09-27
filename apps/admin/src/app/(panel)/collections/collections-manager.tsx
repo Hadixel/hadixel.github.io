@@ -4,8 +4,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveCollection, deleteCollectionAction } from "@/lib/actions/catalog";
-import type { ActionState } from "@/lib/actions/auth";
+import { saveCollection, deleteCollection } from "@/lib/actions/collection-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { faDigits } from "@/lib/date";
 import { Button, Card, CardBody, CardHeader, Field, Input } from "@/components/ui";
 
@@ -67,7 +67,7 @@ function CollectionCard({ collection, products }: { collection: CollectionSeed; 
 }
 
 function CollectionForm({ seed, products, title }: { seed: CollectionSeed; products: ProductLite[]; title?: string }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveCollection, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveCollection, idle);
   const router = useRouter();
   useEffect(() => {
     if (state.ok) router.refresh();
@@ -134,7 +134,7 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
 
       <div className="flex items-center justify-end gap-3">
         <span className="flex-1" />
-        {state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
+        {!state.ok && state.error && <span role="alert" className="text-sm text-red-700">{state.error}</span>}
         {state.ok && <span className="text-sm text-emerald-600">{state.message}</span>}
         <Button type="submit" disabled={pending}>{pending ? "…" : isEdit ? "ذخیره" : "افزودن"}</Button>
       </div>
@@ -149,7 +149,7 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
 }
 
 function DeleteCollectionButton({ id }: { id: string }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(deleteCollectionAction, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(deleteCollection, idle);
   const router = useRouter();
   useEffect(() => {
     if (state.ok) router.refresh();
@@ -158,7 +158,7 @@ function DeleteCollectionButton({ id }: { id: string }) {
     <form action={formAction} onSubmit={(e) => { if (!confirm("حذف این مجموعه؟")) e.preventDefault(); }}>
       <input type="hidden" name="id" value={id} />
       <Button type="submit" variant="danger" size="sm" disabled={pending}>حذف</Button>
-      {state.error && <span role="alert" className="mr-2 text-xs text-red-700">{state.error}</span>}
+      {!state.ok && state.error && <span role="alert" className="mr-2 text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }
