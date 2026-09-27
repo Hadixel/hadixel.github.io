@@ -13,6 +13,12 @@
 // The table is one-to-one and total — every Persian and Arabic letter maps to something, and nothing
 // maps to two things. That matters more than it looks: a letter that mapped to the empty string would
 // silently merge two words into one address, which is how a page 404s for a product that exists.
+//
+// "Total" is a claim that has to be tested, because it was once merely asserted. ز (zeh) had no
+// entry, and an unmapped letter does not fail loudly — it falls through to the catch-all in
+// `transliterate`, which is a separator, so `لوازم` became `lva-m` and collided with the two words
+// `لوا م`. tests/slug.test.ts enumerates the letters this table claims to cover and requires each one
+// to produce a sound; a letter added to the table belongs in that list.
 
 /** Persian and Arabic letters, plus the forms a keyboard or a retailer mixes into the same word. */
 const LETTERS: Record<string, string> = {
@@ -37,6 +43,7 @@ const LETTERS: Record<string, string> = {
   د: "d", // د  dal
   ذ: "z", // ذ  thal
   ر: "r", // ر  reh
+  ز: "z", // ز  zeh — absent until the totality test in tests/slug.test.ts caught it
   ژ: "zh", // ژ  jeh
   س: "s", // س  seen
   ش: "sh", // ش  sheen
@@ -56,6 +63,8 @@ const LETTERS: Record<string, string> = {
   ن: "n", // ن  noon
   ه: "h", // ه  heh
   ھ: "h", // ھ  heh goal
+  ۀ: "h", // ۀ  heh with yeh above — the persian keyboard's spelling of ه
+  ە: "h", // ە  ae — kurdish/urdu; the same h sound as ة, which is mapped to h above
   و: "v", // و  vav
   ؤ: "v", // ؤ  waw with hamza
   ء: "", // ء  hamza — a bare carrier, no sound of its own
