@@ -12,7 +12,12 @@ overrides:
   react-dom: ^19.2.6
 
 allowBuilds:
-  '@prisma/engines': true
+  "@prisma/engines": true
+  # @scarf/scarf arrives transitively through swagger-ui-dist, which @nestjs/swagger depends on, and
+  # its postinstall is an analytics ping. It builds nothing this repo runs, so it is declined
+  # rather than approved. Recorded as false rather than left out: an undecided build script makes
+  # every pnpm install exit non-zero, which fails the pipeline for a reason nobody chose.
+  "@scarf/scarf": false
   esbuild: true
   prisma: true
 

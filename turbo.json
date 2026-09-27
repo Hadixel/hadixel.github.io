@@ -19,6 +19,19 @@
     },
     "typecheck": {
       "dependsOn": ["^build"]
+    },
+    "@kmodern/api#build": {
+      "dependsOn": ["generate"],
+      "outputs": ["dist/**"],
+      "inputs": [
+        "src/**",
+        "prisma/schema.prisma",
+        "tsconfig.build.json",
+        "nest-cli.json",
+        "../../packages/schema/src/**",
+        "../../scripts/gateway-dist-manifest.mjs"
+      ],
+      "env": ["NODE_ENV"]
     }
   }
 }
