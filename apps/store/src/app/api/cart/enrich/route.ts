@@ -1,49 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@kmodern/db";
-import { cartItemSchema } from "@/lib/cart";
-import { z } from "zod";
+import { GatewayError } from "@kmodern/transport/client";
+import { gateway } from "@/lib/gateway";
 
-// Enrich cart lines with current price/stock/name/image for the cart page.
+// Enriching a basket, through the gateway.
+//
+// The cart cookie is a list of variant ids the browser kept, so it ages: a variant is unpublished, a
+// price moves, a line sells out. This used to resolve that list against the database, which meant the
+// storefront knew the variant and category tables well enough to reproduce the gateway's idea of what is
+// sellable — and the two definitions of "available" were not the same expression.
+//
+// A line the gateway cannot resolve is reported rather than dropped, so a cart that has quietly changed
+// says what is missing instead of shrinking.
+
+export interface EnrichedLine {
+  variantId: string;
+  productId: string;
+  slug: string;
+  productName: string;
+  colorName: string | null;
+  sku: string | null;
+  price: number;
+  qty: number;
+  lineTotal: number;
+  image: string | null;
+  available: boolean;
+  maxAddable: number;
+}
+
+export interface EnrichedCart {
+  lines: EnrichedLine[];
+  subtotal: number;
+  totalCount: number;
+  unavailable: { variantId: string; qty: number }[];
+}
+
 export async function POST(req: NextRequest) {
-  let items;
+  let items: { variantId: string; qty: number }[];
   try {
-    items = z.array(cartItemSchema).parse(await req.json());
+    items = (await req.json()) as { variantId: string; qty: number }[];
+    if (!Array.isArray(items)) throw new Error("not an array");
   } catch {
-    return NextResponse.json({ error: "invalid cart" }, { status: 400 });
-  }
-  const ids = items.map((i) => i.variantId);
-  const variants = await db().variant.findMany({
-    where: { id: { in: ids } },
-    include: { product: { include: { category: true } } },
-  });
-  const map = new Map(variants.map((v) => [v.id, v]));
-  const rejectedVariantIds = ids.filter((id) => !map.has(id));
-  const lines: Array<{
-    variantId: string; qty: number; sku: string; colorName: string; price: number;
-    stock: number; reserved: number; allowBackorder: boolean; productName: string;
-    productSlug: string; categoryWeightKg: number; image: string | null; lineTotal: number; available: boolean;
-  }> = [];
-  for (const it of items) {
-    const v = map.get(it.variantId);
-    if (!v) continue;
-    lines.push({
-      variantId: v.id,
-      qty: it.qty,
-      sku: v.sku,
-      colorName: v.colorName,
-      price: v.price,
-      stock: v.stock,
-      reserved: v.reserved,
-      allowBackorder: v.allowBackorder,
-      productName: v.product.name,
-      productSlug: v.product.slug,
-      categoryWeightKg: v.product.category.weightKg,
-      image: v.images[0] ?? null,
-      lineTotal: v.price * it.qty,
-      available: v.allowBackorder || v.stock - v.reserved >= it.qty,
-    });
+    return NextResponse.json({ error: "سبد خرید نامعتبر است" }, { status: 400 });
   }
 
-  const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
-  return NextResponse.json({ lines, subtotal, rejectedVariantIds });
+  try {
+    const client = await gateway();
+    const cart = await client.post<EnrichedCart>("/cart/enrich", { items });
+    return NextResponse.json({
+      lines: cart.lines,
+      subtotal: cart.subtotal,
+      // The storefront's own name, kept so the cart page does not have to learn the gateway's. The rule
+      // is now the gateway's; only the label the page already used is preserved.
+      rejectedVariantIds: cart.unavailable.map((line) => line.variantId),
+    });
+  } catch (error) {
+    if (error instanceof GatewayError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode || 400 });
+    }
+    return NextResponse.json({ error: "سبد خرید خوانده نشد" }, { status: 500 });
+  }
 }

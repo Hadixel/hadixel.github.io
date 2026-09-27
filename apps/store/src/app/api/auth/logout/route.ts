@@ -1,20 +1,15 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createHash } from "node:crypto";
-import { db } from "@kmodern/db";
-import { CUSTOMER_COOKIE } from "@/lib/auth";
+import { signOut } from "@/lib/customer-session";
 
-/** Revoke the current customer session and clear the cookie. */
+/**
+ * Sign the shopper out.
+ *
+ * This used to hash the cookie's value and write a `revokedAt` itself, because the auth module did not
+ * expose a revocation. Two copies of "end this session" is two places for a session to survive a sign
+ * out, and the copy that ran was this one. The rule is now the gateway's single call, and this route
+ * only clears the cookie.
+ */
 export async function POST() {
-  const store = await cookies();
-  const token = store.get(CUSTOMER_COOKIE)?.value;
-  if (token) {
-    const tokenHash = createHash("sha256").update(token).digest("hex");
-    await db().customerSession.updateMany({
-      where: { tokenHash, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-  }
-  store.delete(CUSTOMER_COOKIE);
+  await signOut();
   return NextResponse.json({ ok: true });
 }

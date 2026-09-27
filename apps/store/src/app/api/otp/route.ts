@@ -1,49 +1,83 @@
 import { NextRequest, NextResponse } from "next/server";
-import { iranPhoneSchema } from "@kmodern/schema";
-import { sendOtp, verifyAndLogin, hasPassword, loginWithPassword, setPassword, currentCustomer } from "@/lib/auth";
+import { GatewayError } from "@kmodern/transport/client";
+import {
+  hasPassword,
+  sendOtp,
+  setPassword,
+  signInWithPassword,
+  verifyAndSignIn,
+} from "@/lib/customer-session";
+
+// The shopper's sign-in, as one route because the modal asks for several things and each of them is a
+// question the gateway answers. The storefront's job is to hand the question over and to set the cookie
+// the gateway's answer implies — it holds no user table, no session rule and no token-generation code.
+//
+// The phone is not parsed here. It used to be validated against the schema before being sent, which
+// rejected `+989121234567` — a number a human types every day — and the fix belongs at the write path
+// rather than at each entry point, so the gateway normalises and this route forwards.
+
+const ACTIONS = ["send", "hasPassword", "loginPassword", "setPassword", "verify"] as const;
+type Action = (typeof ACTIONS)[number];
+
+function isAction(value: unknown): value is Action {
+  return typeof value === "string" && (ACTIONS as readonly string[]).includes(value);
+}
+
+/**
+ * The gateway's own answer, forwarded.
+ *
+ * A failure here is a failure there, so the envelope's Persian message and status go back as they are.
+ * Re-wording it per action is how a shopper ends up being told something the gateway did not say.
+ */
+function failure(error: unknown): NextResponse {
+  if (error instanceof GatewayError) {
+    return NextResponse.json({ error: error.message }, { status: error.statusCode || 400 });
+  }
+  return NextResponse.json({ error: "درخواست نامعتبر است" }, { status: 400 });
+}
 
 export async function POST(req: NextRequest) {
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
-    const action: string = body.action ?? "send";
-    if (action === "send") {
-      const phone = iranPhoneSchema.safeParse(body.phone);
-      if (!phone.success) return NextResponse.json({ error: "شماره موبایل نامعتبر است" }, { status: 400 });
-      const res = await sendOtp(phone.data);
-      // dev: if SMS provider not configured, surface the code for local testing
-      return NextResponse.json({ ok: true, devCode: res.devCode });
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "بدنه درخواست نامعتبر است" }, { status: 400 });
+  }
+
+  const action = body.action ?? "send";
+  if (!isAction(action)) {
+    return NextResponse.json({ error: "درخواست ناشناخته است" }, { status: 400 });
+  }
+
+  const phone = typeof body.phone === "string" ? body.phone : "";
+  const code = typeof body.code === "string" ? body.code : "";
+  const password = typeof body.password === "string" ? body.password : "";
+
+  try {
+    switch (action) {
+      case "send": {
+        const res = await sendOtp(phone);
+        return NextResponse.json({ ok: true, devCode: res.devCode });
+      }
+      case "hasPassword": {
+        return NextResponse.json({ ok: true, has: await hasPassword(phone) });
+      }
+      case "loginPassword": {
+        await signInWithPassword(phone, password);
+        return NextResponse.json({ ok: true });
+      }
+      case "setPassword": {
+        // The shopper is who the gateway says they are. The phone used to be passed in from the client
+        // and matched against a row, which meant a password change addressed to any number.
+        await setPassword(password);
+        return NextResponse.json({ ok: true });
+      }
+      case "verify": {
+        const session = await verifyAndSignIn(phone, code);
+        return NextResponse.json({ ok: true, customerId: session.customerId });
+      }
     }
-    if (action === "hasPassword") {
-      const phone = iranPhoneSchema.safeParse(body.phone);
-      if (!phone.success) return NextResponse.json({ error: "شماره موبایل نامعتبر است" }, { status: 400 });
-      return NextResponse.json({ ok: true, has: await hasPassword(phone.data) });
-    }
-    if (action === "loginPassword") {
-      const phone = iranPhoneSchema.safeParse(body.phone);
-      const password = typeof body.password === "string" ? body.password : "";
-      if (!phone.success || !password) return NextResponse.json({ error: "اطلاعات ناقص است" }, { status: 400 });
-      const res = await loginWithPassword(phone.data, password);
-      if (!res.ok) return NextResponse.json({ error: res.error }, { status: 401 });
-      return NextResponse.json({ ok: true });
-    }
-    if (action === "setPassword") {
-      const me = await currentCustomer();
-      if (!me) return NextResponse.json({ error: "ابتدا وارد شوید" }, { status: 401 });
-      const password = typeof body.password === "string" ? body.password : "";
-      const res = await setPassword(me.customer.phone, password);
-      if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
-      return NextResponse.json({ ok: true });
-    }
-    if (action === "verify") {
-      const phone = iranPhoneSchema.safeParse(body.phone);
-      const code = typeof body.code === "string" ? body.code : "";
-      if (!phone.success || !code) return NextResponse.json({ error: "اطلاعات ناقص است" }, { status: 400 });
-      const res = await verifyAndLogin(phone.data, code);
-      if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
-      return NextResponse.json({ ok: true, customerId: res.customerId });
-    }
-    return NextResponse.json({ error: "unknown action" }, { status: 400 });
-  } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  } catch (error) {
+    return failure(error);
   }
 }
