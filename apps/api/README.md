@@ -19,7 +19,7 @@ choice, and not something a later reader should mistake for one.
 As measured at the time of writing, and re-measurable at any time:
 
 ```bash
-# 63 files: 38 in apps/admin, 25 in apps/store
+# 66 files: 39 in apps/admin, 27 in apps/store
 grep -rln "@kmodern/db" --include="*.ts" --include="*.tsx" apps packages | grep -v '^apps/api/' | wc -l
 
 # 4 of them are type-only edges — the shape §16.1 says the gate must be configured to see
@@ -29,17 +29,36 @@ grep -rn "import type.*@kmodern/db" --include="*.ts" --include="*.tsx" apps pack
 grep -n '@kmodern/db' apps/store/next.config.ts apps/admin/next.config.ts
 ```
 
+66 is the count **as committed**. The audit measures your working tree, so the two disagree while
+client code is being edited — a lower number there means the clients have been consolidated, not
+that this file is wrong. What matters is the direction: it may only fall.
+
 `pnpm run audit` prints this count as `KNOWN`, never as `ok`: §15.3 rule 3 says a ratchet covers
 counts and never a yes/no rule, so a boolean invariant does not become true by being counted. The
 `@kmodern/db` package is deleted when the count reaches zero.
 
+The shim also commits the repo's one registered architecture deviation, declared at the line that
+breaks the rule rather than in a table somewhere that could drift from the code. See §18 in the
+blueprint and `packages/db/src/index.ts`; `pnpm run audit` holds the count at 1 and fails at 2.
+
 ## The generated client
 
 `prisma/schema.prisma` generates into `../src/generated/prisma`, which resolves to
-`src/generated/prisma` here. Exactly one file outside `generated/` may name that path: the index,
-`src/prisma/index.ts`. A consumer reaching past the index to import `generated/prisma/...`
-directly is what the audit's "nothing outside the data tier reaches into `generated/`" check
-exists to catch.
+`src/generated/prisma` here. What the audit enforces is that **nothing outside this package** names
+a `generated/` path — that is the rule §8 states, and it is what protects a consumer from reaching
+past the index.
+
+Three files inside the data tier do name one, and that is not the same as the violation:
+
+| File                                 | Why                                                                                                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/prisma/index.ts`                | the one index the rule asks for                                                                                                                                              |
+| `src/prisma/client.ts`               | the wrapper the index re-exports; it has to construct the client from somewhere                                                                                              |
+| `src/inventory/inventory.service.ts` | the index re-exports _this module_, so importing through the index would make the data tier import itself — and §2's answer to a cycle is a missing module, not an exception |
+
+The third is a deliberate, counted exception and the file says so where the import is. The audit
+prints the in-package count rather than asserting one, because a data tier with a lifecycle module
+cannot have exactly one.
 
 ```bash
 pnpm db:generate   # regenerate the client after a schema change

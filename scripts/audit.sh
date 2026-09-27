@@ -31,8 +31,38 @@ MANIFESTS="package.json apps/*/package.json packages/*/package.json"
 TSCONFIGS="apps/*/tsconfig.json packages/*/tsconfig.json"
 
 head_ "Boundaries"
-n=$(grep -rn "boundaries-ignore" --include='*.ts' --include='*.tsx' apps packages 2>/dev/null | wc -l)
-[ "$n" -eq 0 ] && ok "no import suppressions ($n)" || bad "$n import suppression(s) — a suppression needs a stated reason on the same line, and the count must be zero"
+# §18: a suppression directive is how a deviation is recorded at the violation, and §15.3 makes the
+# count a ratchet — it may only fall. Asserting zero would be wrong here, not stricter: the repo
+# holds one registered deviation (packages/db importing the gateway), so a zero-assertion would
+# force that deviation to be recorded somewhere vaguer than the line that commits it, which is the
+# drift §18 exists to prevent. Each directive must carry a reason on the same line, and that is
+# checked here too, because §18 makes the reason mandatory.
+n=$(grep -rn "@boundaries-ignore" --include='*.ts' --include='*.tsx' apps packages 2>/dev/null | wc -l)
+[ "$n" -le 1 ] \
+  && ok "import suppressions: $n, may only fall (baseline 1: packages/db importing the gateway)" \
+  || bad "$n import suppressions — the baseline is 1 and may only fall; a second one needs a reason §18 can hold"
+m=$(grep -rn "@boundaries-ignore" --include='*.ts' --include='*.tsx' apps packages 2>/dev/null \
+      | grep -vcE '@boundaries-ignore[[:space:]]+[a-z0-9-]+[[:space:]]+-[[:space:]]+\S' || true)
+[ "$m" -eq 0 ] && ok "every suppression carries a reason on the same line" \
+  || bad "$m suppression(s) have no reason on the same line — §18 makes it mandatory, and a suppression with no reason cannot be re-evaluated later"
+
+# The gateway importing the shim that forwards to the gateway is a workspace cycle, and the shim
+# count below filters apps/api out — so without this the one edge that must not exist is the one
+# edge nothing looks at. Both files are the gateway, so it has to be asked separately.
+n=$(grep -rln "@kmodern/db" --include="*.ts" --include="*.tsx" apps/api 2>/dev/null | wc -l)
+[ "$n" -eq 0 ] && ok "the gateway does not import the shim that forwards to it" \
+  || bad "$n file(s) in apps/api import @kmodern/db — the shim forwards to the gateway, so that is a cycle (§2)"
+
+head_ "Migrations"
+# §8: "Two CI jobs enforce it: 1. Immutability ... 2. Drift". There is no CI in this repo yet, so
+# both run here instead — a check that exists only on a future CI provider is a check that does
+# not run. The drift half needs the disposable cluster and builds its own shadow database.
+if bash scripts/check-migrations.sh >/tmp/migrations.out 2>&1; then
+  # The script indents its own output, so it is passed through rather than re-indented.
+  cat /tmp/migrations.out
+else
+  bad "the migration checks failed:"; sed 's/^/        /' /tmp/migrations.out >&2
+fi
 
 head_ "Data path"
 # §15.1 lists "no client imports the database client, including by type-only import" as a
@@ -92,8 +122,8 @@ n=$(grep -L '"extends"' $TSCONFIGS 2>/dev/null | wc -l)
 [ "$n" -eq 0 ] && ok "every workspace tsconfig extends the shared config ($n without)" || bad "$n workspace tsconfig(s) restate compiler options instead of extending packages/config (§5.3)"
 
 n=$(ls .env.example apps/*/.env.example 2>/dev/null | wc -l)
-[ "$n" -ge 4 ] && ok "example environment files present at the root, both apps and the data tier ($n)" \
-  || bad "expected example environment files at the root, both apps and the data tier, found $n — every variable and its tier must be documented (§12)"
+[ "$n" -ge 4 ] && ok "an example environment file per surface, the root and all three apps ($n)" \
+  || bad "expected an example environment file at the root and in each of the three apps, found $n — every variable and its tier must be documented (§12)"
 
 head_ "Data tier"
 # §8 / §15.1: "re-export the generated client through one index. No other file imports a
@@ -107,7 +137,8 @@ n=$(grep -rln "generated/prisma" --include="*.ts" --include="*.tsx" apps package
   && ok "nothing outside the data tier reaches into generated/" \
   || bad "$n file(s) outside the data tier import a generated/ path — go through the index (§8)"
 m=$(grep -rln "generated/prisma" --include="*.ts" apps/api/src 2>/dev/null | grep -v "/generated/" | wc -l)
-printf '  %-22s %s (index + client wrapper + lifecycle; target 1, one index)\n' "generated/ in data tier" "$m"
+printf '  %-22s %s in-package (index + client wrapper + the lifecycle, which the index\n' "generated/ namers" "$m"
+printf '  %-22s   re-exports and so cannot import through it; each says why at the import)\n' ""
 
 head_ "Ratchet (observed, not yet a gate — seeds for the ratchet file)"
 printf '  %-22s store %s   admin %s\n' "colour literals" \

@@ -11,7 +11,9 @@
 //
 // docs is excluded because the blueprint carries reference scripts that are illustrative fragments
 // of an audit, not part of this build: they import a ./helper and a ./index that never existed
-// here. They are quoted evidence, so they are held to no rule.
+// here. They are quoted evidence, so they are held to no rule. It is excluded only at the top
+// level, because a docs/ directory inside a package is ordinary package documentation whose
+// imports are just as breakable as anyone else's.
 //
 // An import that points into generated/ is reported as deferred, not as a failure: the Prisma
 // client is produced by the generate step and is not committed, so a fresh checkout has no such
@@ -23,15 +25,22 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SKIP = new Set(["node_modules", "dist", "out", "generated", "docs"]);
+// Anywhere in the tree: these are never source, at any depth.
+const SKIP = new Set(["node_modules", "dist", "out", "generated"]);
+// Only at the root: a directory with this name elsewhere is ordinary content.
+const SKIP_AT_ROOT = new Set(["docs"]);
+// Every extension this repo writes or runs. .mjs and .cjs are here because the root config files
+// are .mjs — the header's claim that nothing can fall outside the walk is false without them.
+const SOURCE = /\.(ts|tsx|mts|cts|mjs|cjs|js|jsx)$/;
 const EXT = [".ts", ".tsx", ".mts", ".js"];
 
-function* sourceFiles(dir) {
+function* sourceFiles(dir, depth) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith(".") || SKIP.has(entry.name)) continue;
+    if (entry.name.startsWith(".")) continue;
+    if (SKIP.has(entry.name) || (depth === 0 && SKIP_AT_ROOT.has(entry.name))) continue;
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) yield* sourceFiles(full);
-    else if (/\.(ts|tsx|mts|js)$/.test(entry.name)) yield full;
+    if (entry.isDirectory()) yield* sourceFiles(full, depth + 1);
+    else if (SOURCE.test(entry.name)) yield full;
   }
 }
 
@@ -57,7 +66,7 @@ const isGenerated = (path) => path.split(sep).includes("generated");
 const broken = [];
 const deferred = [];
 let examined = 0;
-for (const file of sourceFiles(ROOT)) {
+for (const file of sourceFiles(ROOT, 0)) {
   examined++;
   const source = readFileSync(file, "utf8");
   for (const match of source.matchAll(specifier)) {

@@ -58,6 +58,14 @@ case "${1:-start}" in
 
   reset)
     # Drop the public schema and replay every migration. This is the destructive part.
+    #
+    # Connections are terminated first. A previous run's Prisma pool can still be open, and
+    # `drop schema ... cascade` blocks behind it until the lock is released — which made reset
+    # fail intermittently, and a suite that fails for a reason unrelated to the code is worse than
+    # no suite. Only backends on this disposable database are touched.
+    "$PGBIN/psql" -h "$HOST" -p "$PORT" -U "$USER" -d "$DB" -q \
+      "select pg_terminate_backend(pid) from pg_stat_activity
+       where datname = current_database() and pid <> pg_backend_pid()" >/dev/null
     "$PGBIN/psql" -h "$HOST" -p "$PORT" -U "$USER" -d "$DB" -qc 'drop schema public cascade; create schema public;' >/dev/null
     (cd "$(dirname "$0")/../apps/api" && DATABASE_URL="$URL" ./node_modules/.bin/prisma migrate deploy >/dev/null)
     echo "test database reset: $URL"

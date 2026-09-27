@@ -131,13 +131,25 @@ async function seedCatalog(prisma: ReturnType<typeof db>) {
           /* duplicate in same run */
         }
       }
-      // drop spec fields left over from a previous (e.g. English) labeling
+      // Drop spec fields left over from a previous (e.g. English) labelling — but only the ones
+      // nothing points at. A field absent from catalog.json is ambiguous: it is either a stale
+      // labelling or a field an administrator added through the panel, and this script cannot tell
+      // them apart. Deleting on that ambiguity took every productSpecValue with it, so an admin's
+      // field cost real product data on the next `db:seed`. Criterion 8 of the adoption plan
+      // accepts either idempotence or refusing to overwrite; a field in use is refused, and the
+      // operator is told which ones so the cleanup is a decision rather than a side effect.
       const stale = await prisma.categorySpecField.findMany({ where: { categoryId: cat.id } });
       for (const f of stale) {
-        if (!labels.has(f.name)) {
-          await prisma.productSpecValue.deleteMany({ where: { specFieldId: f.id } });
-          await prisma.categorySpecField.delete({ where: { id: f.id } });
+        if (labels.has(f.name)) continue;
+        const inUse = await prisma.productSpecValue.count({ where: { specFieldId: f.id } });
+        if (inUse > 0) {
+          console.warn(
+            `  kept spec field "${f.name}" on ${cat.name}: ${inUse} product value(s) use it, and ` +
+              `catalog.json does not define it. Delete it by hand if it is stale.`,
+          );
+          continue;
         }
+        await prisma.categorySpecField.delete({ where: { id: f.id } });
       }
     }
     const key = `${prod.category}/${prod.subCategory}`;
