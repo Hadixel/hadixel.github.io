@@ -1,10 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { db } from "@kmodern/db";
-import type { Block, ComponentProps } from "@kmodern/schema";
+import type { ComponentProps } from "@kmodern/schema";
 import { sanitizeAdminHtml } from "@kmodern/schema/sanitize";
-import { hrefFor } from "@/lib/nav";
-import { getPublishedPosts, getPublishedProducts } from "@/lib/queries";
+import type { BlockData, ResolvedBlock } from "@/lib/gateway";
 import { RankNumeral, SectionHeader } from "@kmodern/ui";
 import { ShowcaseCard } from "./showcase-card";
 import { HomeHero } from "./home-hero";
@@ -12,8 +10,9 @@ import { NewsletterForm } from "./newsletter-form";
 import { CountdownTimer } from "./countdown-timer";
 import { AnimatedContent, LogoLoop } from "./reactbits";
 
-// Page-builder renderer. Block list from DB Page.publishedBlocks; each type
-// renders server-side. Sections follow the reference anatomy exactly.
+// Page-builder renderer. The gateway hands over each block with the data it
+// needs already resolved, so this file only draws. Sections follow the
+// reference anatomy exactly.
 
 function Section({
   children,
@@ -38,25 +37,6 @@ function cnSection(pad: string, className?: string) {
   return `mx-auto max-w-[1440px] px-4 ${pad} ${className ?? ""}`;
 }
 
-async function ProductCards({ products }: { products: Awaited<ReturnType<typeof getPublishedProducts>> }) {
-  return (
-    <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {products.map((pr) => (
-        <ShowcaseCard
-          key={pr.id}
-          href={`/product/${pr.slug}`}
-          name={pr.name}
-          model={pr.model}
-          price={pr.price}
-          maxPrice={pr.maxPrice}
-          available={pr.available}
-          variants={pr.dots}
-        />
-      ))}
-    </div>
-  );
-}
-
 /* ---------- Video embeds: schema carries the full watch/page URL; the
    renderer derives the iframe src. APARAT accepts /v/<hash> page URLs or
    its own /video/video/embed/videohash/<hash>/vt/frame embeds. ---------- */
@@ -79,8 +59,16 @@ function youtubeEmbed(url: string): string | null {
   }
 }
 
-async function BlockNode({ block }: { block: Block }) {
-  const { type, props } = block;
+/**
+ * One block, drawn from what the gateway already resolved for it.
+ *
+ * Nothing in this file performs I/O, and that is the point rather than an accident. It used to:
+ * six branches read the catalogue and four resolved a link's slug, so rendering a CMS page held a
+ * database connection for as long as the render took. The gateway resolves all of it now, and the
+ * absence of a data-tier import here is what makes the absence of a fallback possible.
+ */
+function BlockNode({ block }: { block: ResolvedBlock }) {
+  const { type, props, data } = block;
 
   switch (type) {
     /* ---------- Hero: Burner Ignition. The catalog image is treated as a
@@ -88,8 +76,8 @@ async function BlockNode({ block }: { block: Block }) {
        existing storefront header remains outside this composition. ---------- */
     case "hero": {
       const p = props as ComponentProps["hero"];
-      const cta = p.cta ? await hrefFor(p.cta.link) : null;
-      const [hero] = await getPublishedProducts({ limit: 1 });
+      const cta = data.cta ?? null;
+      const hero = data.product ?? null;
       return (
         <HomeHero
           title={p.title}
@@ -107,9 +95,7 @@ async function BlockNode({ block }: { block: Block }) {
        watermark top-right of each plaster card, product centered. ---------- */
     case "productGrid": {
       const p = props as ComponentProps["productGrid"];
-      let products = await getPublishedProducts({ limit: Math.min(p.limit ?? 4, 8) });
-      if (p.source?.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: Math.min(p.limit ?? 4, 8) });
-      if (p.source?.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: Math.min(p.limit ?? 4, 8) });
+      const products = data.products ?? [];
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
@@ -135,9 +121,7 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "productSlider": {
       const p = props as ComponentProps["productSlider"];
-      let products = await getPublishedProducts({ limit: Math.min(p.limit ?? 8, 12) });
-      if (p.source?.kind === "COLLECTION") products = await getPublishedProducts({ collectionId: p.source.collectionId, limit: Math.min(p.limit ?? 8, 12) });
-      if (p.source?.kind === "CATEGORY") products = await getPublishedProducts({ categoryId: p.source.categoryId, limit: Math.min(p.limit ?? 8, 12) });
+      const products = data.products ?? [];
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} seeAllHref="/products" />}
@@ -162,12 +146,12 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "categoryTiles": {
       const p = props as ComponentProps["categoryTiles"];
-      const tiles = await Promise.all(
-        p.categories.map(async (c) => {
-          const cat = await db().category.findUnique({ where: { id: c.categoryId }, select: { slug: true, name: true } });
-          return { href: cat ? `/category/${cat.slug}` : "/", name: cat?.name ?? "دسته", image: c.image };
-        }),
-      );
+      // One resolved tile per entry in props.categories, in the same order, so the image the admin
+      // chose is zipped back on here instead of being looked up.
+      const tiles = (data.tiles ?? []).map((tile, index) => ({
+        ...tile,
+        image: p.categories[index]?.image,
+      }));
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} />}
@@ -193,9 +177,15 @@ async function BlockNode({ block }: { block: Block }) {
     case "bannerPair":
     case "bannerTrio": {
       const p = props as ComponentProps["banner"] & { banners?: ComponentProps["banner"][] };
-      const items = p.banners ?? [p];
+      // Mirrors the gateway's `bannersOf`: a `banner` block is one banner, full stop, and only the
+      // pair and trio forms carry an array. Deriving it the other way round — `p.banners ?? [p]` for
+      // every type — agrees with the gateway on well-formed props and disagrees on a `banner` row
+      // that also happens to carry a `banners` key, and the two are zipped by index, so the links
+      // would bind to the wrong banners. Props arrive as stored rather than re-validated, so this
+      // has to hold for what the row actually contains.
+      const items = type === "banner" ? [p] : p.banners ?? [p];
       const cols = type === "banner" ? 1 : type === "bannerPair" ? 2 : 3;
-      const links = await Promise.all(items.map(async (banner) => (banner.image?.link ? hrefFor(banner.image.link) : null)));
+      const links = data.links ?? [];
       return (
         <Section id={p.anchorId}>
           <div className={`grid gap-4 ${cols === 1 ? "mx-auto max-w-[1100px]" : cols === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
@@ -319,7 +309,7 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "countdown": {
       const p = props as ComponentProps["countdown"];
-      const link = p.link ? await hrefFor(p.link) : null;
+      const link = data.link ?? null;
       return (
         <Section>
           <CountdownTimer endsAt={p.endsAt} linkHref={link?.href} />
@@ -329,7 +319,7 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "blogTeaser": {
       const p = props as ComponentProps["blogTeaser"];
-      const posts = await getPublishedPosts(p.limit ?? 3);
+      const posts = data.posts ?? [];
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} seeAllHref="/blog" />}
@@ -364,18 +354,10 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "comparisonTable": {
       const p = props as ComponentProps["comparisonTable"];
-      const products = await db().product.findMany({
-        where: { id: { in: p.productIds }, status: "PUBLISHED" },
-        include: { variants: { orderBy: { price: "asc" }, take: 1 } },
-      });
-      if (products.length < 2) return null;
-      const specValues = await db().productSpecValue.findMany({
-        where: { productId: { in: products.map((pr) => pr.id) } },
-        select: { productId: true, value: true, specFieldId: true, specField: { select: { name: true } } },
-      });
-      const fieldNames = [...new Set(specValues.map((sv) => sv.specField.name))];
-      const valueOf = (productId: string, fieldName: string) =>
-        specValues.find((sv) => sv.productId === productId && sv.specField.name === fieldName)?.value ?? "—";
+      const table = data.comparison;
+      // Fewer than two published columns is not a comparison. The client's own query dropped the
+      // block in that case and the gateway applies the same rule, so the outcome does not change.
+      if (!table || table.products.length < 2) return null;
       return (
         <Section>
           {p.title && <SectionHeader title={p.title} />}
@@ -384,17 +366,17 @@ async function BlockNode({ block }: { block: Block }) {
               <thead>
                 <tr className="bg-plaster text-right">
                   <th className="px-4 py-3 font-semibold text-ash">ویژگی</th>
-                  {products.map((pr) => (
+                  {table.products.map((pr) => (
                     <th key={pr.id} className="px-4 py-3 font-semibold text-ink">{pr.name}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-plaster">
-                {fieldNames.map((name) => (
-                  <tr key={name}>
-                    <td className="px-4 py-2.5 text-ash">{name}</td>
-                    {products.map((pr) => (
-                      <td key={pr.id} className="px-4 py-2.5 text-ink">{valueOf(pr.id, name)}</td>
+                {table.fields.map((field) => (
+                  <tr key={field.name}>
+                    <td className="px-4 py-2.5 text-ash">{field.name}</td>
+                    {field.values.map((value, index) => (
+                      <td key={table.products[index].id} className="px-4 py-2.5 text-ink">{value}</td>
                     ))}
                   </tr>
                 ))}
@@ -433,7 +415,7 @@ async function BlockNode({ block }: { block: Block }) {
 
     case "beforeAfter": {
       const p = props as ComponentProps["beforeAfter"];
-      const [beforeLink, afterLink] = await Promise.all([p.before.link ? hrefFor(p.before.link) : null, p.after.link ? hrefFor(p.after.link) : null]);
+      const [beforeLink, afterLink] = data.pairLinks ?? [];
       const pair = [
         { image: p.before, link: beforeLink, label: "قبل" },
         { image: p.after, link: afterLink, label: "بعد" },
@@ -517,7 +499,7 @@ async function BlockNode({ block }: { block: Block }) {
   }
 }
 
-export default async function BlockRenderer({ blocks }: { blocks: Block[] }) {
+export default function BlockRenderer({ blocks }: { blocks: ResolvedBlock[] }) {
   const visible = blocks.filter((b) => (b.props as { visible?: boolean })?.visible !== false);
   return (
     <div className="min-h-screen bg-canvas">

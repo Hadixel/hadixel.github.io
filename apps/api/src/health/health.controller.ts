@@ -1,5 +1,5 @@
 import { Controller, Get, Inject } from "@nestjs/common";
-import { DATA_CLIENT } from "../prisma/prisma.module.js";
+import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { createPrismaClient } from "../prisma/client.js";
 
 type Db = ReturnType<typeof createPrismaClient>;
