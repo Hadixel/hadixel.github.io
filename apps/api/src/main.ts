@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
 import { AppModule } from "./app.module.js";
 import { GatewayExceptionFilter } from "./common/filters/gateway-exception.filter.js";
+import { OriginGuard } from "./common/guards/origin.guard.js";
 import { ConfigService } from "./config/config.service.js";
 
 /**
@@ -53,6 +54,12 @@ async function bootstrap(): Promise<void> {
 
   // The one error envelope. Registered after the pipe so it catches the pipe's own rejections.
   app.useGlobalFilters(new GatewayExceptionFilter());
+
+  // The origin check, on every mutating route, installed here rather than per controller so a route
+  // added next year is covered by being a write. Reads are left to CORS above, which answers the
+  // browser rather than the requester. Registered before the filter so its refusals come out in the
+  // same envelope as everything else.
+  app.useGlobalGuards(new OriginGuard(config));
 
   // Security headers on every route. helmet's defaults are a sane floor; they are applied to the
   // whole app rather than to media paths, because the header that matters most here is the one a

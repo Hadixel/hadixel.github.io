@@ -7,10 +7,12 @@
     ".": "./src/index.ts",
     "./format": "./src/format.ts",
     "./setting-keys": "./src/setting-keys.ts",
-    "./sanitize": "./src/sanitize.ts"
+    "./sanitize": "./src/sanitize.ts",
+    "./slug": "./src/slug.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "sanitize-html": "^2.17.7",

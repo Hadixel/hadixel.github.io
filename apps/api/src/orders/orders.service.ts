@@ -16,6 +16,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { formatToman, tomanToRial, fulfillmentLabel, paymentLabel } from "@kmodern/schema";
 import { PaymentStatus } from "../generated/prisma/enums.js";
 import { commitStock, releaseStock, restock } from "../inventory/inventory.service.js";
+import { writeAudit } from "../common/audit.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { createPrismaClient } from "../prisma/client.js";
 import {
@@ -200,6 +201,22 @@ export class OrdersService {
           to: input.to,
           actor: input.actor,
           note: input.note,
+        },
+      });
+
+      // Inside this transaction, not after it. The panel wrote this line once the change had already
+      // committed, so a failed audit write left an order nobody could account for and the operator was
+      // told it had worked. Written here, the line and the change succeed or fail together.
+      await writeAudit(tx, {
+        action: `ORDER_${input.to}`,
+        entityType: "ORDER",
+        entityId: input.orderId,
+        meta: {
+          dimension: input.dimension,
+          from,
+          to: input.to,
+          note: input.note ?? null,
+          orderNumber: order.orderNumber,
         },
       });
 

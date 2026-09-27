@@ -40,3 +40,17 @@ export class UnauthorizedException extends GatewayException {
     super(HttpStatus.UNAUTHORIZED, message);
   }
 }
+
+/**
+ * The caller is known, and is not allowed to do this.
+ *
+ * Distinct from `UnauthorizedException` on purpose. 401 means "who are you" and sends a client to log
+ * in; 403 means "we know who you are, and the answer is still no", and sending that to a login screen
+ * is how an operator ends up logging in four times in a row against a permission that was never the
+ * problem.
+ */
+export class ForbiddenException extends GatewayException {
+  constructor(message = "به این بخش دسترسی ندارید.") {
+    super(HttpStatus.FORBIDDEN, message);
+  }
+}
