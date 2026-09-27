@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@kmodern/db";
+import { tomanToRial } from "@kmodern/schema";
 import { zarinpalConfigFromEnv, requestPayment } from "@kmodern/adapters";
 import { currentCustomer } from "@/lib/auth";
 import { getSettingOrDefault } from "@/lib/settings";
@@ -27,7 +28,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await db().order.update({ where: { id }, data: { paymentExpiresAt: expiresAt } });
 
   const res = await requestPayment(cfg, {
-    amountRial: order.total * 10, // 011: TOMAN→Rial at gateway
+    // The shared conversion, not a factor written here (011). This call site and the callback that
+    // verifies it used to each carry their own `* 10`, which is how a boundary ends up asking for one
+    // amount and verifying against another.
+    amountRial: tomanToRial(order.total),
     description: `سفارش ${order.orderNumber}`,
     callbackUrl,
     orderId: order.orderNumber,

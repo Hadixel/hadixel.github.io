@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { commitStock, db, recordOrderEvent, releaseStock } from "@kmodern/db";
+import { tomanToRial } from "@kmodern/schema";
 import { zarinpalConfigFromEnv, verifyPayment } from "@kmodern/adapters";
 import { kavenegarConfigFromEnv, sendLookup } from "@kmodern/adapters";
 
@@ -25,7 +26,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const cfg = zarinpalConfigFromEnv();
   if (!cfg) return NextResponse.redirect(new URL(`/order/${order.orderNumber}?payment=error`, baseUrl));
 
-  const verify = await verifyPayment(cfg, authority, order.total * 10);
+  // Verified against the shared conversion of the order total, which is the same number the payment
+  // request asked for. Two hand-written factors either side of this boundary is how a payment verifies
+  // against an amount the customer was never charged.
+  const verify = await verifyPayment(cfg, authority, tomanToRial(order.total));
   if (verify.code === 100 || verify.code === 101) {
     // commit: stock -= reserved
     await commitStock(order.id);

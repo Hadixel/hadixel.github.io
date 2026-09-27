@@ -420,5 +420,11 @@ export {
   type IranCity,
 } from "./iran";
 
-export { toFaDigits, formatToman, formatRial, formatPrice } from "./format";
+export { toFaDigits, formatToman, formatRial, formatPrice, tomanToRial } from "./format";
 export { jalaliYear } from "./jalali";
+export {
+  FULFILLMENT_LABELS,
+  PAYMENT_LABELS,
+  fulfillmentLabel,
+  paymentLabel,
+} from "./order-status";

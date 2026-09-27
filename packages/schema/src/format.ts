@@ -16,6 +16,21 @@ export function formatToman(amount: number): string {
 
 export function formatRial(amountToman: number): number {
   // gateway boundary only (011)
+  return tomanToRial(amountToman);
+}
+
+/**
+ * TOMAN to Rial, the conversion the payment gateway boundary needs (011).
+ *
+ * Every price in this system is TOMAN; Zarinpal takes Rial. The conversion lives here, in the package
+ * both the gateway and the clients already depend on, so the two sides of the boundary cannot each
+ * remember the factor — the two call sites that used to apply the factor inline are exactly how a
+ * boundary gets it wrong in one direction and not the other, and a payment request for the wrong
+ * amount is a payment that verifies against the wrong number.
+ *
+ * Rounded because the gateway is sent an integer, and a fractional Rial amount is not a thing.
+ */
+export function tomanToRial(amountToman: number): number {
   return Math.round(amountToman * 10);
 }
 

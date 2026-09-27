@@ -10,6 +10,8 @@
     "src/content",
     "src/health",
     "src/common",
+    "src/inventory",
+    "src/orders",
     "src/app.module.ts",
     "src/main.ts",
     "prisma.config.ts",

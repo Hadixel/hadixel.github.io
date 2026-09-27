@@ -98,11 +98,20 @@ export async function makeVariant(opts: {
   });
 }
 
-export async function makeOrder() {
+/**
+ * An order, with a customer of its own unless one is named.
+ *
+ * The `customerId` is there because a shopper's order history is a per-customer read: a test that wants
+ * two orders belonging to the same person has to be able to say so, and inventing a second customer to
+ * make the fixture work would quietly turn a history test into a one-order test.
+ */
+export async function makeOrder(opts: { customerId?: string; total?: number } = {}) {
   const n = ++seq;
-  const customer = await db().customer.create({
-    data: { phone: `0912${String(n).padStart(7, "0")}` },
-  });
+  const customer = opts.customerId
+    ? { id: opts.customerId }
+    : await db().customer.create({
+        data: { phone: `0912${String(n).padStart(7, "0")}` },
+      });
   return db().order.create({
     data: {
       orderNumber: `1404-${String(n).padStart(6, "0")}`,
@@ -111,8 +120,8 @@ export async function makeOrder() {
       paymentMethod: $Enums.PaymentMethod.ONLINE,
       shippingMethod: $Enums.ShippingMethod.LOCAL,
       deliveryFeeMode: $Enums.DeliveryFeeMode.FLAT,
-      subtotal: 0,
-      total: 0,
+      subtotal: opts.total ?? 0,
+      total: opts.total ?? 0,
     },
   });
 }

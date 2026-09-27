@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "./config/config.module.js";
 import { ContentModule } from "./content/content.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
 
 /**
@@ -17,6 +18,6 @@ import { DataModule } from "./prisma/prisma.module.js";
  * Everything arrives through a module that owns it.
  */
 @Module({
-  imports: [ConfigModule, DataModule, HealthModule, ContentModule],
+  imports: [ConfigModule, DataModule, HealthModule, ContentModule, OrdersModule],
 })
 export class AppModule {}
