@@ -145,13 +145,18 @@ describe("the storefront's home read", () => {
     expect(home.blocks).toEqual([]);
   });
 
-  it("falls back to a default base URL rather than calling a relative path", async () => {
+  // This used to assert the opposite: that the client falls back to a default base URL. It does not any
+  // more, and that is the point. A build without the variable would otherwise produce a client that
+  // calls a loopback address nobody is serving and reports every read as a gateway failure — which
+  // sends an operator to look at the gateway when the build is what is wrong.
+  it("refuses to read at all when the gateway's address is not configured", async () => {
     delete process.env.NEXT_PUBLIC_API_URL;
     fetchMock.mockResolvedValue(stubResponse(homeBody));
 
-    await load();
+    const home = await load();
 
-    const [url] = fetchMock.mock.calls[0] as [string];
-    expect(url.startsWith("http://")).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(home.failure).toMatch(/NEXT_PUBLIC_API_URL/);
+    expect(home.blocks).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@
 // incoming request and forwards it. The request they build is otherwise identical.
 
 import { cookies, headers } from "next/headers";
-import { createApiClient, type ApiClient } from "./client.js";
+import { createApiClient, type ApiClient } from "./client";
 
 /** Identity, per §10: one name per audience, and nothing else varies between the clients. */
 export const CUSTOMER_COOKIE = "kmodern_customer";
@@ -33,6 +33,36 @@ export function createBrowserApiClient(opts: {
 }
 
 /**
+ * The caller's cookie jar, or null when there is no request to read one from.
+ *
+ * Next's `cookies()` throws outside a request scope, and that is not an error condition worth
+ * propagating: it means "there is no caller here", and the honest result of that is a request with no
+ * credential. Swallowing it is what keeps this module drivable from a test — criterion 9 asks for
+ * exactly that — and it is safe, because a credential-less request is answered 401 by the gateway rather
+ * than being treated as an authenticated one.
+ */
+// Inferred from the functions, not imported by name: `next/headers` exports the two functions but
+// not their return types, and reaching into `next/dist` for them would pin this file to one release.
+type RequestCookies = Awaited<ReturnType<typeof cookies>>;
+type RequestHeaders = Awaited<ReturnType<typeof headers>>;
+
+async function readRequestCookies(): Promise<RequestCookies | null> {
+  try {
+    return await cookies();
+  } catch {
+    return null;
+  }
+}
+
+async function readRequestHeaders(): Promise<RequestHeaders | null> {
+  try {
+    return await headers();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * A client for a server component or a server action, holding the caller's credential.
  *
  * This is the read helper §10 describes: credentials come from the request context rather than from
@@ -44,15 +74,19 @@ export async function createServerApiClient(opts: {
   baseUrl: string;
   /** Which realm's cookie to forward. Defaults to the shopper's. */
   tokenName?: string;
+  /** An explicit credential, for a caller that has one to hand rather than one to read. */
+  token?: string;
   onError?: Parameters<typeof createApiClient>[0]["onError"];
 }): Promise<ApiClient> {
-  const jar = await cookies();
-  const all = await headers();
+  const name = opts.tokenName ?? CUSTOMER_COOKIE;
+  const jar = await readRequestCookies();
+  const all = await readRequestHeaders();
+  const explicit = opts.token;
   return createApiClient({
     baseUrl: opts.baseUrl,
-    tokenName: opts.tokenName ?? CUSTOMER_COOKIE,
-    getToken: () => jar.get(opts.tokenName ?? CUSTOMER_COOKIE)?.value ?? null,
-    getCookieHeader: () => all.get("cookie") ?? null,
+    tokenName: name,
+    getToken: () => explicit ?? jar?.get(name)?.value ?? null,
+    getCookieHeader: () => all?.get("cookie") ?? null,
     ...(opts.onError ? { onError: opts.onError } : {}),
   });
 }

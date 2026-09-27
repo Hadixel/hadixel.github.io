@@ -1,6 +1,6 @@
 import {
   GatewayError,
-  gatewayGet,
+  gateway,
   type HomeDeal,
   type HomeProduct,
   type ResolvedBlock,
@@ -29,7 +29,10 @@ const EMPTY: Omit<HomeView, "failure"> = { blocks: [], products: [], deals: [] }
 
 export async function loadHome(): Promise<HomeView> {
   try {
-    const body = await gatewayGet<unknown>("/content/home?limit=24&dealsLimit=6");
+    const client = await gateway();
+    const body = await client.get<unknown>("/content/home", {
+      query: { limit: 24, dealsLimit: 6 },
+    });
     if (!isHomeResponse(body)) {
       // A 200 that is not the documented shape is a contract break between two processes. Treating
       // it as an empty page would hide it; reporting it puts it in the log an operator reads.

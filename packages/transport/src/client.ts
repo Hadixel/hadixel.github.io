@@ -31,12 +31,14 @@ export class GatewayError extends Error {
     statusCode: number,
     timestamp: string | null = null,
     unreachable = false,
+    misconfigured = false,
   ) {
     super(message);
     this.name = "GatewayError";
     this.statusCode = statusCode;
     this.timestamp = timestamp;
     this.unreachable = unreachable;
+    this.misconfigured = misconfigured;
   }
 
   /** No such thing, or the caller may not see it. The one case a client renders as a 404. */
@@ -48,6 +50,17 @@ export class GatewayError extends Error {
   get unauthorized(): boolean {
     return this.statusCode === 401;
   }
+
+  /**
+   * The client was built without a usable gateway address, so nothing was attempted.
+   *
+   * A separate flag from `unreachable` because the two demand opposite responses. A gateway that is
+   * down is an operational problem to retry; an unconfigured address is a build fault that no retry will
+   * fix, and reporting it as an outage sends someone to the wrong machine. It is still an error rather
+   * than a silent default, and still reaches the caller as a `GatewayError`, so a page that reports
+   * failure reports this too — with a message that names the variable.
+   */
+  misconfigured: boolean;
 }
 
 export interface RequestOptions {
@@ -103,12 +116,23 @@ export interface ApiClient {
 
 export const DEFAULT_TIMEOUT_MS = 8_000;
 
-/** Not a fetch: an HTTP error message is a programmer's mistake, not a runtime condition to swallow. */
-function mustGetEnv(name: string, value: string | undefined): string {
+/**
+ * A gateway address, or a typed failure saying there is none.
+ *
+ * Deliberately not a default and not a bare `Error`. Defaulting to a loopback address produces a deployed
+ * build that calls nothing and reports every read as a gateway failure — pointing an operator at the
+ * gateway when the build is what is wrong. A bare `Error` would also escape a caller that is written to
+ * report gateway failures, turning a configuration fault into a 500 instead of a page that says the shop
+ * is unavailable. `GatewayError` with `misconfigured` set is both: reported, and identifiable.
+ */
+function requireBaseUrl(value: string | undefined): string {
   if (!value || value.trim() === "") {
-    throw new Error(
-      `${name} is not set. The gateway's address is a build input, so a build without it produces a ` +
-        "client that calls nothing — declare it in the build task's env and in .env.example.",
+    throw new GatewayError(
+      "نشانی درگاه پیکربندی نشده است. متغیر NEXT_PUBLIC_API_URL در زمان ساخت باید تنظیم شود.",
+      0,
+      null,
+      false,
+      true,
     );
   }
   return value.trim().replace(/\/+$/, "");
@@ -135,7 +159,7 @@ function withQuery(path: string, query: RequestOptions["query"]): string {
  * browser storage, or the same cookie read off an incoming request.
  */
 export function createApiClient(config: ApiClientConfig): ApiClient {
-  const baseUrl = mustGetEnv("the gateway base URL", config.baseUrl);
+  const baseUrl = requireBaseUrl(config.baseUrl);
   const defaultTimeout = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   async function send(

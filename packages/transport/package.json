@@ -17,5 +17,13 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   }
 }

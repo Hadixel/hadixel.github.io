@@ -35,10 +35,25 @@ describe("the base URL", () => {
   it("refuses to build a client without one, naming the variable", () => {
     // A client that defaulted to loopback would produce a deployed build that calls nothing and reports
     // every read as a failure — the failure would point at the gateway rather than at the build.
-    expect(() => createApiClient({ baseUrl: "", tokenName: "c", getToken: () => null })).toThrow(
-      /NEXT_PUBLIC_API_URL|gateway base URL/,
-    );
-    expect(() => createApiClient({ baseUrl: "   ", tokenName: "c", getToken: () => null })).toThrow();
+    const attempt = () => createApiClient({ baseUrl: "", tokenName: "c", getToken: () => null });
+    expect(attempt).toThrow(GatewayError);
+    expect(attempt).toThrow(/NEXT_PUBLIC_API_URL/);
+    expect(attempt).toThrow();
+  });
+
+  // It is a gateway error rather than a bare one so a page written to report gateway failures reports
+  // this too, and so it can be told apart from an outage that a retry might fix.
+  it("marks a missing address as misconfigured, not as an outage", () => {
+    let thrown: unknown;
+    try {
+      createApiClient({ baseUrl: "", tokenName: "c", getToken: () => null });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(GatewayError);
+    const failure = thrown as GatewayError;
+    expect(failure.misconfigured).toBe(true);
+    expect(failure.unreachable).toBe(false);
   });
 
   it("does not double a trailing slash into a double slash in every path", async () => {

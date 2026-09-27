@@ -14,6 +14,7 @@
     "@kmodern/adapters": "workspace:*",
     "@kmodern/db": "workspace:*",
     "@kmodern/schema": "workspace:*",
+    "@kmodern/transport": "workspace:*",
     "@kmodern/scraper": "workspace:*",
     "@kmodern/ui": "workspace:*",
     "dotenv": "^16.4.5",

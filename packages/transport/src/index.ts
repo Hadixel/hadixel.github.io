@@ -17,4 +17,4 @@ export {
   type ApiClient,
   type ApiClientConfig,
   type RequestOptions,
-} from "./client.js";
+} from "./client";

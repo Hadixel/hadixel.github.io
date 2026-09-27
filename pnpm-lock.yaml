@@ -64,6 +64,9 @@ importers:
       '@kmodern/scraper':
         specifier: workspace:*
         version: link:../../packages/scraper
+      '@kmodern/transport':
+        specifier: workspace:*
+        version: link:../../packages/transport
       '@kmodern/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -174,6 +177,9 @@ importers:
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@kmodern/transport':
+        specifier: workspace:*
+        version: link:../../packages/transport
       '@kmodern/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -274,6 +280,9 @@ importers:
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../schema
+      next:
+        specifier: ^16.0.0
+        version: 16.3.6(@babel/core@7.29.7)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@types/node':
         specifier: ^24.0.0

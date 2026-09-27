@@ -1,4 +1,4 @@
-import { GatewayError, gatewayGet, type ResolvedBlock } from "@/lib/gateway";
+import { GatewayError, gateway, type ResolvedBlock } from "@/lib/gateway";
 
 /**
  * Reading one CMS page by slug, and telling "no such page" from "cannot tell".
@@ -18,7 +18,8 @@ export type PageLookup =
 
 export async function lookupPage(slug: string): Promise<PageLookup> {
   try {
-    const body = await gatewayGet<unknown>(`/content/pages/${encodeURIComponent(slug)}`);
+    const client = await gateway();
+    const body = await client.get<unknown>(`/content/pages/${encodeURIComponent(slug)}`);
     if (!isPageResponse(body)) {
       return { kind: "unavailable", reason: "پاسخ درگاه با ساختار مورد انتظار نخواند." };
     }
