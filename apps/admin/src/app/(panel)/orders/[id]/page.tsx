@@ -6,9 +6,16 @@ import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardBody, CardHeader, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { STATUS_LABELS, StatusBadge } from "@/components/status";
 import { OrderStatusTransitions } from "./transitions";
+import { readOrderTransitions } from "@/lib/actions/order-status";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // The steps the form may offer, from the server that will apply them. Served rather than tabulated
+  // here: this page used to render a `<Select>` from a local copy of the transition table, which is a
+  // second implementation of a rule the gateway owns and the one thing this form must not get wrong.
+  // Read alongside the row below rather than after it, so a gateway that is slow does not hold up the
+  // page — the row is what the operator came for, and the form is usable without the extra list.
+  const transitionsPromise = readOrderTransitions(id);
   const order = await db().order.findUnique({
     where: { id },
     include: {
@@ -20,6 +27,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   });
   if (!order) notFound();
 
+  // Nothing offered rather than a locally-guessed list. An order with no allowed transitions is a
+  // terminal one, and an order the gateway would not answer for has nothing this form can do anyway —
+  // either way the honest rendering is the same: this status is final.
+  const transitions = (await transitionsPromise) ?? { fulfillment: [], payment: [] };
   const address = (order.shippingAddress ?? {}) as Record<string, string>;
 
   return (
@@ -35,7 +46,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <Card>
             <CardHeader title="وضعیت و انتقال" subtitle={`اجرا: ${STATUS_LABELS[order.fulfillmentStatus] ?? order.fulfillmentStatus} • پرداخت: ${STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}`} />
             <CardBody>
-              <OrderStatusTransitions orderId={order.id} fulfilled={order.fulfillmentStatus} paid={order.paymentStatus} />
+              <OrderStatusTransitions orderId={order.id} fulfilled={order.fulfillmentStatus} paid={order.paymentStatus} allowed={transitions} />
             </CardBody>
           </Card>
 

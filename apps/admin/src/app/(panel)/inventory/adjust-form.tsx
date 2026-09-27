@@ -6,14 +6,16 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { adjustStock } from "@/lib/actions/orders";
-import type { ActionState } from "@/lib/actions/auth";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button } from "@/components/ui";
 
 export function AdjustStockRow({ variantId }: { variantId: string }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(adjustStock, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(adjustStock, idle);
   const router = useRouter();
   useEffect(() => {
-    if (state.ok) router.refresh();
+    // Only a real success refreshes. `idle` is `ok` with an empty message, and refreshing for that
+    // would re-render the page on mount.
+    if (state.ok && state.message) router.refresh();
   }, [state, router]);
 
   return (
@@ -36,8 +38,8 @@ export function AdjustStockRow({ variantId }: { variantId: string }) {
         className="w-24 rounded-card border border-fog px-2 py-1 text-sm"
       />
       <Button type="submit" variant="secondary" size="sm" disabled={pending}>ثبت</Button>
-      {state.error && <span role="alert" className="text-xs text-red-700">{state.error}</span>}
-      {state.ok && <span className="text-xs text-emerald-600">✓</span>}
+      {!state.ok && state.error && <span role="alert" className="text-xs text-red-700">{state.error}</span>}
+      {state.ok && state.message && <span className="text-xs text-emerald-600">✓</span>}
     </form>
   );
 }

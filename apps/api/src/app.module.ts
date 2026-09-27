@@ -4,6 +4,7 @@ import { CheckoutModule } from "./checkout/checkout.module.js";
 import { ConfigModule } from "./config/config.module.js";
 import { ContentModule } from "./content/content.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { InventoryModule } from "./inventory/inventory.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
 
@@ -27,6 +28,9 @@ import { DataModule } from "./prisma/prisma.module.js";
     AuthModule,
     ContentModule,
     OrdersModule,
+    // Inventory sits below Orders because orders compose its lifecycle, and above nothing because
+    // nothing composes an adjustment.
+    InventoryModule,
     CheckoutModule,
   ],
 })

@@ -1,46 +1,49 @@
 "use client";
 
-// Order status transition controls (009). Shows allowed next steps for the
-// fulfillment and payment dimensions; each transition validates server-side,
-// writes an OrderStatusEvent + stock side effect, and refreshes the page.
+// Order status transition controls (009).
+//
+// The allowed next steps arrive as props from the page, which read them from the gateway. This
+// component used to carry two byte-identical copies of the transition tables — the same ones the
+// server enforced — and render its `<Select>` from them. That is the drift ticket 12 exists to close:
+// a form that offers what it thinks the server accepts, checked against a table nobody re-reads when
+// the server's changes.
+//
+// So there is no rule in this file. It renders the two lists it is given, and submits one. A status
+// with an empty list is a terminal one, which is the server's statement rather than a local guess —
+// and the gateway's `transitionsFor` returns an empty array precisely so this reads as "finished"
+// rather than as "nothing loaded".
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { setOrderStatus } from "@/lib/actions/orders";
-import type { ActionState } from "@/lib/actions/auth";
 import { STATUS_LABELS } from "@/components/status";
 import { Button, Input, Select, Spinner, Textarea } from "@/components/ui";
+import { setOrderStatusAction } from "@/lib/actions/orders";
+import type { ActionResult } from "@/lib/actions/result";
+import { idle } from "@/lib/actions/result";
 
-const FULFILLMENT_NEXT: Record<string, string[]> = {
-  PENDING: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["PROCESSING", "CANCELLED"],
-  PROCESSING: ["SHIPPED", "CANCELLED"],
-  SHIPPED: ["DELIVERED", "RETURNED"],
-  DELIVERED: ["RETURNED"],
-  CANCELLED: [],
-  RETURNED: [],
-};
-
-const PAYMENT_NEXT: Record<string, string[]> = {
-  AWAITING: ["PAID", "FAILED"],
-  PAID: ["REFUNDED"],
-  FAILED: ["AWAITING"],
-  REFUNDED: [],
-};
+/** The steps the gateway will accept, per dimension. Rendered, not decided. */
+export interface AllowedTransitions {
+  fulfillment: string[];
+  payment: string[];
+}
 
 export function OrderStatusTransitions({
   orderId,
   fulfilled,
   paid,
+  allowed,
 }: {
   orderId: string;
   fulfilled: string;
   paid: string;
+  allowed: AllowedTransitions;
 }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(setOrderStatus, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(setOrderStatusAction, idle);
   const router = useRouter();
   useEffect(() => {
-    if (state.ok) router.refresh();
+    // `ok` with an empty message is the idle state, not a success to refresh for. Without this the
+    // page would re-render on mount, which is the same bug as refreshing in a loop.
+    if (state.ok && state.message) router.refresh();
   }, [state, router]);
 
   return (
@@ -53,10 +56,10 @@ export function OrderStatusTransitions({
         }}>
           <input type="hidden" name="orderId" value={orderId} />
           <input type="hidden" name="dimension" value="FULFILLMENT" />
-          {FULFILLMENT_NEXT[fulfilled]?.length ? (
+          {allowed.fulfillment.length ? (
             <>
-              <Select name="to" defaultValue={FULFILLMENT_NEXT[fulfilled][0]}>
-                {FULFILLMENT_NEXT[fulfilled].map((s) => (
+              <Select name="to" defaultValue={allowed.fulfillment[0]}>
+                {allowed.fulfillment.map((s) => (
                   <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
                 ))}
               </Select>
@@ -79,10 +82,10 @@ export function OrderStatusTransitions({
         }}>
           <input type="hidden" name="orderId" value={orderId} />
           <input type="hidden" name="dimension" value="PAYMENT" />
-          {PAYMENT_NEXT[paid]?.length ? (
+          {allowed.payment.length ? (
             <>
-              <Select name="to" defaultValue={PAYMENT_NEXT[paid][0]}>
-                {PAYMENT_NEXT[paid].map((s) => (
+              <Select name="to" defaultValue={allowed.payment[0]}>
+                {allowed.payment.map((s) => (
                   <option key={s} value={s}>{STATUS_LABELS[s] ?? s}</option>
                 ))}
               </Select>
@@ -97,8 +100,8 @@ export function OrderStatusTransitions({
         </form>
       </div>
 
-      {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-      {state.ok && <p role="status" aria-live="polite" className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+      {!state.ok && state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && state.message && <p role="status" aria-live="polite" className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
     </div>
   );
 }

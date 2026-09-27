@@ -1,93 +1,38 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { commitStock, db, releaseStock, reserveStock, restock, $Enums } from "@kmodern/db";
+import { commitStock, db, reserveStock, $Enums } from "@kmodern/db";
 import { addressSchema } from "@kmodern/schema";
 import { settingKeys } from "@kmodern/schema/setting-keys";
 import { actionContext } from "./ctx";
 import { field, intField, jsonParse } from "./form-helpers";
 import { getSettingOrDefault } from "@/lib/settings";
 import { nextOrderNumber } from "@/lib/order-number";
-import type { ActionState } from "./auth";
+import { setOrderStatus } from "./order-status";
+import { fromGateway } from "@/lib/gateway";
+import { failed, type ActionResult } from "./result";
 
-const FULFILLMENT_NEXT: Record<string, string[]> = {
-  PENDING: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["PROCESSING", "CANCELLED"],
-  PROCESSING: ["SHIPPED", "CANCELLED"],
-  SHIPPED: ["DELIVERED", "RETURNED"],
-  DELIVERED: ["RETURNED"],
-  CANCELLED: [],
-  RETURNED: [],
-};
-
-const PAYMENT_NEXT: Record<string, string[]> = {
-  AWAITING: ["PAID", "FAILED"],
-  PAID: ["REFUNDED"],
-  FAILED: ["AWAITING"],
-  REFUNDED: [],
-};
-
-/** generic order status transition — validates, writes status, stock side
- * effects, event, and audit as one transaction. */
-export async function setOrderStatus(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const { admin, ip, ua } = await actionContext();
-  const orderId = field(formData, "orderId");
-  const dimension = field(formData, "dimension") as $Enums.OrderEventDimension;
-  const to = field(formData, "to") as string;
-  const note = field(formData, "note") || undefined;
-
-  if (!orderId || !["FULFILLMENT", "PAYMENT"].includes(dimension) || !to || (note?.length ?? 0) > 1000) {
-    return { error: "درخواست تغییر وضعیت نامعتبر است" };
-  }
-
-  try {
-    await db().$transaction(async (tx) => {
-      const order = await tx.order.findUnique({ where: { id: orderId } });
-      if (!order) throw new Error("ORDER_NOT_FOUND");
-      const from = dimension === "FULFILLMENT" ? order.fulfillmentStatus : order.paymentStatus;
-      const allowed = dimension === "FULFILLMENT" ? FULFILLMENT_NEXT[from] : PAYMENT_NEXT[from];
-      if (!allowed?.includes(to)) throw new Error(`INVALID_TRANSITION:${from}:${to}`);
-
-      const statusField = dimension === "FULFILLMENT" ? "fulfillmentStatus" : "paymentStatus";
-      const updated = await tx.order.updateMany({
-        where: { id: orderId, [statusField]: from } as never,
-        data: { [statusField]: to } as never,
-      });
-      if (updated.count !== 1) throw new Error("ORDER_CHANGED");
-
-      // Side effects run only after the compare-and-set above. A concurrent
-      // duplicate request cannot apply the same transition twice.
-      if (dimension === "PAYMENT") {
-        if (to === "PAID") await commitStock(orderId, tx);
-        else if (to === "FAILED") await releaseStock(orderId, tx);
-        else if (to === "REFUNDED") await restock(orderId, tx);
-      } else if (to === "CANCELLED" || to === "RETURNED") {
-        if (order.paymentStatus === "PAID") await restock(orderId, tx);
-        else await releaseStock(orderId, tx);
-      }
-
-      await tx.orderStatusEvent.create({
-        data: { orderId, dimension, from, to, actor: admin.email, note },
-      });
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: admin.id,
-          action: `ORDER_${to}`,
-          entityType: "ORDER",
-          entityId: orderId,
-          meta: { dimension, from, to, note, orderNumber: order.orderNumber, ip, ua },
-        },
-      });
-    }, { timeout: 15_000 });
-    return { ok: true, message: "وضعیت سفارش به‌روزرسانی شد" };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (message === "ORDER_NOT_FOUND") return { error: "سفارش پیدا نشد" };
-    if (message === "ORDER_CHANGED") return { error: "وضعیت سفارش هم‌زمان تغییر کرده؛ صفحه را تازه‌سازی کنید" };
-    if (message.startsWith("INVALID_TRANSITION")) return { error: "این انتقال وضعیت مجاز نیست" };
-    if (message.startsWith("INSUFFICIENT_STOCK")) return { error: "موجودی برای این انتقال کافی نیست" };
-    return { error: "تغییر وضعیت انجام نشد؛ دوباره تلاش کنید" };
-  }
+/**
+ * Order status change, through the gateway.
+ *
+ * A form-fields-to-request adapter and nothing more. The transition tables, the compare-and-set, the
+ * stock side effect, the event and the audit line all belong to the gateway, which has enforced them
+ * since ticket 08 — the panel's copies of that logic were a second implementation free to disagree,
+ * and one of them had already: the panel released stock on a cancellation unconditionally where the
+ * gateway restocks a paid order. The `actionContext()` call remains so an unauthenticated POST to this
+ * action is refused at the panel's own boundary before the gateway is asked on the operator's behalf.
+ */
+export async function setOrderStatusAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  await actionContext();
+  return setOrderStatus({
+    orderId: field(formData, "orderId"),
+    dimension: field(formData, "dimension") as "FULFILLMENT" | "PAYMENT",
+    to: field(formData, "to"),
+    note: field(formData, "note") || undefined,
+  });
 }
 
 interface ManualItemInput {
@@ -95,7 +40,7 @@ interface ManualItemInput {
   qty: number;
 }
 
-export async function createManualOrder(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function createManualOrder(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const { admin, ip, ua } = await actionContext();
   const customerId = field(formData, "customerId");
   const paymentMethod = field(formData, "paymentMethod") as $Enums.PaymentMethod;
@@ -115,24 +60,24 @@ export async function createManualOrder(_prev: ActionState, formData: FormData):
   };
   const addressParsed = addressSchema.safeParse({ ...address, isDefault: false });
   if (!addressParsed.success) {
-    return { error: addressParsed.error.issues[0]?.message ?? "آدرس گیرنده معتبر نیست" };
+    return failed(addressParsed.error.issues[0]?.message ?? "آدرس گیرنده معتبر نیست");
   }
   const shippingAddress = addressParsed.data;
   const deliveryFee = deliveryFeeMode === "FREE" ? 0 : rawDeliveryFee;
 
-  if (!customerId) return { error: "مشتری را انتخاب کنید" };
-  if (adminNote && adminNote.length > 2000) return { error: "یادداشت ادمین بیش از حد طولانی است" };
-  if (!address.recipientName || !address.recipientPhone) return { error: "نام و موبایل گیرنده الزامی است" };
-  if (address.recipientName.length > 200 || address.recipientPhone.length > 40) return { error: "اطلاعات گیرنده بیش از حد طولانی است" };
-  if (!Array.isArray(items) || !items.length) return { error: "حداقل یک آیتم اضافه کنید" };
+  if (!customerId) return failed("مشتری را انتخاب کنید");
+  if (adminNote && adminNote.length > 2000) return failed("یادداشت ادمین بیش از حد طولانی است");
+  if (!address.recipientName || !address.recipientPhone) return failed("نام و موبایل گیرنده الزامی است");
+  if (address.recipientName.length > 200 || address.recipientPhone.length > 40) return failed("اطلاعات گیرنده بیش از حد طولانی است");
+  if (!Array.isArray(items) || !items.length) return failed("حداقل یک آیتم اضافه کنید");
   if (items.length > 100 || items.some((i) => !i || typeof i.variantId !== "string" || !Number.isInteger(i.qty) || i.qty <= 0 || i.qty > 1000)) {
-    return { error: "آیتم‌های نامعتبر" };
+    return failed("آیتم‌های نامعتبر");
   }
-  if (new Set(items.map((i) => i.variantId)).size !== items.length) return { error: "هر تنوع فقط یک بار در سفارش باشد" };
-  if (!Number.isFinite(deliveryFee) || deliveryFee < 0) return { error: "هزینه ارسال نامعتبر است" };
-  if (!["ONLINE", "CARD_TO_CARD", "COD"].includes(paymentMethod)) return { error: "روش پرداخت نامعتبر است" };
-  if (!["LOCAL", "POST", "BARBERI"].includes(shippingMethod)) return { error: "روش ارسال نامعتبر است" };
-  if (!["FREE", "FLAT", "API_QUOTE", "FALLBACK_FLAT", "FREIGHT_COLLECT"].includes(deliveryFeeMode)) return { error: "روش محاسبه ارسال نامعتبر است" };
+  if (new Set(items.map((i) => i.variantId)).size !== items.length) return failed("هر تنوع فقط یک بار در سفارش باشد");
+  if (!Number.isFinite(deliveryFee) || deliveryFee < 0) return failed("هزینه ارسال نامعتبر است");
+  if (!["ONLINE", "CARD_TO_CARD", "COD"].includes(paymentMethod)) return failed("روش پرداخت نامعتبر است");
+  if (!["LOCAL", "POST", "BARBERI"].includes(shippingMethod)) return failed("روش ارسال نامعتبر است");
+  if (!["FREE", "FLAT", "API_QUOTE", "FALLBACK_FLAT", "FREIGHT_COLLECT"].includes(deliveryFeeMode)) return failed("روش محاسبه ارسال نامعتبر است");
 
   const variantIds = items.map((i) => i.variantId);
   const cod = paymentMethod === "COD";
@@ -219,56 +164,36 @@ export async function createManualOrder(_prev: ActionState, formData: FormData):
     createdOrderId = order.id;
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    if (message === "CUSTOMER_NOT_FOUND") return { error: "مشتری پیدا نشد" };
-    if (message === "VARIANT_NOT_FOUND") return { error: "یکی از تنوع‌ها پیدا نشد" };
-    if (message.startsWith("INSUFFICIENT_STOCK")) return { error: "موجودی برای یکی از تنوع‌ها کافی نیست" };
-    if (message === "INVALID_PRICE") return { error: "قیمت تنوع نامعتبر است" };
-    return { error: "ثبت سفارش انجام نشد؛ دوباره تلاش کنید" };
+    if (message === "CUSTOMER_NOT_FOUND") return failed("مشتری پیدا نشد");
+    if (message === "VARIANT_NOT_FOUND") return failed("یکی از تنوع‌ها پیدا نشد");
+    if (message.startsWith("INSUFFICIENT_STOCK")) return failed("موجودی برای یکی از تنوع‌ها کافی نیست");
+    if (message === "INVALID_PRICE") return failed("قیمت تنوع نامعتبر است");
+    return failed("ثبت سفارش انجام نشد؛ دوباره تلاش کنید");
   }
   redirect(`/orders/${createdOrderId}`);
 }
 
-/** manual stock adjustment with compare-and-set + audit (017 inventory queue) */
-export async function adjustStock(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const { admin, ip, ua } = await actionContext();
+/**
+ * Manual stock adjustment, through the gateway (017 inventory queue).
+ *
+ * The compare-and-set, the reserved-stock floor and the audit line are the gateway's — `inventory`
+ * has owned the stock lifecycle since ticket 08, and the panel's copy here was a fourth implementation
+ * of it. The `note` is sent rather than recorded locally because it is the only part of this action
+ * that is the panel's business: what the operator said about the adjustment.
+ */
+export async function adjustStock(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  await actionContext();
   const variantId = field(formData, "variantId");
   const delta = intField(formData, "delta");
   const note = field(formData, "note") || "تعدیل دستی";
 
   if (!variantId || delta === 0 || Math.abs(delta) > 1_000_000 || note.length > 500) {
-    return { error: "مقدار تغییر یا توضیح نامعتبر است" };
+    return failed("مقدار تغییر یا توضیح نامعتبر است");
   }
 
-  try {
-    await db().$transaction(async (tx) => {
-      const variant = await tx.variant.findUnique({ where: { id: variantId } });
-      if (!variant) throw new Error("VARIANT_NOT_FOUND");
-      if (variant.stock + delta < variant.reserved) throw new Error("STOCK_RESERVED");
-      const updated = await tx.variant.updateMany({
-        where: {
-          id: variantId,
-          stock: variant.stock,
-          reserved: variant.reserved,
-        },
-        data: { stock: { increment: delta } },
-      });
-      if (updated.count !== 1) throw new Error("STOCK_CONFLICT");
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: admin.id,
-          action: "STOCK_ADJUSTED",
-          entityType: "VARIANT",
-          entityId: variantId,
-          meta: { delta, note, before: variant.stock, after: variant.stock + delta, sku: variant.sku, ip, ua },
-        },
-      });
-    });
-    return { ok: true, message: "موجودی تعدیل شد" };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (message === "VARIANT_NOT_FOUND") return { error: "تنوع پیدا نشد" };
-    if (message === "STOCK_RESERVED") return { error: "موجودی قابل تزریق کمتر از مقدار رزروشده است" };
-    if (message === "STOCK_CONFLICT") return { error: "موجودی هم‌زمان تغییر کرده؛ دوباره تلاش کنید" };
-    return { error: "تعدیل موجودی انجام نشد" };
-  }
+  return fromGateway(
+    (client) =>
+      client.post(`/inventory/variants/${encodeURIComponent(variantId)}/adjust`, { delta, note }),
+    "موجودی تعدیل شد",
+  );
 }

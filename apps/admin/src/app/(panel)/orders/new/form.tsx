@@ -6,7 +6,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { createManualOrder } from "@/lib/actions/orders";
-import type { ActionState } from "@/lib/actions/auth";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Field, Input, Textarea } from "@/components/ui";
 import { formatToman } from "@kmodern/schema/format";
 
@@ -25,7 +25,7 @@ interface VariantLite {
 }
 
 export function ManualOrderForm({ customers, variants }: { customers: CustomerLite[]; variants: VariantLite[] }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(createManualOrder, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(createManualOrder, idle);
   const [lines, setLines] = useState<Array<{ variantId: string; qty: number }>>([]);
   const [address, setAddress] = useState({
     recipientName: "",
@@ -152,7 +152,7 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
               <Field label="یادداشت ادمین"><Textarea name="adminNote" /></Field>
             </div>
           </div>
-          {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+          {!state.ok && state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
           <div className="flex justify-end">
             <Button type="submit" disabled={pending}>{pending ? "در حال ثبت…" : "ثبت سفارش"}</Button>
           </div>

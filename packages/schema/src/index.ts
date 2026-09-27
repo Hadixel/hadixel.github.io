@@ -353,6 +353,24 @@ export const postalCodeSchema = z
   .refine((value) => normalizePostalCode(value) !== null, "کد پستی باید ۱۰ رقم باشد")
   .transform((value) => normalizePostalCode(value) as string);
 
+/**
+ * A discount code, in the one spelling the column stores.
+ *
+ * Normalising at the write path is the point, and it is why this is a schema rather than a helper the
+ * reader calls. The checkout reader compares with `trim().toLowerCase()` on both sides, which means a
+ * code stored as " Summer " matched the code "SUMMER" — and also means the column held a value that no
+ * longer equalled itself, so a uniqueness check on the raw column accepted "SUMMER" and "summer" as two
+ * different codes, and the second one silently shadowed the first. Normalising here means the stored
+ * value is the matched value, and the unique index does the work the reader was standing in for.
+ */
+export const discountCodeSchema = z
+  .string()
+  .transform((value) => value.trim().toLowerCase())
+  // Checked after the transform, so the length bound applies to the stored value rather than to
+  // whatever whitespace a paste arrived with.
+  .refine((value) => value.length > 0, "کد تخفیف الزامی است")
+  .refine((value) => value.length <= 64, "کد تخفیف بیش از حد طولانی است");
+
 export const addressSchema = z.object({
   recipientName: z.string().min(1, "نام گیرنده الزامی است"),
   recipientPhone: iranPhoneSchema,
@@ -387,9 +405,18 @@ export const discountSchema = z.object({
   type: z.enum(["PERCENT", "FIXED", "FREE_DELIVERY"]),
   scope: z.enum(["ALL", "PRODUCTS", "CATEGORIES", "COLLECTIONS"]),
   mode: z.enum(["COUPON", "AUTOMATIC"]),
+  // Trimmed and lowercased here rather than at the checkout reader. The reader used to do
+  // `code?.trim().toLowerCase() === wanted`, which made a match work for " Summer " while the column
+  // still held the spaces — so the unique index on `code` accepted "SUMMER" and "summer" as two
+  // distinct codes and the second shadowed the first at the till. Normalising at the write path makes
+  // the stored value the matched value.
   code: z.preprocess(
-    (value) => value === "" ? undefined : value,
-    z.string().regex(/^[A-Za-z0-9_-]{3,32}$/, "کد تخفیف ۳ تا ۳۲ حرف/رقم").optional(),
+    (value) => value === "" || value === null ? undefined : value,
+    discountCodeSchema
+      // The character class and its bounds are the shop's rule for what a code may look like, and they
+      // are checked after normalisation so "SUMMER " is judged as "summer".
+      .refine((value) => /^[a-z0-9_-]{3,32}$/.test(value), "کد تخفیف ۳ تا ۳۲ حرف/رقم")
+      .optional(),
   ),
   value: z.number().finite().nonnegative(),
   maxAmount: z.number().finite().nonnegative().optional(),
