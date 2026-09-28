@@ -190,6 +190,31 @@ export async function makeProduct(opts: {
   };
 }
 
+/**
+ * A variant on a product that already exists.
+ *
+ * `makeVariant` above makes a product of its own, which is right for the stock-lifecycle tests and
+ * wrong for anything about a product's variant *set* — a test that needs two variants on one product
+ * has no way to say so, and would end up asserting against two products that happen to share a colour.
+ */
+export async function makeVariantOn(
+  productId: string,
+  opts: { sku?: string; colorName?: string; price?: number; stock?: number; reserved?: number } = {},
+) {
+  const n = ++seq;
+  return db().variant.create({
+    data: {
+      productId,
+      colorName: opts.colorName ?? `رنگ ${n}`,
+      sku: opts.sku ?? `sku-${n}`,
+      price: opts.price ?? 100_000,
+      stock: opts.stock ?? 5,
+      reserved: opts.reserved ?? 0,
+      images: [],
+    },
+  });
+}
+
 export async function makeCategory(slug?: string, name?: string, parentId?: string) {
   const n = ++seq;
   return db().category.create({

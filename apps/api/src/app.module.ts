@@ -10,6 +10,7 @@ import { InventoryModule } from "./inventory/inventory.module.js";
 import { DiscountsModule } from "./discounts/discounts.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
+import { ProductsModule } from "./products/products.module.js";
 import { SettingsModule } from "./settings/settings.module.js";
 
 /**
@@ -42,6 +43,9 @@ import { SettingsModule } from "./settings/settings.module.js";
     // nothing composes an adjustment.
     InventoryModule,
     CheckoutModule,
+    // Products sit below Inventory: their variant diff writes a variant's stock and so calls the
+    // same primitive the manual adjustment does, rather than a second copy of the floor.
+    ProductsModule,
     // Settings last among the operator's features: it names no other feature's rows, and everything
     // that composes a decision from a setting reads it rather than declaring it.
     SettingsModule,

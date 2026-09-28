@@ -6,8 +6,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveProduct } from "@/lib/actions/catalog";
-import type { ActionState } from "@/lib/actions/auth";
+import { saveProduct } from "@/lib/actions/product-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { MediaPickerButton } from "./media-picker-button";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 
@@ -47,7 +47,7 @@ export interface ProductSeed {
 
 export function ProductForm({ product, categories }: ProductSeed) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveProduct, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveProduct, idle);
   useEffect(() => {
     if (state.ok) router.refresh();
   }, [state, router]);
@@ -235,7 +235,10 @@ export function ProductForm({ product, categories }: ProductSeed) {
           </CardBody>
         </Card>
 
-        {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {/* Narrowed on `ok`, which is the point of the union: the old `ActionState` had four optional
+            fields, so a failure with no message type-checked and rendered an empty box. A successful
+            save redirects, so there is no success line to show here. */}
+        {!state.ok && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
         <div className="flex justify-end gap-3">
           <Button type="button" variant="secondary" onClick={() => router.back()}>انصراف</Button>
           <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره محصول"}</Button>

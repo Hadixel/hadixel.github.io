@@ -112,5 +112,10 @@ Persian name, which is every name in this shop.
 - The generated Prisma enums are string-literal *unions*, not the runtime objects `@IsEnum` needs. A
   DTO therefore declares its own enum object, and the service that judges a row must compare against
   the *generated* union, or a value read off a row needs a conversion it should not need.
+- A file the *clients* bundle must import extensionlessly. `prisma/index.ts` re-exports
+  `inventory.service.ts`, `packages/db` forwards that, and both Next apps pull it in — so a `.js`
+  specifier anywhere in that graph type-checks and then fails the build with "Module not found", naming
+  the import rather than the reason. It is the same rule `inventory.service.ts` states at its top, and
+  it applies to every file that file imports.
 - A test that forbids a word fails on the comment explaining the change. Match on the `import` or the
   `export`, never on the bare word, or the test forbids explaining itself.

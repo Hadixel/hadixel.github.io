@@ -26,6 +26,11 @@ import { OrderEventDimension, PaymentMethod, ReservationStatus } from "../genera
 import type { Prisma } from "../generated/prisma/client";
 import { db } from "../prisma/client";
 import { settingKeys } from "@kmodern/schema/setting-keys";
+import {
+  StockConflictException,
+  StockReservedException,
+  VariantNotFoundException,
+} from "./exceptions/inventory.exception.js";
 
 type InventoryClient = Pick<Prisma.TransactionClient, "variant" | "stockReservation" | "setting">;
 
@@ -228,4 +233,54 @@ export function recordOrderEvent(
   client?: Pick<Prisma.TransactionClient, "orderStatusEvent">,
 ) {
   return (client ?? db()).orderStatusEvent.create({ data: input });
+}
+
+// ---------------------------------------------------------------------------
+// Setting a variant's stock from outside the order lifecycle
+// ---------------------------------------------------------------------------
+
+/** What a caller has to know about the row before it is allowed to change it. */
+export interface VariantStockExpectation {
+  /** The stock the caller read. */
+  stock: number;
+  /** The reserved count the caller read. */
+  reserved: number;
+}
+
+/**
+ * Set a variant's stock to an absolute count, under the two guarantees every writer owes.
+ *
+ * Both of these were duplicated. The manual adjustment had them inside its controller, and the
+ * panel's product form had a third copy that re-read the variant inside its own transaction and then
+ * compared against that same read — so the guard the comment described ("a stale product form cannot
+ * overwrite a concurrent order") could never fire, while looking exactly like it worked. One
+ * implementation is the only way the two paths can be trusted to agree.
+ *
+ * `expected` is what makes it a compare-and-set rather than a read-then-write: the caller's update is
+ * conditional on the row still holding the numbers it read, so a hold taken in between turns the
+ * write into zero rows updated rather than into a silent overwrite of somebody's reservation.
+ * Required rather than optional — a caller that has not read the row has nothing to assert against,
+ * and an unconditional stock write is how a sold unit reappears.
+ */
+export async function setVariantStock(
+  client: Pick<Prisma.TransactionClient, "variant">,
+  variantId: string,
+  stock: number,
+  expected: VariantStockExpectation,
+): Promise<{ stock: number; reserved: number; sku: string }> {
+  const variant = await client.variant.findUnique({ where: { id: variantId } });
+  if (!variant) throw new VariantNotFoundException();
+
+  // The floor. Taking stock below what is already promised would oversell the variant, so this is a
+  // refusal rather than a clamp: the operator asked for a number, and writing a different one is worse
+  // than refusing.
+  if (stock < variant.reserved) throw new StockReservedException();
+
+  const updated = await client.variant.updateMany({
+    where: { id: variantId, stock: expected.stock, reserved: expected.reserved },
+    data: { stock },
+  });
+  if (updated.count !== 1) throw new StockConflictException();
+
+  return { stock, reserved: variant.reserved, sku: variant.sku };
 }
