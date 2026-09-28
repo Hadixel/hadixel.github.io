@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
-import { config as loadDotenv } from "dotenv";
-import path from "node:path";
-
-// Root .env holds DATABASE_URL (packages/db/.env is a symlink to it). Next
-// only auto-loads the app-dir .env, so load the monorepo root explicitly so
-// build-time prerender + runtime can reach Postgres.
-loadDotenv({ path: path.resolve(process.cwd(), "../../.env") });
+// The same removal as the panel's, for the same reason: the storefront no longer opens Postgres, so
+// it does not need the root `.env` at build time. `NEXT_PUBLIC_API_URL` is declared in the `build`
+// task's `env`, which is what puts the gateway's address in the cache key.
 
 type RemotePattern = {
   protocol: "http" | "https";
