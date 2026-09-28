@@ -8,8 +8,11 @@ import { ContentModule } from "./content/content.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { InventoryModule } from "./inventory/inventory.module.js";
 import { DiscountsModule } from "./discounts/discounts.module.js";
+import { NavModule } from "./nav/nav.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
+import { PagesModule } from "./pages/pages.module.js";
+import { PostsModule } from "./posts/posts.module.js";
 import { ProductsModule } from "./products/products.module.js";
 import { SettingsModule } from "./settings/settings.module.js";
 
@@ -38,6 +41,7 @@ import { SettingsModule } from "./settings/settings.module.js";
     CategoriesModule,
     CollectionsModule,
     DiscountsModule,
+    NavModule,
     OrdersModule,
     // Inventory sits below Orders because orders compose its lifecycle, and above nothing because
     // nothing composes an adjustment.
@@ -45,7 +49,10 @@ import { SettingsModule } from "./settings/settings.module.js";
     CheckoutModule,
     // Products sit below Inventory: their variant diff writes a variant's stock and so calls the
     // same primitive the manual adjustment does, rather than a second copy of the floor.
+    PostsModule,
     ProductsModule,
+    // Pages sit beside the content reads they feed: the storefront renders these blocks.
+    PagesModule,
     // Settings last among the operator's features: it names no other feature's rows, and everything
     // that composes a decision from a setting reads it rather than declaring it.
     SettingsModule,

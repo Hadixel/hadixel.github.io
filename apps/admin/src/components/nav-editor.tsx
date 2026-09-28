@@ -7,9 +7,9 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveNav } from "@/lib/actions/content";
+import { saveNav } from "@/lib/actions/nav-actions";
 import type { LinkRef } from "@kmodern/schema";
-import type { ActionState } from "@/lib/actions/auth";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 
 type TargetType = "PAGE" | "CATEGORY" | "COLLECTION" | "BLOG_INDEX" | "BLOG_POST" | "EXTERNAL" | "NONE";
@@ -120,7 +120,7 @@ const newItem = (): ItemState => ({
 
 export function NavEditor({ seed }: { seed: NavSeed }) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveNav, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveNav, idle);
   useEffect(() => {
     if (state.ok) router.refresh();
   }, [state, router]);
@@ -233,7 +233,9 @@ export function NavEditor({ seed }: { seed: NavSeed }) {
         </CardBody>
       </Card>
 
-      {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {/* Narrowed on `ok`, which is the point of the union: the old `ActionState` had four
+          optional fields, so a failure with no message type-checked and rendered an empty box. */}
+      {!state.ok && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره منو"}</Button>

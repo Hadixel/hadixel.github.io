@@ -7,8 +7,8 @@
 // postBodySchema on save.
 
 import { useActionState, useEffect, useState } from "react";
-import { savePost } from "@/lib/actions/content";
-import type { ActionState } from "@/lib/actions/auth";
+import { savePost } from "@/lib/actions/post-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { MediaPickerButton } from "./media-picker-button";
 
@@ -164,7 +164,7 @@ function nodeToJson(n: NodeState): Record<string, unknown> {
 }
 
 export function BlogEditor({ post, products, collections }: { post: PostSeed; products: Array<{ id: string; name: string }>; collections: Array<{ id: string; name: string }> }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(savePost, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(savePost, idle);
   const [title, setTitle] = useState(post.title);
   const [slug, setSlug] = useState(post.slug);
   const [excerpt, setExcerpt] = useState(post.excerpt);
@@ -315,7 +315,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
         </CardBody>
       </Card>
 
-      {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {!state.ok && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره پست"}</Button>
       </div>

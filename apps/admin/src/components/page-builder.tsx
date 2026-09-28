@@ -8,8 +8,8 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ComponentType } from "@kmodern/schema";
-import { savePage } from "@/lib/actions/content";
-import type { ActionState } from "@/lib/actions/auth";
+import { savePage } from "@/lib/actions/page-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { MediaPickerButton } from "./media-picker-button";
 
@@ -157,9 +157,13 @@ export interface PageSeed {
 
 export function PageBuilder({ page }: { page: PageSeed }) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(savePage, {});
+  const [state, formAction, pending] = useActionState<ActionResult<{ pageId: string }>, FormData>(savePage, {
+    ok: true,
+    message: "",
+    data: { pageId: "" },
+  });
   useEffect(() => {
-    if (state.ok && state.id && !page.id) router.push(`/pages/${state.id}`);
+    if (state.ok && state.data && !page.id) router.push(`/pages/${state.data.pageId}`);
     else if (state.ok) router.refresh();
   }, [page.id, router, state]);
 
@@ -240,7 +244,10 @@ export function PageBuilder({ page }: { page: PageSeed }) {
           </CardBody>
         </Card>
 
-        {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {/* Narrowed on `ok`, which is the point of the union: the old `ActionState` had four optional
+            fields, so a failure with no message type-checked and rendered an empty box. A successful
+            save redirects, so there is no success line to show here. */}
+        {!state.ok && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
         {state.ok && <p role="status" aria-live="polite" className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
 
         <div className="sticky bottom-4 flex justify-end gap-3">
