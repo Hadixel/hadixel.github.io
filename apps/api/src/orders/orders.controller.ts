@@ -9,7 +9,7 @@
 // panel used to keep its own copy. Resolving them once here is what lets a client render a status
 // without knowing the enum.
 
-import { Controller, Get, Param, Post, Query, Req, Body } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { ConflictException } from "../common/exceptions/gateway.exception.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -26,6 +26,8 @@ import {
   OrderNotFoundException,
   TransitionNotAllowedException,
 } from "./exceptions/order.exception.js";
+import { DATA_CLIENT } from "../prisma/data-client.token.js";
+import type { PrismaClient } from "../generated/prisma/client.js";
 import { OrdersService } from "./orders.service.js";
 
 export interface OrderListResponse {
@@ -33,11 +35,28 @@ export interface OrderListResponse {
   total: number;
 }
 
+/** What the manual-order form is filled in from. */
+export interface OrderFormOptions {
+  customers: { id: string; name: string | null; phone: string }[];
+  variants: {
+    id: string;
+    sku: string;
+    price: number;
+    stock: number;
+    colorName: string;
+    product: { name: string };
+  }[];
+}
+
 @Controller("orders")
 export class OrdersController {
   constructor(
     private readonly orders: OrdersService,
     private readonly auth: AuthService,
+    // Injected for the one read the form needs rather than reached through the service, because the
+    // service is about orders and this is a catalogue read that happens to feed an order form. The
+    // alternative is a catalogue method on the orders service, which is where a read does not belong.
+    @Inject(DATA_CLIENT) private readonly db: PrismaClient,
   ) {}
 
   // ---- shopper: their own orders, and nobody else's ----
@@ -62,6 +81,51 @@ export class OrdersController {
   }
 
   // ---- operator: any order ----
+
+  /**
+   * What the manual-order form needs to be filled in: the customers to order for and the variants to
+   * order.
+   *
+   * Both together because the form cannot submit without both, and a manual order is the one write in
+   * the shop that begins with a human choosing from a list — so the list is the write's own input, and
+   * it belongs where the write is validated rather than in a page two queries of its own.
+   *
+   * Bounded, and the variant row carries its product's name because a SKU alone is not something a
+   * person recognises. Capped rather than filtered: an operator with more than five hundred sellable
+   * variants needs a search, and this is the list that a search would filter.
+   */
+  @Get("options")
+  async options(@Req() req: Request): Promise<OrderFormOptions> {
+    await requireAdmin(this.auth, req);
+
+    const [customers, variants] = await Promise.all([
+      this.db.customer.findMany({
+        orderBy: { createdAt: "asc" },
+        select: { id: true, name: true, phone: true },
+        take: 500,
+      }),
+      this.db.variant.findMany({
+        orderBy: { product: { name: "asc" } },
+        select: {
+          id: true,
+          sku: true,
+          price: true,
+          stock: true,
+          colorName: true,
+          product: { select: { name: true } },
+        },
+        take: 500,
+      }),
+    ]);
+
+    return {
+      customers: customers.map((row) => ({ id: row.id, name: row.name, phone: row.phone })),
+      // The product stays nested rather than flattened to a name, because that is the shape the form's
+      // prop type declares — a read that answers a different shape is a translation the panel has to
+      // write, which is the duplication this read exists to remove.
+      variants,
+    };
+  }
 
   @Get()
   async list(@Req() req: Request, @Query() query: OrderAdminQueryDto): Promise<OrderListResponse> {

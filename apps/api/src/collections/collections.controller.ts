@@ -70,6 +70,17 @@ export class CollectionsController {
    * `name` and `slug` of the member product travel with each item because the editor shows them next
    * to the ids it holds — one read rather than the panel fetching each product to label a row.
    */
+  /**
+   * The collections' names, for a picker.
+   *
+   * A picker needs an id and a label and nothing else, and it needs them from a read rather than from
+   * the panel's own copy of the table. Capped, because a picker lists what a person can scan.
+   */
+  @Get("options")
+  async options(): Promise<{ id: string; name: string }[]> {
+    return this.db.collection.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true }, take: 200 });
+  }
+
   @Get()
   async list(): Promise<CollectionSummary[]> {
     const rows = await this.db.collection.findMany({

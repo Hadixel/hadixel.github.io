@@ -46,6 +46,13 @@ import {
  */
 type Tx = Prisma.TransactionClient;
 
+/** One category as a product form needs it: a name, and the fields it declares. */
+export interface CategoryOption {
+  id: string;
+  name: string;
+  specFields: { id: string; name: string; type: string; unit: string | null }[];
+}
+
 /** One category, with the counts and the parent's name, as the panel's tree renders it. */
 export interface CategorySummary {
   id: string;
@@ -88,6 +95,42 @@ export class CategoriesController {
    * manager holds ids and needs labels and sizes beside them, and a panel that fetched each of those
    * separately would be N+1 over a table it should not be reading.
    */
+  /**
+   * The categories with their declared spec fields, for the product form.
+   *
+   * Not `list()`: a product form asks a different question of the tree. It does not want counts or a
+   * parent name, it wants the fields *this* category declares, because it renders an input per field
+   * and the field list is the category's to decide. A form that asked for the whole tree and picked
+   * the fields out would couple it to the shape of an answer meant for a screen.
+   */
+  @Get("options")
+  async options(): Promise<CategoryOption[]> {
+    const rows = await this.db.category.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        specFields: {
+          orderBy: { sortOrder: "asc" },
+          select: { id: true, name: true, type: true, unit: true },
+        },
+      },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      specFields: row.specFields.map((field) => ({
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        // `null` and not an absent key: the form's prop type says `string | null`, and an absent
+        // key is a different thing from a field that has no unit — one is unknown, the other is none.
+        unit: field.unit,
+      })),
+    }));
+  }
+
   @Get()
   async list(@Req() req: Request): Promise<CategorySummary[]> {
     // Operator-only, and the reason is what this view carries rather than what the storefront already

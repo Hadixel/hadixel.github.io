@@ -171,6 +171,24 @@ export class PagesController {
   }
 
   /**
+   * The pages' ids, slugs and titles, for a link picker in the navigation editor.
+   *
+   * A slug beside a title because that is what a link *is* in this shop: a page is addressed by its
+   * slug, so an operator choosing one needs to see which address they are about to point at. Operator-
+   * only, unlike the block types below, because a page's draft state is not public.
+   */
+  @Get("options")
+  async options(@Req() req: Request): Promise<{ id: string; slug: string; title: string }[]> {
+    await requireAdmin(this.auth, req);
+
+    return this.db.page.findMany({
+      orderBy: { title: "asc" },
+      select: { id: true, slug: true, title: true },
+      take: 200,
+    });
+  }
+
+  /**
    * The page-builder's vocabulary, served so a form can offer only the blocks it can store.
    *
    * The same reason the settings definitions are served: the alternative is a second list of block
