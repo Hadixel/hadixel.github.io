@@ -67,13 +67,26 @@ Persian name, which is every name in this shop.
 - **Closed:** the audit guarantee, the shared origin check, inventory adjustment on the gateway's own
   stock lifecycle, the result shape in mechanism, the one canonicalisation, and the discount code at
   the write path.
-- **To do:** the remaining features' writes (products and variants, settings, pages, blog posts, nav,
-  media, customers), each needing a gateway route and leaving one file per feature behind it. Then the
-  four doubled delete paths collapsed to one implementation each — page, post, discount and media are
-  the last four, and each has both a bare `deleteX(formData)` and a `deleteXAction(_prev, formData)`
-  that exists only to satisfy `useActionState`; discounts are the first of the four now collapsed.
-  Then every panel page reading through the gateway, type-only imports included. Then the panel's own
-  five `sameOrigin` copies collapsed to the one the gate counts.
+- **To do:** media and customers, then every panel page reading through the gateway, type-only
+  imports included, then the panel's own five `sameOrigin` copies collapsed to the one the gate counts.
+  The doubled delete paths are down to one: media is the last, and it is the only one of the original
+  eight still holding both a bare `deleteX(formData)` and a `deleteXAction(_prev, formData)` that
+  exists only to satisfy `useActionState`.
+- **A vocabulary the panel held was not a guarantee, and three of them turned out to be doing real
+  work.** Pages, blog and nav each ran `blockSchema`, `postBodySchema` and `menuSchema` on the
+  panel's own form, as a fast-fail before its own write. Each read like a guarantee because each
+  produced a Persian error message, and each was a rule a client could skip — the schemas live in a
+  package the storefront also imports, so nothing stopped a post arriving by any other route and
+  landing unjudged. They are the gateway's now and the panel's copies are gone. The general form of
+  this: **a fast-fail a client owns is not a fast fail, it is a suggestion.**
+- **A compare-and-set can be written so that it cannot fire, and look exactly like one that
+  works.** The panel's product form re-read a variant inside its transaction and then wrote
+  conditionally on the values it had just read, on the same connection — so the condition held by
+  construction while the comment above it claimed a stale form could not overwrite a concurrent
+  order. The rules that *were* real are now `setVariantStock`, called by both writers of a variant's
+  stock, and the ordering is asserted by watching which client the query goes to rather than by
+  racing a save against a deletion — a race decides that by luck, and a test that passes or fails by
+  luck is worse than none.
 - **The gateway's validation pipe was discarding every Persian DTO message, and now does not.** The
   pipe raised Nest's own `BadRequestException`; the error filter trusts a message only from a
   `GatewayException`, so every `message:` on every DTO was decorative and each of the possible
@@ -117,5 +130,14 @@ Persian name, which is every name in this shop.
   specifier anywhere in that graph type-checks and then fails the build with "Module not found", naming
   the import rather than the reason. It is the same rule `inventory.service.ts` states at its top, and
   it applies to every file that file imports.
+- **A decorator's work is only visible through the validation pipe**, so a controller test cannot see
+  a wrong decorator at all. The page DTO declared `action` as `@IsBoolean` while the form sends
+  `"draft"` or `"publish"`, so every page save was refused by the pipe — and twenty controller tests
+  passed, because they construct the DTO's instance and call the method, and the pipe is not involved.
+  Found by running the built gateway and posting at it. The fix is a DTO-contract test that sends the
+  form's own values through `VALIDATION_PIPE_OPTIONS`, which is the only place a decorator runs.
+- `@Length` is not `@ArrayMaxSize`. On an array, `@Length(0, 200)` refused the empty list — the
+  collection and page DTOs use `@ArrayMaxSize` for exactly this, and following the wrong one cost a
+  round trip.
 - A test that forbids a word fails on the comment explaining the change. Match on the `import` or the
   `export`, never on the bare word, or the test forbids explaining itself.
