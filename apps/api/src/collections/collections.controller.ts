@@ -16,7 +16,7 @@
 // place to have learned it: between the count and the write, a product could be deleted and the
 // membership would then point at nothing.
 
-import { Body, Controller, Delete, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { canonicalSlug } from "@kmodern/schema/slug";
 import { writeAudit } from "../common/audit.js";
@@ -38,6 +38,15 @@ import {
 
 type Tx = Prisma.TransactionClient;
 
+/** One collection as the panel's editor needs it. */
+export interface CollectionSummary {
+  id: string;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  items: { productId: string; productName: string; sortOrder: number }[];
+}
+
 /** What a saved collection answers with. */
 export interface CollectionSaved {
   id: string;
@@ -50,6 +59,41 @@ export class CollectionsController {
     private readonly auth: AuthService,
     @Inject(DATA_CLIENT) private readonly db: ReturnType<typeof createPrismaClient>,
   ) {}
+
+  /**
+   * The collections, with the products in each, as the panel's editor needs them.
+   *
+   * Read rather than left to the panel, and the reason is the same as the settings definitions: the
+   * editor has to be told what exists, and a panel holding its own read of the same tables is a second
+   * shape for the same data, free to disagree about what a collection contains.
+   *
+   * `name` and `slug` of the member product travel with each item because the editor shows them next
+   * to the ids it holds — one read rather than the panel fetching each product to label a row.
+   */
+  @Get()
+  async list(): Promise<CollectionSummary[]> {
+    const rows = await this.db.collection.findMany({
+      orderBy: { sortOrder: "asc" },
+      include: {
+        items: {
+          orderBy: { sortOrder: "asc" },
+          include: { product: { select: { name: true, slug: true } } },
+        },
+      },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      sortOrder: row.sortOrder,
+      items: row.items.map((item) => ({
+        productId: item.productId,
+        productName: item.product.name,
+        sortOrder: item.sortOrder,
+      })),
+    }));
+  }
 
   @Post()
   async create(@Req() req: Request, @Body() body: SaveCollectionDto): Promise<CollectionSaved> {

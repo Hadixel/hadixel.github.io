@@ -15,7 +15,7 @@
 // change had already committed, so a failed audit write was a category nobody could account for, and
 // the operator was told it had saved.
 
-import { Body, Controller, Delete, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
 // The `./slug` subpath rather than the package root, because the canonicalisation is not part of the
 // schema's vocabulary — it is the one answer to "what is this thing's address", and it is imported on
@@ -46,6 +46,27 @@ import {
  */
 type Tx = Prisma.TransactionClient;
 
+/** One category, with the counts and the parent's name, as the panel's tree renders it. */
+export interface CategorySummary {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  parentName?: string;
+  weightKg: number;
+  sortOrder: number;
+  productCount: number;
+  childCount: number;
+  specFields: {
+    id: string;
+    name: string;
+    type: string;
+    unit?: string;
+    filterable: boolean;
+    sortOrder: number;
+  }[];
+}
+
 /** What a saved category answers with: the id to navigate to, and the slug it landed on. */
 export interface CategorySaved {
   id: string;
@@ -59,6 +80,52 @@ export class CategoriesController {
     // The data client arrives through the module that owns it, the same as every other feature.
     @Inject(DATA_CLIENT) private readonly db: ReturnType<typeof createPrismaClient>,
   ) {}
+
+  /**
+   * The tree, as the panel's manager needs it.
+   *
+   * A parent name and two counts travel with each row because that is what the tree renders: the
+   * manager holds ids and needs labels and sizes beside them, and a panel that fetched each of those
+   * separately would be N+1 over a table it should not be reading.
+   */
+  @Get()
+  async list(@Req() req: Request): Promise<CategorySummary[]> {
+    // Operator-only, and the reason is what this view carries rather than what the storefront already
+    // shows: the public catalogue exposes a category's name and its products, while this answers with
+    // its spec fields, its child count and its product count — the shop's shape to an operator. The
+    // settings definitions are the opposite case and are deliberately public: nothing in a field
+    // table is a secret.
+    await requireAdmin(this.auth, req);
+
+    const rows = await this.db.category.findMany({
+      orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }],
+      include: {
+        parent: { select: { id: true, name: true } },
+        specFields: { orderBy: { sortOrder: "asc" } },
+        _count: { select: { products: true, children: true } },
+      },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      parentId: row.parentId,
+      parentName: row.parent?.name,
+      weightKg: row.weightKg,
+      sortOrder: row.sortOrder,
+      productCount: row._count.products,
+      childCount: row._count.children,
+      specFields: row.specFields.map((field) => ({
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        unit: field.unit ?? undefined,
+        filterable: field.filterable,
+        sortOrder: field.sortOrder,
+      })),
+    }));
+  }
 
   @Post()
   async create(@Req() req: Request, @Body() body: SaveCategoryDto): Promise<CategorySaved> {

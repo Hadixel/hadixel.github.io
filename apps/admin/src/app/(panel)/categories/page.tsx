@@ -1,39 +1,41 @@
-import { db } from "@kmodern/db";
+// The category tree, read through the gateway.
+//
+// This page used to import the data tier and query the tree itself, with each row carrying its
+// parent's name, its product and child counts, and its declared spec fields — because the manager
+// renders all of them and holds only ids. One gateway read answers the same shape, so the page is a
+// client of the shop's data rather than a second holder of it.
+
+import { readThrough } from "@/lib/reads";
 import { CategoriesManager } from "./categories-manager";
 
+/** One category, as the gateway's `GET /categories` answers. */
+interface CategorySummary {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  parentName?: string;
+  weightKg: number;
+  sortOrder: number;
+  productCount: number;
+  childCount: number;
+  specFields: {
+    id: string;
+    name: string;
+    type: string;
+    unit?: string;
+    filterable: boolean;
+    sortOrder: number;
+  }[];
+}
+
 export default async function CategoriesPage() {
-  const categories = await db().category.findMany({
-    orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }],
-    include: {
-      parent: { select: { id: true, name: true } },
-      specFields: { orderBy: { sortOrder: "asc" } },
-      _count: { select: { products: true, children: true } },
-    },
-  });
+  const categories = await readThrough<CategorySummary[]>("/categories");
+
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="mb-4 text-xl font-bold text-ink">دسته‌بندی‌ها</h1>
-      <CategoriesManager
-        categories={categories.map((c) => ({
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          parentId: c.parentId,
-          parentName: c.parent?.name,
-          weightKg: c.weightKg,
-          sortOrder: c.sortOrder,
-          productCount: c._count.products,
-          childCount: c._count.children,
-          specFields: c.specFields.map((sf) => ({
-            id: sf.id,
-            name: sf.name,
-            type: sf.type,
-            unit: sf.unit ?? undefined,
-            filterable: sf.filterable,
-            sortOrder: sf.sortOrder,
-          })),
-        }))}
-      />
+      <CategoriesManager categories={categories} />
     </div>
   );
 }

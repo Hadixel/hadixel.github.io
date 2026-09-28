@@ -18,7 +18,7 @@
 // failures into "ذخیره انجام نشد؛ دوباره تلاش کنید" and the operator had no way to tell a typo from a
 // database being down.
 
-import { Body, Controller, Delete, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -52,6 +52,22 @@ export class ProductsController {
     // The data client arrives through the module that owns it, the same as every other feature.
     @Inject(DATA_CLIENT) private readonly db: PrismaClient,
   ) {}
+
+  /**
+   * The catalogue's product names, for a picker in the panel.
+   *
+   * A picker needs an id and a label and nothing else, and it needs them from a read rather than from
+   * the panel's own copy of the product table. Capped, because a picker lists what a person can scan:
+   * an unbounded list is not a control, and the cost of building one is a client's to choose.
+   */
+  @Get("options")
+  async options(): Promise<{ id: string; name: string }[]> {
+    return this.db.product.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+      take: 500,
+    });
+  }
 
   @Post()
   async create(@Req() req: Request, @Body() body: SaveProductDto): Promise<ProductSaved> {
