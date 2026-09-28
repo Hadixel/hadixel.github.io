@@ -17,6 +17,7 @@ import { AuditQueryDto } from "../src/audit/dto/audit.dto.js";
 import { plainToInstance } from "class-transformer";
 import { validateSync } from "class-validator";
 import { db } from "../src/prisma/index.js";
+import type { PrismaClient } from "../src/prisma/index.js";
 import { resetDatabase } from "./harness.js";
 
 function service(): AuditService {
@@ -175,7 +176,7 @@ describe("paging the trail", () => {
         }
         return Reflect.get(target, prop, receiver);
       },
-    }) as unknown as AuditService;
+    }) as unknown as PrismaClient;
 
     await new AuditService(spy).list({ limit: 10, offset: 0 });
 

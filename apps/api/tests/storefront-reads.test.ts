@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ValidationPipe, type ArgumentMetadata } from "@nestjs/common";
 import { VALIDATION_PIPE_OPTIONS } from "../src/common/validation.js";
 import { db } from "../src/prisma/index.js";
-import type { Prisma, PrismaClient } from "../src/generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../src/prisma/index.js";
 import { StorefrontController } from "../src/storefront/storefront.controller.js";
 import { StorefrontService } from "../src/storefront/storefront.service.js";
 import { PostListQueryDto, PostSlugParamDto } from "../src/storefront/dto/storefront.dto.js";
