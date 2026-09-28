@@ -353,24 +353,6 @@ export const postalCodeSchema = z
   .refine((value) => normalizePostalCode(value) !== null, "کد پستی باید ۱۰ رقم باشد")
   .transform((value) => normalizePostalCode(value) as string);
 
-/**
- * A discount code, in the one spelling the column stores.
- *
- * Normalising at the write path is the point, and it is why this is a schema rather than a helper the
- * reader calls. The checkout reader compares with `trim().toLowerCase()` on both sides, which means a
- * code stored as " Summer " matched the code "SUMMER" — and also means the column held a value that no
- * longer equalled itself, so a uniqueness check on the raw column accepted "SUMMER" and "summer" as two
- * different codes, and the second one silently shadowed the first. Normalising here means the stored
- * value is the matched value, and the unique index does the work the reader was standing in for.
- */
-export const discountCodeSchema = z
-  .string()
-  .transform((value) => value.trim().toLowerCase())
-  // Checked after the transform, so the length bound applies to the stored value rather than to
-  // whatever whitespace a paste arrived with.
-  .refine((value) => value.length > 0, "کد تخفیف الزامی است")
-  .refine((value) => value.length <= 64, "کد تخفیف بیش از حد طولانی است");
-
 export const addressSchema = z.object({
   recipientName: z.string().min(1, "نام گیرنده الزامی است"),
   recipientPhone: iranPhoneSchema,
@@ -395,62 +377,6 @@ export const seoSchema = z.object({
   canonical: z.string().optional(),
   noindex: z.boolean().default(false),
   robots: z.string().default("index, follow"),
-});
-
-// ------------------------------------------------------------
-// Discounts (018)
-// ------------------------------------------------------------
-
-export const discountSchema = z.object({
-  type: z.enum(["PERCENT", "FIXED", "FREE_DELIVERY"]),
-  scope: z.enum(["ALL", "PRODUCTS", "CATEGORIES", "COLLECTIONS"]),
-  mode: z.enum(["COUPON", "AUTOMATIC"]),
-  // Trimmed and lowercased here rather than at the checkout reader. The reader used to do
-  // `code?.trim().toLowerCase() === wanted`, which made a match work for " Summer " while the column
-  // still held the spaces — so the unique index on `code` accepted "SUMMER" and "summer" as two
-  // distinct codes and the second shadowed the first at the till. Normalising at the write path makes
-  // the stored value the matched value.
-  code: z.preprocess(
-    (value) => value === "" || value === null ? undefined : value,
-    discountCodeSchema
-      // The character class and its bounds are the shop's rule for what a code may look like, and they
-      // are checked after normalisation so "SUMMER " is judged as "summer".
-      .refine((value) => /^[a-z0-9_-]{3,32}$/.test(value), "کد تخفیف ۳ تا ۳۲ حرف/رقم")
-      .optional(),
-  ),
-  value: z.number().finite().nonnegative(),
-  maxAmount: z.number().finite().nonnegative().optional(),
-  productIds: z.array(z.string()).default([]),
-  categoryIds: z.array(z.string()).default([]),
-  collectionIds: z.array(z.string()).default([]),
-  startsAt: z.string().datetime(),
-  endsAt: z.string().datetime().optional(),
-  minOrderSubtotal: z.number().finite().nonnegative().optional(),
-  maxUsesTotal: z.number().int().positive().optional(),
-  maxUsesPerCustomer: z.number().int().positive().optional(),
-  status: z.enum(["ACTIVE", "DISABLED"]).default("ACTIVE"),
-}).superRefine((data, ctx) => {
-  if (data.type === "PERCENT" && (data.value <= 0 || data.value > 100)) {
-    ctx.addIssue({ code: "custom", path: ["value"], message: "درصد تخفیف باید بین ۱ تا ۱۰۰ باشد" });
-  }
-  if (data.type === "FIXED" && data.value <= 0) {
-    ctx.addIssue({ code: "custom", path: ["value"], message: "مبلغ تخفیف باید بزرگ‌تر از صفر باشد" });
-  }
-  if (data.type === "FREE_DELIVERY" && data.value !== 0) {
-    ctx.addIssue({ code: "custom", path: ["value"], message: "ارسال رایگان مقدار نامعتبر دارد" });
-  }
-  if (data.scope === "PRODUCTS" && data.productIds.length === 0) {
-    ctx.addIssue({ code: "custom", path: ["productIds"], message: "حداقل یک محصول انتخاب کنید" });
-  }
-  if (data.scope === "CATEGORIES" && data.categoryIds.length === 0) {
-    ctx.addIssue({ code: "custom", path: ["categoryIds"], message: "حداقل یک دسته انتخاب کنید" });
-  }
-  if (data.scope === "COLLECTIONS" && data.collectionIds.length === 0) {
-    ctx.addIssue({ code: "custom", path: ["collectionIds"], message: "حداقل یک مجموعه انتخاب کنید" });
-  }
-  if (data.endsAt && Date.parse(data.endsAt) <= Date.parse(data.startsAt)) {
-    ctx.addIssue({ code: "custom", path: ["endsAt"], message: "زمان پایان باید بعد از زمان شروع باشد" });
-  }
 });
 
 // ------------------------------------------------------------

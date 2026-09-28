@@ -18,10 +18,12 @@
 
 import { describe, expect, it } from "vitest";
 import { ValidationPipe, type ArgumentMetadata } from "@nestjs/common";
+import { plainToInstance } from "class-transformer";
 import type { ValidationError } from "class-validator";
 import { VALIDATION_PIPE_OPTIONS, validationExceptionFactory } from "../src/common/validation.js";
 import { SaveCategoryDto, UpdateCategoryDto } from "../src/categories/dto/category.dto.js";
 import { SaveCollectionDto, UpdateCollectionDto } from "../src/collections/dto/collection.dto.js";
+import { SaveDiscountDto, UpdateDiscountDto } from "../src/discounts/dto/discount.dto.js";
 
 /**
  * The gateway's actual validation pipe, built from the options `main.ts` uses.
@@ -207,6 +209,121 @@ describe("a collection body", () => {
       items: [{ productId: "p1", sortOrder: -1 }],
     });
     expect(badPosition).toEqual(expect.arrayContaining([expect.stringMatching(/ترتیب محصول/)]));
+  });
+});
+
+describe("a discount body", () => {
+  const base = {
+    type: "PERCENT",
+    scope: "ALL",
+    mode: "AUTOMATIC",
+    value: 10,
+    startsAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("accepts the smallest thing that is a discount", async () => {
+    expect(await refusalOf(SaveDiscountDto, base)).toBeNull();
+  });
+
+  it("insists on a start, because a discount with no window can never be open", async () => {
+    const { startsAt: _startsAt, ...withoutStart } = base;
+    expect((await refusalOf(SaveDiscountDto, withoutStart))?.message).toMatch(/startsAt/);
+  });
+
+  it("wants an instant, not a wall-clock string", async () => {
+    // The browser's `datetime-local` field has no zone, and reading it as UTC would move a discount's
+    // start by up to a day depending on where the operator is. Interpreting one is the panel's job,
+    // because it is the side that knows the operator's timezone; what arrives here is an instant.
+    expect(
+      (await refusalOf(SaveDiscountDto, { ...base, startsAt: "2026-01-01T00:00" }))?.message,
+    ).toMatch(/زمان شروع/);
+  });
+
+  it("canonicalises the code before judging it, so padding cannot smuggle in a 33rd character", async () => {
+    // Order is the whole rule. Judged *before* the transform, `"  " + 32 letters + "  "` would pass a
+    // length check and then be stored with its spaces — and the till matches the raw column.
+    const atLimit = `  ${"a".repeat(32)}  `;
+    expect(await refusalOf(SaveDiscountDto, { ...base, mode: "COUPON", code: atLimit })).toBeNull();
+
+    const overLimit = `  ${"a".repeat(33)}  `;
+    expect(
+      (await refusalOf(SaveDiscountDto, { ...base, mode: "COUPON", code: overLimit }))?.message,
+    ).toMatch(/کد تخفیف/);
+  });
+
+  it("refuses a code that is only whitespace", async () => {
+    // `@IsNotEmpty` accepts three spaces, so this needs `/\S/` of its own.
+    expect(
+      (await refusalOf(SaveDiscountDto, { ...base, mode: "COUPON", code: "   " }))?.message,
+    ).toMatch(/کد تخفیف/);
+  });
+
+  it("refuses the characters the shop has always refused in a code", async () => {
+    for (const bad of ["ab", "has space", "has!bang", "کد-فارسی"]) {
+      expect(
+        (await refusalOf(SaveDiscountDto, { ...base, mode: "COUPON", code: bad }))?.message,
+        bad,
+      ).toMatch(/کد تخفیف/);
+    }
+  });
+
+  it("bounds the value, because it is a Float a later calculation multiplies against", async () => {
+    expect((await refusalOf(SaveDiscountDto, { ...base, value: -1 }))?.message).toMatch(/مقدار/);
+    expect((await refusalOf(SaveDiscountDto, { ...base, value: 1e12 }))?.message).toMatch(/مقدار/);
+    expect((await refusalOf(SaveDiscountDto, { ...base, value: Number.NaN }))?.message).toMatch(/مقدار/);
+  });
+
+  it("insists on a whole number of at least one for a usage cap", async () => {
+    // The two go into `Int?` columns, and a float there is a driver error the operator cannot act on.
+    for (const cap of [0, -1, 1.5]) {
+      expect(
+        (await refusalOf(SaveDiscountDto, { ...base, maxUsesTotal: cap }))?.message,
+        `cap ${cap}`,
+      ).toMatch(/سقف استفاده کل/);
+    }
+  });
+
+  it("refuses the same target twice, naming the list it was in", async () => {
+    // The panel checked this itself, against its own copy of the rule, and reported it generically.
+    expect(
+      (await refusalOf(SaveDiscountDto, { ...base, productIds: ["p1", "p1"] }))?.message,
+    ).toMatch(/تکرار/);
+  });
+
+  it("checks inside the list, not just that it is a list", async () => {
+    // Without `each: true` the pipe sees a list of anything and validates nothing in it, so a
+    // non-string id would reach the `String[]` column and be stored.
+    const messages = await messagesFor(SaveDiscountDto, { ...base, categoryIds: [1, 2] });
+    expect(messages).toEqual(
+      expect.arrayContaining([expect.stringMatching(/شناسه دسته/)]),
+    );
+  });
+
+  it("caps the targets a discount may name", async () => {
+    const ids = (n: number) => Array.from({ length: n }, (_, i) => `p${i}`);
+    expect(await refusalOf(SaveDiscountDto, { ...base, productIds: ids(200) })).toBeNull();
+    expect(
+      (await refusalOf(SaveDiscountDto, { ...base, productIds: ids(201) }))?.message,
+    ).toMatch(/محصول/);
+  });
+
+  it("refuses an undeclared enum member rather than storing it", async () => {
+    expect((await refusalOf(SaveDiscountDto, { ...base, type: "BUY_ONE" }))?.message).toMatch(/نوع/);
+    expect((await refusalOf(SaveDiscountDto, { ...base, scope: "EVERYTHING" }))?.message).toMatch(/دامنه/);
+  });
+
+  it("leaves every field optional on an update, so a form cannot blank one by omitting it", async () => {
+    expect(await refusalOf(UpdateDiscountDto, {})).toBeNull();
+    expect(await refusalOf(UpdateDiscountDto, { value: 25 })).toBeNull();
+  });
+
+  it("canonicalises the code on an update too, or a rename would be the one path that skips it", () => {
+    // A rule that exists on one path and not the other is a rule that gets forgotten on the second.
+    // Asserted on the *transformed instance* rather than through the pipe, because what is being
+    // claimed is what the value became — a class-transformer question, not a validation one, and the
+    // pipe reports only whether the result was acceptable.
+    const instance: unknown = plainToInstance(UpdateDiscountDto, { code: "  SUMMER  " });
+    expect(instance).toMatchObject({ code: "summer" });
   });
 });
 

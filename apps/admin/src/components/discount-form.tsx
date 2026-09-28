@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveDiscount } from "@/lib/actions/settings";
-import type { ActionState } from "@/lib/actions/auth";
+import { saveDiscount } from "@/lib/actions/discount-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select } from "@/components/ui";
 import { fromDateTimeLocal } from "@/lib/date";
 
@@ -28,7 +28,7 @@ export interface DiscountSeed {
 
 export function DiscountForm({ seed }: { seed: DiscountSeed }) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveDiscount, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveDiscount, idle);
   useEffect(() => {
     if (state.ok) router.refresh();
   }, [state, router]);
@@ -142,8 +142,10 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
         </CardBody>
       </Card>
 
-      {state.error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-      {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+      {/* Narrowed on `ok`, which is the point of the union: the old `ActionState` had four optional
+          fields, so a success with no message and a failure with no error both type-checked. */}
+      {!state.ok && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && state.message !== "" && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره تخفیف"}</Button>
       </div>

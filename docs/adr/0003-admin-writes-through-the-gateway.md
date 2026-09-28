@@ -67,12 +67,24 @@ Persian name, which is every name in this shop.
 - **Closed:** the audit guarantee, the shared origin check, inventory adjustment on the gateway's own
   stock lifecycle, the result shape in mechanism, the one canonicalisation, and the discount code at
   the write path.
-- **To do:** the remaining features' writes (products and variants, categories, collections, discounts,
-  settings, pages, blog posts, nav, media, customers), each needing a gateway route and leaving one file
-  per feature behind it. Then the eight doubled delete paths collapsed to one implementation each —
-  four entities have both a bare `deleteX(formData)` and a `deleteXAction(_prev, formData)` that exists
-  only to satisfy `useActionState`. Then every panel page reading through the gateway, type-only imports
-  included. Then the panel's own five `sameOrigin` copies collapsed to the one the gate counts.
+- **To do:** the remaining features' writes (products and variants, settings, pages, blog posts, nav,
+  media, customers), each needing a gateway route and leaving one file per feature behind it. Then the
+  four doubled delete paths collapsed to one implementation each — page, post, discount and media are
+  the last four, and each has both a bare `deleteX(formData)` and a `deleteXAction(_prev, formData)`
+  that exists only to satisfy `useActionState`; discounts are the first of the four now collapsed.
+  Then every panel page reading through the gateway, type-only imports included. Then the panel's own
+  five `sameOrigin` copies collapsed to the one the gate counts.
+- **The gateway's validation pipe was discarding every Persian DTO message, and now does not.** The
+  pipe raised Nest's own `BadRequestException`; the error filter trusts a message only from a
+  `GatewayException`, so every `message:` on every DTO was decorative and each of the possible
+  mistakes arrived as one generic sentence. `common/validation.ts` fixes it by giving the pipe an
+  `exceptionFactory` that raises the gateway's own bad request. This is a gateway-wide fact rather than
+  a fact about any one feature, and it is worth knowing before writing a DTO: a `message:` is
+  decorative again the moment that factory is removed.
+- **Shape and meaning are split, and which is which is not arbitrary.** A DTO holds what a field *is*
+  — its type, its bounds, whether it is a list — and the service holds what a discount *means*, because
+  each of those rules reads a second field ("a percentage may not be 101" is meaningless without
+  `type`). A rule that needs its neighbours cannot be a decorator.
 - **The panel is now dependent on the gateway being up.** That is the point of the change, and it is
   why a misconfigured address is reported as itself rather than as an action failure: no retry fixes a
   build that never had the variable, and the message names it.
@@ -92,3 +104,13 @@ Persian name, which is every name in this shop.
   wrong range. Write `\u200B` escapes. This is how the ZWNJ handling was wrong twice before it was right.
 - A `vi.spyOn` on a Prisma client's model getter leaks into later tests in the same file. A scoped
   `Proxy` over the client, handed to the one constructor that takes it, does not.
+- `@IsISO8601({ strict: true })` **accepts** a bare wall-clock string. Measured, not remembered:
+  `"2026-01-01T00:00"`, `"2026-01-01"` and `"2026-01-01T09:30:00"` all pass it. `strict` checks the
+  format, not the presence of a zone, so a date that means something different to every reader is
+  exactly the input it lets through. Pair it with a `/(?:Z|[+-]\d{2}:?\d{2})$/` check, and let the
+  client — which knows the operator's timezone — do the converting.
+- The generated Prisma enums are string-literal *unions*, not the runtime objects `@IsEnum` needs. A
+  DTO therefore declares its own enum object, and the service that judges a row must compare against
+  the *generated* union, or a value read off a row needs a conversion it should not need.
+- A test that forbids a word fails on the comment explaining the change. Match on the `import` or the
+  `export`, never on the bare word, or the test forbids explaining itself.

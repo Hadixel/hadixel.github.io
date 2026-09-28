@@ -13,6 +13,7 @@
     "src/auth",
     "src/categories",
     "src/collections",
+    "src/discounts",
     "src/inventory",
     "src/orders",
     "src/checkout",

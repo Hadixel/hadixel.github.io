@@ -247,6 +247,13 @@ export async function makePage(slug: string, blocks: unknown) {
 export async function makeDiscount(opts: {
   productIds: string[];
   type?: "PERCENT" | "FIXED";
+  /**
+   * Defaults to `PRODUCTS`, which is what the content read's fixtures want. A test about the *write*
+   * rules should say `ALL` explicitly when it means a discount with no targets, because
+   * `scope: PRODUCTS` with an empty list is a discount the gateway refuses — a state the fixture
+   * will happily create and a write test will then trip over for the wrong reason.
+   */
+  scope?: "ALL" | "PRODUCTS" | "CATEGORIES" | "COLLECTIONS";
   value: number;
   maxAmount?: number | null;
   mode?: "AUTOMATIC" | "COUPON";
@@ -258,7 +265,7 @@ export async function makeDiscount(opts: {
   return db().discount.create({
     data: {
       code: opts.mode === "COUPON" ? `DISC-${n}` : null,
-      scope: "PRODUCTS",
+      scope: opts.scope ?? "PRODUCTS",
       type: opts.type ?? "PERCENT",
       value: opts.value,
       maxAmount: opts.maxAmount ?? null,

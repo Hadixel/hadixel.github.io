@@ -7,6 +7,7 @@ import { ConfigModule } from "./config/config.module.js";
 import { ContentModule } from "./content/content.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { InventoryModule } from "./inventory/inventory.module.js";
+import { DiscountsModule } from "./discounts/discounts.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
 
@@ -29,10 +30,12 @@ import { DataModule } from "./prisma/prisma.module.js";
     HealthModule,
     AuthModule,
     ContentModule,
-    // Categories and collections are the panel's catalogue tree, and sit below Auth because every
-    // route they own is an operator's.
+    // Categories, collections and discounts are the panel's catalogue tree, and sit below Auth
+    // because every route they own is an operator's. A discount names products, categories and
+    // collections, so it belongs beside the two features it points at rather than after them.
     CategoriesModule,
     CollectionsModule,
+    DiscountsModule,
     OrdersModule,
     // Inventory sits below Orders because orders compose its lifecycle, and above nothing because
     // nothing composes an adjustment.
