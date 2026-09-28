@@ -1,8 +1,28 @@
+// Running a scrape, and watching one run.
+//
+// The scrape is this process's work: the pipeline, its cache and its output files all live here, and
+// the image bytes it downloads are served back out of this route. None of that is database work, so
+// none of it belongs behind the gateway, which is the one process that talks to Postgres and has no
+// business fetching a manufacturer's catalogue.
+//
+// What moved is the audit trail. This route used to open the panel's own data tier and write
+// `SCRAPER_STARTED` and `SCRAPER_CANCEL_REQUESTED` itself, each in a `try/catch` that logged the
+// failure and carried on — so a scrape nobody could account for was reported as a scrape somebody
+// had started. The lines are the gateway's now, written through the one `writeAudit` every sensitive
+// mutation uses, and a failure to write one is reported rather than swallowed.
+//
+// The origin check below is the one in `@/lib/origin`. This file, and the other two scraper routes,
+// each defined a byte-identical copy of it; a check written out three times is a check maintained
+// three times, and the copies can only agree by accident. The check itself is unchanged and still
+// runs on both mutating verbs: an operator's cookie is `SameSite=lax`, and lax still sends it on a
+// top-level cross-site POST, which is the shape a cross-site form submission has.
+
 import { NextResponse } from "next/server";
 import type { ScrapeFilters } from "@kmodern/scraper";
-import { db } from "@kmodern/db";
 import { requireAdminApi } from "@/lib/auth";
 import { scraperJobs } from "@/lib/scraper-jobs";
+import { sameOrigin } from "@/lib/origin";
+import { fromGateway } from "@/lib/gateway";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,25 +47,7 @@ async function authorize() {
   return { ctx: auth.ctx } as const;
 }
 
-function sameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "")
-    .split(",")[0]
-    .trim();
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
 
-function requestMeta(request: Request) {
-  return {
-    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || undefined,
-    userAgent: request.headers.get("user-agent") ?? undefined,
-  };
-}
 
 export async function GET(request: Request) {
   const auth = await authorize();
@@ -201,23 +203,24 @@ export async function POST(request: Request) {
     return errorResponse("start_failed", 500);
   }
 
-  try {
-    const meta = requestMeta(request);
-    await db().adminAuditLog.create({
-      data: {
-        adminUserId: auth.ctx.admin.id,
+
+  const recorded = await fromGateway<{ recorded: true }>(
+    (client) =>
+      client.post("/scraper/actions", {
         action: "SCRAPER_STARTED",
-        entityType: "SCRAPER",
         entityId: snapshot.id,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
-        meta: { source, limit: limit ?? null, cache, downloadImages, priceLookup, filters: filters as never },
-      },
-    });
-  } catch (error) {
-    // The scrape has already started; an audit outage must not orphan the job.
-    console.error("scraper audit write failed", error);
-  }
+        meta: { source, limit: limit ?? null, cache, downloadImages, priceLookup, filters },
+      }),
+    "شروع اسکرپ ثبت شد.",
+  );
+  // Reported, not swallowed, and the job is deliberately not cancelled to compensate.
+  //
+  // The old code logged the failure and returned 202, so a scrape with nobody recorded as having
+  // started it looked exactly like a recorded one — and the comment above it called that the right
+  // trade, on the grounds that the job would be orphaned. Cancelling a scrape the operator asked for
+  // in order to tidy its paperwork destroys the work to protect the record of it, and the record is
+  // the smaller loss. The job runs; the operator is told the trail is incomplete.
+  if (!recorded.ok) return errorResponse(recorded.error, 500);
 
   return NextResponse.json(snapshot, {
     status: 202,
@@ -232,21 +235,19 @@ export async function DELETE(request: Request) {
 
   const snapshot = scraperJobs.cancel();
   if (snapshot.status === "cancelling") {
-    try {
-      const meta = requestMeta(request);
-      await db().adminAuditLog.create({
-        data: {
-          adminUserId: auth.ctx.admin.id,
+    // The same rule as the start: written by the gateway through the one audit helper, and a failure
+    // to write it reported rather than logged and forgotten. A cancellation cannot be taken back
+    // either — the job has already been told to stop — so this is a record of an action rather than
+    // a line to join to a transaction.
+    const recorded = await fromGateway<{ recorded: true }>(
+      (client) =>
+        client.post("/scraper/actions", {
           action: "SCRAPER_CANCEL_REQUESTED",
-          entityType: "SCRAPER",
           entityId: snapshot.id,
-          ip: meta.ip,
-          userAgent: meta.userAgent,
-        },
-      });
-    } catch (error) {
-      console.error("scraper cancel audit write failed", error);
-    }
+        }),
+      "درخواست لغو اسکرپ ثبت شد.",
+    );
+    if (!recorded.ok) return errorResponse(recorded.error, 500);
   }
   return NextResponse.json(snapshot, {
     headers: { "Cache-Control": "no-store" },

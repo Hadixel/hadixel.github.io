@@ -1,48 +1,56 @@
 import Link from "next/link";
-import { db } from "@kmodern/db";
-import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema/setting-keys";
+import { readThrough } from "@/lib/reads";
 import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardBody, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
 
+/**
+ * The landing page's figures, as one read.
+ *
+ * These were eight queries written in this file — four counts, a low-stock list with a total beside it,
+ * and five recent orders. Writing them here meant the page *was* the query, so a change to what
+ * "awaiting payment" meant could not reach this page without rewriting this page, and there was nowhere
+ * else for a rule about the low-stock line to live but next to the comparison it governed.
+ *
+ * The threshold that arrives with the summary is the shop's configured one. It used to be a `3` typed
+ * into this file, which meant the panel's own settings form could change the setting and this page
+ * would keep counting against three.
+ */
+interface DashboardSummary {
+  threshold: number;
+  thresholdIsStored: boolean;
+  todayOrders: number;
+  awaitingOrders: number;
+  lowStockTotal: number;
+  lowStockVariants: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    colorName: string | null;
+    sku: string;
+    stock: number;
+    reserved: number;
+  }>;
+  drafts: { products: number; pages: number; posts: number; total: number };
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    total: number;
+    fulfillmentStatus: string;
+    placedAt: string;
+    customerName: string | null;
+    customerPhone: string;
+  }>;
+}
+
 export default async function DashboardPage() {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const [todayOrders, awaitingOrders, lowStockVariants, drafts, recentOrders] = await Promise.all([
-    db().order.count({ where: { placedAt: { gte: startOfToday } } }),
-    db().order.count({ where: { paymentStatus: "AWAITING" } }),
-    (async () => {
-      const threshold = await getSettingOrDefault<number>(settingKeys.inventoryLowStockThreshold, 3);
-      const [variants, total] = await Promise.all([
-        db().variant.findMany({
-          where: { stock: { lte: threshold } },
-          include: { product: { select: { name: true, slug: true } } },
-          orderBy: { stock: "asc" },
-          take: 10,
-        }),
-        db().variant.count({ where: { stock: { lte: threshold } } }),
-      ]);
-      return { variants, total };
-    })(),
-    (async () => {
-      const [products, pages, posts] = await Promise.all([
-        db().product.count({ where: { status: "DRAFT" } }),
-        db().page.count({ where: { status: "DRAFT" } }),
-        db().post.count({ where: { status: "DRAFT" } }),
-      ]);
-      return { products, pages, posts, total: products + pages + posts };
-    })(),
-    db().order.findMany({
-      orderBy: { placedAt: "desc" },
-      take: 5,
-      include: { customer: { select: { name: true, phone: true } } },
-    }),
-  ]);
-
-const lowStock = lowStockVariants.variants;
+  const s = await readThrough<DashboardSummary>("/dashboard");
+  const lowStock = s.lowStockVariants;
+  const drafts = s.drafts;
+  const recentOrders = s.recentOrders;
+  const awaitingOrders = s.awaitingOrders;
+  const todayOrders = s.todayOrders;
 
   return (
     <div className="space-y-6">
@@ -50,7 +58,7 @@ const lowStock = lowStockVariants.variants;
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 <StatCard title="سفارش‌های امروز" value={todayOrders} href="/orders" />
         <StatCard title="در انتظار پرداخت" value={awaitingOrders} href="/orders?status=AWAITING" />
-        <StatCard title="کم‌موجودی" value={lowStockVariants.total} href="/inventory" />
+        <StatCard title="کم‌موجودی" value={s.lowStockTotal} href="/inventory" />
         <StatCard title="پیش‌نویس‌ها" value={drafts.total} href="/products?status=DRAFT" />
       </div>
 
@@ -94,10 +102,10 @@ const lowStock = lowStockVariants.variants;
                   {recentOrders.map((o) => (
                     <TR key={o.id}>
                       <TD><Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link></TD>
-                      <TD>{o.customer.name || o.customer.phone}</TD>
+                      <TD>{o.customerName || o.customerPhone}</TD>
                       <TD>{formatToman(o.total)}</TD>
                       <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                      <TD className="text-xs text-ash">{formatJalaliDateTime(o.placedAt)}</TD>
+                      <TD className="text-xs text-ash">{formatJalaliDateTime(new Date(o.placedAt))}</TD>
                     </TR>
                   ))}
                 </TBody>
@@ -127,7 +135,7 @@ const lowStock = lowStockVariants.variants;
               <TBody>
                 {lowStock.map((v) => (
                   <TR key={v.id}>
-                    <TD><Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.product.name}</Link></TD>
+                    <TD><Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.productName}</Link></TD>
                     <TD>{v.colorName || "—"}</TD>
                     <TD className="text-xs"><span dir="ltr">{v.sku}</span></TD>
                     <TD><Badge color={v.stock <= 0 ? "red" : "amber"}>{faDigits(v.stock)}</Badge></TD>

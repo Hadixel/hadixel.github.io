@@ -14,8 +14,10 @@
 
 import { Inject, Injectable } from "@nestjs/common";
 import { formatToman, tomanToRial, fulfillmentLabel, paymentLabel } from "@kmodern/schema";
-import { PaymentStatus } from "../generated/prisma/enums.js";
-import { commitStock, releaseStock, restock } from "../inventory/inventory.service.js";
+import { PaymentStatus, type PaymentMethod, type ShippingMethod, type DeliveryFeeMode } from "../generated/prisma/enums.js";
+import { commitStock, releaseStock, reserveStock, restock } from "../inventory/inventory.service.js";
+import { nextOrderNumber } from "../checkout/order-number.js";
+import { OrderRuleViolation } from "./exceptions/order.exception.js";
 import { writeAudit } from "../common/audit.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { createPrismaClient } from "../prisma/client.js";
@@ -25,9 +27,45 @@ import {
   stockEffectFor,
   type TransitionDimension,
 } from "./order-transitions.js";
-import type { OrderDetail, OrderSummary } from "./dto/order.dto.js";
+
+import type {
+  OrderAdminDetail,
+  OrderAdminSummary,
+  OrderDetail,
+  OrderShippingAddress,
+  OrderSummary,
+} from "./dto/order.dto.js";
 
 type Db = ReturnType<typeof createPrismaClient>;
+
+/** One line of an operator-placed order. */
+export interface ManualOrderLine {
+  variantId: string;
+  qty: number;
+}
+
+export interface ManualOrderInput {
+  customerId: string;
+  address: unknown;
+  paymentMethod: PaymentMethod;
+  shippingMethod: ShippingMethod;
+  deliveryFeeMode: DeliveryFeeMode;
+  deliveryFee: number;
+  adminNote: string | null;
+  lines: ManualOrderLine[];
+  /** Who is doing it, written onto the status events so the trail names a person and not a session. */
+  actor: string;
+  /**
+   * The hold's lifetime, resolved by the caller.
+   *
+   * Named rather than left to `reserveStock` because the window is a shop setting and the panel reads
+   * it; letting the inventory module read it too would be two readers of one setting, which is the
+   * shape of problem `GET /settings/values` exists to end.
+   */
+  reserveWindow?: { expiresAt?: Date };
+  meta?: { adminUserId?: string | null; ip?: string | null; userAgent?: string | null };
+}
+
 
 /** The order row fields both read models are built from. Named so a projection change is one edit. */
 type OrderBase = {
@@ -57,6 +95,24 @@ type OrderEventRow = {
   actor: string;
   note: string | null;
   at: Date;
+};
+
+/** The fields the operator's detail adds to the row: who ordered it, how, and what it added up to. */
+type OrderAdminRow = OrderBase & {
+  customerId: string;
+  customer: { id: string; name: string | null; phone: string; email: string | null };
+  paymentMethod: string;
+  shippingMethod: string;
+  deliveryFeeMode: string;
+  subtotal: number;
+  discountAmount: number;
+  deliveryFee: number;
+  gatewayRefId: string | null;
+  shippingTracking: string | null;
+  adminNote: string | null;
+  items: OrderItemRow[];
+  events: OrderEventRow[];
+  reservations: { id: string; qty: number; status: string; expiresAt: Date }[];
 };
 
 /** How a settlement ended. Each is a decision the caller has to act on differently. */
@@ -263,14 +319,27 @@ export class OrdersService {
     return this.toDetail(order);
   }
 
-  /** One order for the panel, which is allowed to see any of them. */
-  async readOrderForAdmin(orderId: string): Promise<OrderDetail | null> {
+  /**
+   * One order for the panel, which is allowed to see any of them.
+   *
+   * Everything one order page prints, in one query: the customer beside the order, the stock holds
+   * behind it, and the events in the order the history reads best. The panel used to assemble this
+   * itself — one `findUnique` with four `include`s and a cast on the address — and the address cast
+   * is the part worth naming: it asserted a `Json` snapshot was a `Record<string, string>` and then
+   * read five keys off it, which is a claim about the column that no client can check.
+   */
+  async readOrderForAdmin(orderId: string): Promise<OrderAdminDetail | null> {
     const order = await this.db.order.findUnique({
       where: { id: orderId },
-      include: { items: true, events: { orderBy: { at: "asc" } } },
+      include: {
+        items: true,
+        events: { orderBy: { at: "asc" } },
+        reservations: { orderBy: { expiresAt: "asc" } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+      },
     });
     if (!order) return null;
-    return this.toDetail(order);
+    return this.toAdminDetail(order);
   }
 
   /**
@@ -296,22 +365,31 @@ export class OrdersService {
     return { orders: rows.map((row) => this.toSummary(row)), total };
   }
 
-  /** The panel's order list, filterable by the two statuses an operator actually filters on. */
+  /**
+   * The panel's order list, filterable by the two statuses an operator actually filters on and by a
+   * term typed into one box.
+   *
+   * Each row carries the customer and the payment method, because those are two of the seven columns
+   * the table prints and a list that omits them is a list the page has to go and fetch the rest of.
+   */
   async listOrdersForAdmin(opts: {
     limit: number;
     offset: number;
     paymentStatus?: string;
     fulfillmentStatus?: string;
     query?: string;
-  }): Promise<{ orders: OrderSummary[]; total: number }> {
+  }): Promise<{ orders: OrderAdminSummary[]; total: number }> {
     const where = {
       ...(opts.paymentStatus ? { paymentStatus: opts.paymentStatus as never } : {}),
       ...(opts.fulfillmentStatus ? { fulfillmentStatus: opts.fulfillmentStatus as never } : {}),
+      // The order number *or* the phone, matched without regard to case — the panel's search box
+      // always did both and always did it case-insensitively, and a search that quietly stopped
+      // matching a customer's number reads as a shop with fewer orders in it.
       ...(opts.query
         ? {
             OR: [
-              { orderNumber: { contains: opts.query } },
-              { customer: { phone: { contains: opts.query } } },
+              { orderNumber: { contains: opts.query, mode: "insensitive" as const } },
+              { customer: { phone: { contains: opts.query, mode: "insensitive" as const } } },
             ],
           }
         : {}),
@@ -322,11 +400,21 @@ export class OrdersService {
         orderBy: { placedAt: "desc" },
         take: opts.limit,
         skip: opts.offset,
-        include: { items: { select: { quantity: true } } },
+        include: {
+          items: { select: { quantity: true } },
+          customer: { select: { id: true, name: true, phone: true } },
+        },
       }),
       this.db.order.count({ where }),
     ]);
-    return { orders: rows.map((row) => this.toSummary(row)), total };
+    return {
+      orders: rows.map((row) => ({
+        ...this.toSummary(row),
+        paymentMethod: row.paymentMethod,
+        customer: row.customer,
+      })),
+      total,
+    };
   }
 
   /**
@@ -344,6 +432,134 @@ export class OrdersService {
     });
     if (!order) return null;
     return { amountRial: tomanToRial(order.total), orderNumber: order.orderNumber };
+  }
+
+  /**
+   * Create an order on an operator's behalf — a telephone order, a shopfront sale.
+   *
+   * This was a transaction written in the panel: it allocated the order number, priced the lines,
+   * reserved the stock, wrote the status events and the audit line, and committed. Every part of that
+   * is a rule the gateway already holds — `nextOrderNumber` is the same counter the checkout allocates
+   * from, and `reserveStock` is the same hold — so leaving the write in the panel meant two paths to an
+   * order were two implementations free to disagree about what an order is.
+   *
+   * The differences from a checkout are deliberate and small. A manual order may be cash on delivery,
+   * in which case it is born paid and its stock is committed rather than held, because the money
+   * genuinely changed hands at the counter. It is not subject to the one-unpaid-order rule, which
+   * exists to stop a shopper's browser retrying checkout — an operator placing a second order for the
+   * same customer is doing the opposite. And a delivery fee is given rather than quoted, because an
+   * operator taking a telephone order is the one quoting it.
+   */
+  async createManualOrder(input: ManualOrderInput): Promise<{ id: string; orderNumber: string }> {
+    const {
+      customerId,
+      address,
+      paymentMethod,
+      shippingMethod,
+      deliveryFeeMode,
+      deliveryFee,
+      adminNote,
+      lines: requested,
+      actor,
+      meta,
+    } = input;
+    const cod = paymentMethod === "COD";
+
+    return this.db.$transaction(async (tx) => {
+      const customer = await tx.customer.findUnique({ where: { id: customerId }, select: { id: true } });
+      if (!customer) throw new OrderRuleViolation("CUSTOMER_NOT_FOUND", "مشتری پیدا نشد");
+
+      const variants = await tx.variant.findMany({
+        where: { id: { in: requested.map((line) => line.variantId) } },
+        include: { product: { select: { id: true, name: true } } },
+      });
+      const byId = new Map(variants.map((v) => [v.id, v]));
+      if (byId.size !== new Set(requested.map((line) => line.variantId)).size) {
+        throw new OrderRuleViolation("VARIANT_NOT_FOUND", "یکی از تنوع‌ها پیدا نشد");
+      }
+
+      const lines = requested.map((line) => {
+        const variant = byId.get(line.variantId)!;
+        if (!Number.isFinite(variant.price) || variant.price < 0) {
+          throw new OrderRuleViolation("INVALID_PRICE", "قیمت تنوع نامعتبر است");
+        }
+        return { ...line, variant };
+      });
+
+      const orderNumber = await nextOrderNumber(tx);
+      const subtotal = lines.reduce((sum, line) => sum + line.variant.price * line.qty, 0);
+      const fee = Number.isFinite(deliveryFee) && deliveryFee > 0 ? deliveryFee : 0;
+
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          customerId,
+          shippingAddress: address as never,
+          fulfillmentStatus: "PENDING",
+          // Cash on delivery is paid at the counter, so the order is born settled. Everything else waits
+          // for money the gateway has not seen.
+          paymentStatus: cod ? "PAID" : "AWAITING",
+          paymentMethod,
+          shippingMethod,
+          deliveryFeeMode,
+          subtotal,
+          discountAmount: 0,
+          deliveryFee: fee,
+          total: subtotal + fee,
+          currency: "TOMAN",
+          adminNote,
+          placedAt: new Date(),
+          items: {
+            create: lines.map(({ variant, qty }) => ({
+              productId: variant.productId,
+              variantId: variant.id,
+              productName: variant.product.name,
+              colorName: variant.colorName,
+              sku: variant.sku,
+              unitPrice: variant.price,
+              quantity: qty,
+              lineTotal: variant.price * qty,
+              image: variant.images[0] ?? null,
+            })),
+          },
+          events: {
+            create: [
+              { dimension: "FULFILLMENT", from: "", to: "PENDING", actor, note: "سفارش دستی" },
+              ...(cod
+                ? [{ dimension: "PAYMENT" as const, from: "AWAITING", to: "PAID", actor, note: "پرداخت هنگام ثبت (COD)" }]
+                : []),
+            ],
+          },
+        },
+      });
+
+      // The transaction's client, for the reason the checkout gives: a hold taken on another connection
+      // cannot see an order row this transaction has not committed, and its foreign key fails.
+      await reserveStock(
+        order.id,
+        lines.map(({ variant, qty }) => ({
+          variantId: variant.id,
+          qty,
+          allowBackorder: variant.allowBackorder,
+        })),
+        paymentMethod,
+        input.reserveWindow,
+        tx,
+      );
+      if (cod) await commitStock(order.id, tx);
+
+      await writeAudit(tx, {
+        adminUserId: meta?.adminUserId ?? null,
+        action: "ORDER_CREATED_MANUAL",
+        entityType: "ORDER",
+        entityId: order.id,
+        ip: meta?.ip ?? null,
+        userAgent: meta?.userAgent ?? null,
+        meta: { orderNumber, subtotal, total: subtotal + fee, paymentMethod },
+      });
+
+      return { id: order.id, orderNumber };
+    }, { timeout: 15_000 });
   }
 
   private toSummary(row: OrderBase & { items?: { quantity: number }[] }): OrderSummary {
@@ -391,4 +607,66 @@ export class OrdersService {
       shippingAddress: row.shippingAddress,
     };
   }
+
+  /**
+   * The operator's view of one order.
+   *
+   * Built on the shopper's read model rather than beside it, so the items, the events and — the part
+   * that matters — the legal transitions are one implementation. The transitions are resolved here
+   * from the same table `POST /orders/:id/status` enforces, so a status form rendered from this
+   * answer cannot offer a step the server will refuse.
+   *
+   * The money crosses as four numbers that add up, never as a scaled one: the order's total was
+   * frozen in TOMAN when it was placed, and a client multiplying its way to a figure the server never
+   * wrote is how a shop and its own invoice disagree.
+   */
+  private toAdminDetail(row: OrderAdminRow): OrderAdminDetail {
+    return {
+      ...this.toDetail(row),
+      customerId: row.customerId,
+      customer: row.customer,
+      subtotal: row.subtotal,
+      discountAmount: row.discountAmount,
+      deliveryFee: row.deliveryFee,
+      paymentMethod: row.paymentMethod,
+      shippingMethod: row.shippingMethod,
+      deliveryFeeMode: row.deliveryFeeMode,
+      gatewayRefId: row.gatewayRefId,
+      shippingTracking: row.shippingTracking,
+      adminNote: row.adminNote,
+      reservations: row.reservations.map((reservation) => ({
+        id: reservation.id,
+        qty: reservation.qty,
+        status: reservation.status,
+        expiresAt: reservation.expiresAt.toISOString(),
+      })),
+      shippingAddress: toShippingAddress(row.shippingAddress),
+    };
+  }
+}
+
+/**
+ * The address snapshot, as the six things an order page prints.
+ *
+ * A `Json` column is not a record of strings, and the panel asserted it was one. So each key is read
+ * as what it is or as nothing: an order placed before an address gained a field renders that line
+ * absent rather than as the word "undefined" in the middle of a delivery address.
+ */
+function toShippingAddress(snapshot: unknown): OrderShippingAddress {
+  const record = (typeof snapshot === "object" && snapshot !== null ? snapshot : {}) as Record<
+    string,
+    unknown
+  >;
+  const text = (key: string): string | null => {
+    const value = record[key];
+    return typeof value === "string" && value.trim() !== "" ? value : null;
+  };
+  return {
+    province: text("province"),
+    city: text("city"),
+    addressLine: text("addressLine"),
+    recipientName: text("recipientName"),
+    recipientPhone: text("recipientPhone"),
+    postalCode: text("postalCode"),
+  };
 }

@@ -7,7 +7,7 @@
 // collection could be deleted, and the menu would then be saved pointing at nothing — which the
 // storefront renders as a link that goes nowhere, with no error anywhere.
 
-import { Body, Controller, Inject, Patch, Req } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Patch, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -17,9 +17,34 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import type { MenuItemValue } from "@kmodern/schema";
 import { SaveNavDto } from "./dto/nav.dto.js";
 import { MenuNotFoundException, NavTargetMissingException } from "./exceptions/nav.exception.js";
-import { collectTargets, parseMenu } from "./nav.service.js";
+import { collectTargets, nestMenu, parseMenu, type MenuRow, type NavItemView } from "./nav.service.js";
 
 type Tx = Prisma.TransactionClient;
+
+/** One menu, as the editor renders it. */
+export interface NavMenuRead {
+  location: string;
+  name: string;
+  items: NavItemView[];
+}
+
+/** The pickers the editor offers, so the page never has to label an id it was handed. */
+export interface NavPageOption {
+  id: string;
+  slug: string;
+  title: string;
+}
+
+export interface NavCategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface NavCollectionOption {
+  id: string;
+  name: string;
+}
 
 @Controller("nav")
 export class NavController {
@@ -28,6 +53,54 @@ export class NavController {
     // The data client arrives through the module that owns it, the same as every other feature.
     @Inject(DATA_CLIENT) private readonly db: PrismaClient,
   ) {}
+
+  /**
+   * The three menus, each one a tree, with the pickers the editor offers beside them.
+   *
+   * One read rather than the page's six, and the page's six were not six facts: the panel fetched
+   * each location's rows, then fetched pages, root categories and collections to label the ids its own
+   * tree held. The tree it built from those rows — group by parent, sort by `sortOrder`, recurse, and
+   * decide what a stored `target` means — is here now, and so is the link vocabulary it decided it
+   * with, which was a hand-written list of type names beside the table.
+   *
+   * A location with no menu is *absent* from the answer rather than answered with an empty tree. The
+   * panel filtered those out and said "منویی یافت نشد" when none were left, and an empty tree would
+   * have rendered as a menu with nothing in it.
+   */
+  @Get()
+  async read(@Req() req: Request): Promise<{ menus: NavMenuRead[]; pages: NavPageOption[]; categories: NavCategoryOption[]; collections: NavCollectionOption[] }> {
+    await requireAdmin(this.auth, req);
+
+    const [menus, pages, categories, collections] = await Promise.all([
+      this.db.menu.findMany({
+        // The editor's own order, so a menu comes back the way it was left.
+        orderBy: { location: "asc" },
+        include: { items: { orderBy: { sortOrder: "asc" }, include: { promos: true } } },
+      }),
+      // A picker, so it lists what a person can scan — and the cap is this route's, not a caller's.
+      this.db.page.findMany({ orderBy: { title: "asc" }, select: { id: true, slug: true, title: true }, take: 200 }),
+      // Roots only: a menu links to a top-level category, and offering the whole tree would let an
+      // operator point a dropdown at a category the storefront renders inside another one.
+      this.db.category.findMany({
+        where: { parentId: null },
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, name: true, slug: true },
+        take: 200,
+      }),
+      this.db.collection.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true }, take: 200 }),
+    ]);
+
+    return {
+      menus: menus.map((menu) => ({
+        location: menu.location,
+        name: menu.name,
+        items: nestMenu(menu.items as unknown as MenuRow[]),
+      })),
+      pages,
+      categories,
+      collections,
+    };
+  }
 
   /**
    * Replace one location's tree.

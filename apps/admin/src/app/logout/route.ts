@@ -1,20 +1,8 @@
 import { NextResponse } from "next/server";
 import { logout } from "@/lib/auth";
+import { sameOrigin } from "@/lib/origin";
 
 export const runtime = "nodejs";
-
-function sameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "")
-    .split(",")[0]
-    .trim();
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
 
 /** POST /logout — revoke session + clear cookie */
 export async function POST(req: Request) {

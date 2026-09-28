@@ -1,33 +1,82 @@
+// The pages list, read through the gateway.
+//
+// This page used to import the data tier and hold its own query: a `where` assembled beside a table,
+// an unbounded `findMany`, and — for the "بلوک" column — a read of every page's entire `draftBlocks`
+// array so the JSX could call `.length` on it. A page of two hundred blocks meant a table cell that
+// received two hundred blocks' worth of JSON to render the number ۲۰۰. The read now answers the count,
+// named for the column that shows it (`GET /pages`).
+//
+// The split into system and custom rows is the page's still, because that is a rendering decision —
+// which group an operator reads first — and the read orders by kind so the two groups arrive whole.
+
 import Link from "next/link";
-import { db } from "@kmodern/db";
+import { readThrough } from "@/lib/reads";
+import { enumParam, pageParam } from "@/lib/pagination";
 import { faDigits } from "@/lib/date";
-import { Badge, Button, Card, CardHeader, EmptyState, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, EmptyState, Input, Pagination, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
 import { DeletePageButton } from "./delete-page";
-import { enumParam } from "@/lib/pagination";
+
+/**
+ * The rows this table shows.
+ *
+ * Sent as the page size rather than left to the gateway's default, because the table's density is a
+ * rendering decision. The gateway answers with the size it actually served, so the pager counts pages
+ * of that size and not of the number written here.
+ */
+const PAGE_SIZE = 25;
+
+/** One row, as `GET /pages` answers. `blockCount` is the number, not the blocks behind it. */
+interface PageSummary {
+  id: string;
+  title: string;
+  slug: string;
+  kind: string;
+  status: string;
+  blockCount: number;
+}
+
+/** One page of pages, with the count the pager divides by. */
+interface PageListPage {
+  rows: PageSummary[];
+  total: number;
+  page: number;
+  size: number;
+}
 
 export default async function PagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const status = enumParam(params.status, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
   const q = params.q?.trim();
+  const page = pageParam(params.page);
 
-  const where = {
-    ...(status ? { status: status as never } : {}),
-    ...(q ? { title: { contains: q, mode: "insensitive" as const } } : {}),
-  };
-
-  const pages = await db().page.findMany({
-    where,
-    orderBy: [{ kind: "asc" }, { title: "asc" }],
+  // Built as one query string so the same values drive the request and the pager's links: a filter the
+  // request applied and the links dropped is a filter an operator cannot get back to.
+  const query = new URLSearchParams({
+    ...(q ? { q } : {}),
+    ...(status ? { status } : {}),
+    ...(page > 1 ? { page: String(page) } : {}),
+    size: String(PAGE_SIZE),
   });
-  const systemPages = pages.filter((p) => p.kind === "SYSTEM");
-  const customPages = pages.filter((p) => p.kind === "CUSTOM");
+  // The filters on their own — no page — because the form must submit a fresh search onto page one.
+  const baseQs = new URLSearchParams({
+    ...(q ? { q } : {}),
+    ...(status ? { status } : {}),
+  });
 
-  const Row = ({ p, pinned }: { p: (typeof pages)[number]; pinned?: boolean }) => (
+  const pages = await readThrough<PageListPage>(`/pages?${query.toString()}`);
+  // The size the server actually read, not the one that was asked for: the gateway clamps it, and a
+  // pager dividing by a size it did not get is a pager whose page count disagrees with its rows.
+  const totalPages = Math.ceil(pages.total / pages.size);
+
+  const systemPages = pages.rows.filter((p) => p.kind === "SYSTEM");
+  const customPages = pages.rows.filter((p) => p.kind === "CUSTOM");
+
+  const Row = ({ p, pinned }: { p: PageSummary; pinned?: boolean }) => (
     <TR key={p.id}>
       <TD>
         <Link href={`/pages/${p.id}`} className="font-medium text-ink hover:text-flame-700">{p.title}</Link>
@@ -35,7 +84,7 @@ export default async function PagesPage({
       </TD>
       <TD>{pinned ? <Badge color="violet">سیستمی</Badge> : <Badge>سفارشی</Badge>}</TD>
       <TD><StatusBadge status={p.status} /></TD>
-      <TD>{faDigits(((p.draftBlocks ?? []) as unknown[]).length)} بلوک</TD>
+      <TD>{faDigits(p.blockCount)} بلوک</TD>
       <TD>{p.kind === "CUSTOM" && p.status === "DRAFT" && <DeletePageButton id={p.id} />}</TD>
     </TR>
   );
@@ -45,7 +94,7 @@ export default async function PagesPage({
       <Card>
         <CardHeader
           title="صفحات"
-          subtitle="صفحات سیستمی همیشه بالا و غیرقابل حذف"
+          subtitle={pages.total ? `${faDigits(pages.total)} صفحه` : "صفحات سیستمی همیشه بالا و غیرقابل حذف"}
           actions={
             <Button asChild>
               <Link href="/pages/new">صفحه جدید</Link>
@@ -70,7 +119,7 @@ export default async function PagesPage({
           </form>
         </div>
 
-        {pages.length === 0 ? (
+        {pages.rows.length === 0 ? (
           <EmptyState text="صفحه‌ای یافت نشد" />
         ) : (
           <Table>
@@ -90,6 +139,7 @@ export default async function PagesPage({
           </Table>
         )}
       </Card>
+      <Pagination page={page} totalPages={totalPages} basePath={`/pages${baseQs.size > 0 ? `?${baseQs.toString()}` : ""}`} />
     </div>
   );
 }

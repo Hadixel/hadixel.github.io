@@ -13,7 +13,7 @@
 // `useActionState` and returned whatever the first one did — two places for one rule to live, and one
 // of them to be forgotten.
 
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { componentSchemas } from "@kmodern/schema";
 import { PageStatus } from "../generated/prisma/enums";
@@ -23,16 +23,43 @@ import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
-import { SavePageDto } from "./dto/page.dto.js";
+import { PageListQueryDto, SavePageDto } from "./dto/page.dto.js";
 import { PageNotFoundException, PageSlugTakenException } from "./exceptions/page.exception.js";
 import {
   assertPageIsDeletable,
   assertSlugIsMovable,
+  matchesSearch,
   parsePageSeo,
   validateBlocks,
 } from "./pages.service.js";
 
 type Tx = Prisma.TransactionClient;
+
+/**
+ * One page as the table renders it.
+ *
+ * `blockCount` and not the block list, because the column is a count. The panel read every page's
+ * whole `draftBlocks` array to call `.length` on it.
+ */
+export interface PageSummary {
+  id: string;
+  title: string;
+  slug: string;
+  kind: string;
+  status: string;
+  blockCount: number;
+}
+
+/** One page in full, as the builder seeds itself from it. Blocks are the *draft* list. */
+export interface PageDetail {
+  id: string;
+  title: string;
+  slug: string;
+  kind: string;
+  status: string;
+  blocks: { id: string; type: string; props: Record<string, unknown> }[];
+  seo: Record<string, unknown>;
+}
 
 @Controller("pages")
 export class PagesController {
@@ -197,6 +224,104 @@ export class PagesController {
   @Get("block-types")
   blockTypes(): string[] {
     return Object.keys(componentSchemas);
+  }
+
+  /**
+   * The page list: the pages, filtered and paged, with the count the panel's pager divides by.
+   *
+   * One read rather than the page's own `findMany` plus `count`, because the two were two statements
+   * about the same predicate and a page saved between them produced a pager whose page count
+   * disagreed with the rows on it.
+   *
+   * `blockCount` rather than the block list, because the column says how many blocks a page has and
+   * not what they are. The panel read every page's whole `draftBlocks` array to call `.length` on it,
+   * which for a page of two hundred blocks is a payload no table ever looked at.
+   */
+  @Get()
+  async list(
+    @Req() req: Request,
+    @Query() query: PageListQueryDto,
+  ): Promise<{ rows: PageSummary[]; total: number; page: number; size: number }> {
+    await requireAdmin(this.auth, req);
+
+    const q = query.q?.trim();
+    const where: Prisma.PageWhereInput = {
+      ...(query.status ? { status: query.status as PageStatus } : {}),
+      ...(q ? matchesSearch(q) : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.db.page.findMany({
+        where,
+        // System pages first, then by title: the panel's own order, and the one its two lists were
+        // drawn from. `kind` ascending puts `CUSTOM` before `SYSTEM`, so the order is named rather
+        // than inherited — the panel asked the database to sort a string and drew the result as
+        // "system pages on top", which is the opposite of what the sort gave it.
+        orderBy: [{ kind: "desc" }, { title: "asc" }],
+        skip: (query.page - 1) * query.size,
+        take: query.size,
+        select: { id: true, title: true, slug: true, kind: true, status: true, draftBlocks: true },
+      }),
+      this.db.page.count({ where }),
+    ]);
+
+    return {
+      rows: rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        slug: row.slug,
+        kind: row.kind,
+        status: row.status,
+        blockCount: Array.isArray(row.draftBlocks) ? row.draftBlocks.length : 0,
+      })),
+      total,
+      page: query.page,
+      size: query.size,
+    };
+  }
+
+  /**
+   * One page in full, for the builder to seed itself from.
+   *
+   * The *draft* blocks and not the published ones, because the builder edits the draft: seeding it
+   * from `publishedBlocks` opened a published page in an empty builder, and the first save published
+   * the empty list over the page the shop was serving.
+   *
+   * A 404 rather than a null, for the reason the post read is: an empty builder rendered against an
+   * id that names nothing is a builder that saves a blank page over whatever the id actually was.
+   */
+  @Get(":id")
+  async one(@Req() req: Request, @Param("id") id: string): Promise<PageDetail> {
+    await requireAdmin(this.auth, req);
+
+    const page = await this.db.page.findUnique({ where: { id } });
+    if (!page) throw new PageNotFoundException();
+
+    const blocks = (Array.isArray(page.draftBlocks) ? page.draftBlocks : []) as Array<{
+      id?: unknown;
+      type?: unknown;
+      props?: unknown;
+    }>;
+
+    return {
+      id: page.id,
+      title: page.title,
+      slug: page.slug,
+      kind: page.kind,
+      status: page.status,
+      // The stored blocks, projected to the three fields the builder holds and defaulting each. The
+      // vocabulary is not re-run on the way out: a read that refused a stored block would make a page
+      // unopenable, and the builder is where an operator fixes one.
+      blocks: blocks.map((block) => ({
+        id: typeof block.id === "string" ? block.id : "",
+        type: typeof block.type === "string" ? block.type : "",
+        props:
+          block.props && typeof block.props === "object" && !Array.isArray(block.props)
+            ? (block.props as Record<string, unknown>)
+            : {},
+      })),
+      seo: (page.seo ?? {}) as Record<string, unknown>,
+    };
   }
 }
 

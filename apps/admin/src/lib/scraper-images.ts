@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
-import { fetchBuffer } from "@kmodern/scraper";
+import { fetchAsset, imageExtensionForContentType } from "@kmodern/scraper";
 import type { Storage } from "@kmodern/adapters";
 import { mediaStorage } from "@/lib/media";
 import type { ScraperCatalogItem } from "@/lib/scraper-types";
@@ -99,13 +99,13 @@ function variantKey(slug: string, color: string): string {
 
 async function materializeEntry(
   entry: ImageEntry,
-  destination: string,
-  publicPath: string,
   slug: string,
   color: ColorToken,
   storage: Storage | null,
+  pathFor: (extension: string) => { destination: string; publicPath: string },
 ): Promise<string> {
   let body: Buffer | undefined;
+  let contentType: string | null = null;
   if (entry.local && !isHttpUrl(entry.local)) {
     try {
       const localPath = resolve(entry.local);
@@ -121,16 +121,22 @@ async function materializeEntry(
   if (!body) {
     const remote = entry.remote ?? entry.local;
     if (!remote || !isHttpUrl(remote)) throw new Error("No readable image source");
-    body = Buffer.from(await fetchBuffer(remote, {
+    const asset = await fetchAsset(remote, {
       retries: 2,
       timeoutMs: 20_000,
       minIntervalMs: 100,
       maxBytes: 10 * 1024 * 1024,
       allowedContentTypes: ["image/"],
-    }));
+    });
+    body = Buffer.from(asset.bytes);
+    contentType = asset.contentType;
   }
 
-  const extension = imageExtension(entry.local ?? entry.remote ?? "image.jpg");
+  // Manufacturers such as datees.ir omit `Content-Type` entirely, so the detected
+  // media type decides the extension rather than the URL's own suffix.
+  const extension = imageExtensionForContentType(contentType)
+    ?? imageExtension(entry.local ?? entry.remote ?? "image.jpg");
+  const { destination, publicPath } = pathFor(extension);
   if (storage) {
     const digest = createHash("sha256").update(body).digest("hex");
     const key = `scraper/products/${slug}/${color}/${digest}${extension}`;
@@ -169,19 +175,14 @@ export async function prepareScrapedImages(items: ScraperCatalogItem[]): Promise
       const urls: string[] = [];
       for (let index = 0; index < selected.length; index++) {
         const entry = selected[index];
-        const source = entry.local ?? entry.remote ?? "image.jpg";
-        const extension = imageExtension(source);
-        const relative = `products/${item.slug}/variant-${color}/img-${index + 1}${extension}`;
-        const destination = join(publicDir, item.slug, `variant-${color}`, `img-${index + 1}${extension}`);
         try {
-          const publicUrl = await materializeEntry(
-            entry,
-            destination,
-            `/${relative}`,
-            item.slug,
-            color,
-            storage,
-          );
+          const publicUrl = await materializeEntry(entry, item.slug, color, storage, (extension) => {
+            const name = `img-${index + 1}${extension}`;
+            return {
+              destination: join(publicDir, item.slug, `variant-${color}`, name),
+              publicPath: `/products/${item.slug}/variant-${color}/${name}`,
+            };
+          });
           ready += 1;
           urls.push(publicUrl);
         } catch {

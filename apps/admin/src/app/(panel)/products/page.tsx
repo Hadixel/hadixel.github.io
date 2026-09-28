@@ -1,11 +1,50 @@
+// The product table, read through the gateway.
+//
+// This page used to import the data tier and run three queries of its own: a page of products, a
+// total for the pager, and the category list the filter's dropdown is built from. All three are
+// gateway reads now — which is what criterion 10 asks for, and what makes the page a *client* of the
+// shop's catalogue rather than a second holder of it.
+//
+// The filter is a query string now rather than a Prisma `where`. Which columns a search box covers is
+// the gateway's to decide, and the four it has always covered — name, model, brand, slug, each
+// matched without regard to case — are the four it still covers.
+//
+// Two reads, because the page needs both before it can render and neither depends on the other: the
+// page of products, and the categories the dropdown offers. Nothing here fetches a row to label
+// another, and a read that cannot be made fails the page rather than rendering an empty catalogue.
+
 import Link from "next/link";
-import { db } from "@kmodern/db";
+import { readThrough } from "@/lib/reads";
 import { faDigits } from "@/lib/date";
 import { Button, Card, CardHeader, EmptyState, Input, Pagination, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
 import { enumParam, pageParam } from "@/lib/pagination";
 
+/** The page size the table renders. Named here and sent as a bounded value; the gateway clamps it. */
 const PAGE_SIZE = 25;
+
+/** One page of the product table, as the gateway's `GET /products` answers. */
+interface ProductPage {
+  products: {
+    id: string;
+    name: string;
+    slug: string;
+    model: string;
+    status: string;
+    category: { id: string; name: string };
+    variantCount: number;
+    updatedAt: string;
+  }[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+/** The category names the filter offers, as the gateway's `GET /categories/options` answers. */
+interface CategoryOption {
+  id: string;
+  name: string;
+}
 
 export default async function ProductsPage({
   searchParams,
@@ -18,43 +57,35 @@ export default async function ProductsPage({
   const status = enumParam(params.status, ["DRAFT", "PUBLISHED", "ARCHIVED"]);
   const category = params.category && params.category !== "ALL" && /^[a-z0-9_-]{1,64}$/i.test(params.category) ? params.category : undefined;
 
-  const where = {
-    ...(status ? { status: status as never } : {}),
+  // The gateway's own query keys, which are not this page's. The filter select posts `category` and
+  // this page reads `category`; the gateway calls the same filter `categoryId`, because over there it
+  // is one.
+  const query = new URLSearchParams({
+    ...(q ? { q } : {}),
+    ...(status ? { status } : {}),
     ...(category ? { categoryId: category } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { model: { contains: q, mode: "insensitive" as const } },
-            { brand: { contains: q, mode: "insensitive" as const } },
-            { slug: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  };
+    ...(page > 1 ? { page: String(page) } : {}),
+    size: String(PAGE_SIZE),
+  });
 
-  const [products, total, categories] = await Promise.all([
-    db().product.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      include: {
-        category: { select: { name: true } },
-        _count: { select: { variants: true } },
-      },
-    }),
-    db().product.count({ where }),
-    db().category.findMany({ orderBy: { sortOrder: "asc" } }),
-  ]);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const hasFilters = Boolean(q || status || category);
-
+  // The pager's links come back through this page, so they carry this page's parameter names and no
+  // page number. Written with the gateway's names instead, the second page of a filtered table would
+  // quietly drop the filter — the one bug a filter that works on page one and vanishes on page two
+  // survives a manual check of.
   const baseQs = new URLSearchParams({
     ...(q ? { q } : {}),
     ...(status ? { status } : {}),
-    ...(category ? { category } : {}),
+    ...(category ? { category: category } : {}),
   });
+
+  const [{ products, total, size }, categories] = await Promise.all([
+    readThrough<ProductPage>(`/products?${query.toString()}`),
+    readThrough<CategoryOption[]>("/categories/options"),
+  ]);
+  // The size the server actually read, not the one that was asked for: the gateway clamps it, and a
+  // pager dividing by a size it did not get is a pager whose page count disagrees with its rows.
+  const totalPages = Math.ceil(total / size);
+  const hasFilters = Boolean(q || status || category);
 
   return (
     <div className="space-y-4">
@@ -85,7 +116,7 @@ export default async function ProductsPage({
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">دسته‌بندی</label>
-              <Select aria-label="فیلتر دسته‌بندی" name="category" defaultValue={category ?? "ALL"}>
+              <Select aria-label="فیلتر دسته‌بندی محصول" name="category" defaultValue={category ?? "ALL"}>
                 <option value="ALL">همه</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -122,9 +153,10 @@ export default async function ProductsPage({
                   </TD>
                   <TD>{p.category.name}</TD>
                   <TD className="text-xs">{p.model}</TD>
-                  <TD>{faDigits(p._count.variants)}</TD>
+                  <TD>{faDigits(p.variantCount)}</TD>
                   <TD><StatusBadge status={p.status} /></TD>
-                  <TD className="text-xs text-ash">{faDigits(p.updatedAt.toLocaleDateString("fa-IR"))}</TD>
+                  {/* The date crossed as a string; the renderer's own parser takes a Date. */}
+                  <TD className="text-xs text-ash">{faDigits(new Date(p.updatedAt).toLocaleDateString("fa-IR"))}</TD>
                 </TR>
               ))}
             </TBody>

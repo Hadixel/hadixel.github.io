@@ -1,26 +1,58 @@
+// One customer, read through the gateway.
+//
+// The page used to run three queries of its own: the customer with their addresses and their newest
+// orders, and an aggregate over every order they had placed. The aggregate was the reason this is
+// one read rather than two: a customer with sixty orders was shown the newest fifty and, in the
+// header, the sum of all sixty — a page computing one number from a query and another from a slice
+// of it, which is how "مجموع خرید" and the order table came to disagree.
+//
+// An id that names nobody is now the gateway's 404, and it reaches the error boundary rather than
+// rendering this page with an empty customer. The old `notFound()` drew the same screen as a
+// customer with no orders and no addresses, on the screen where an operator decides whether to chase
+// an order — two very different facts, one picture.
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { db } from "@kmodern/db";
+import { readThrough } from "@/lib/reads";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardBody, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { StatusBadge } from "@/components/status";
 import { formatToman } from "@kmodern/schema/format";
 
+/** One customer, as `GET /customers/:id` answers. Dates are ISO; money and counts are numbers. */
+interface CustomerDetail {
+  id: string;
+  name: string | null;
+  phone: string;
+  email: string | null;
+  smsMarketingConsent: boolean;
+  joinedAt: string;
+  /** Over *every* order the customer has placed, not over the slice listed below. */
+  orderCount: number;
+  totalSpend: number;
+  addresses: {
+    id: string;
+    recipientName: string;
+    recipientPhone: string;
+    province: string;
+    city: string;
+    addressLine: string;
+    postalCode: string;
+    isDefault: boolean;
+  }[];
+  /** The newest slice; the count above is the whole number. */
+  recentOrders: {
+    id: string;
+    orderNumber: string;
+    placedAt: string;
+    fulfillmentStatus: string;
+    paymentStatus: string;
+    total: number;
+  }[];
+}
+
 export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [customer, totals] = await Promise.all([
-    db().customer.findUnique({
-      where: { id },
-      include: {
-        addresses: { orderBy: { isDefault: "desc" } },
-        orders: { orderBy: { createdAt: "desc" }, take: 50 },
-      },
-    }),
-    db().order.aggregate({ where: { customerId: id }, _count: { _all: true }, _sum: { total: true } }),
-  ]);
-  if (!customer) notFound();
-  const totalCount = totals._count._all;
-  const totalSpend = totals._sum.total ?? 0;
+  const customer = await readThrough<CustomerDetail>(`/customers/${encodeURIComponent(id)}`);
 
   return (
     <div className="space-y-4">
@@ -36,9 +68,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-ash">تلفن</dt><dd dir="ltr">{customer.phone}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">ایمیل</dt><dd>{customer.email || faDigits("—")}</dd></div>
-              <div className="flex justify-between"><dt className="text-ash">عضویت</dt><dd>{formatJalaliDateTime(customer.createdAt)}</dd></div>
+              <div className="flex justify-between"><dt className="text-ash">عضویت</dt><dd>{formatJalaliDateTime(new Date(customer.joinedAt))}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">بازاریابی پیامکی</dt><dd>{customer.smsMarketingConsent ? "فعال" : "غیرفعال"}</dd></div>
-              <div className="flex justify-between"><dt className="text-ash">مجموع خرید</dt><dd className="font-semibold">{formatToman(totalSpend)}</dd></div>
+              <div className="flex justify-between"><dt className="text-ash">مجموع خرید</dt><dd className="font-semibold">{formatToman(customer.totalSpend)}</dd></div>
             </dl>
           </CardBody>
         </Card>
@@ -68,8 +100,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       </div>
 
       <Card>
-        <CardHeader title="سفارش‌ها" subtitle={`${faDigits(totalCount)} سفارش${customer.orders.length < totalCount ? ` (نمایش ${faDigits(customer.orders.length)} سفارش آخر)` : ""}`} />
-        {customer.orders.length === 0 ? (
+        <CardHeader
+          title="سفارش‌ها"
+          subtitle={`${faDigits(customer.orderCount)} سفارش${customer.recentOrders.length < customer.orderCount ? ` (نمایش ${faDigits(customer.recentOrders.length)} سفارش آخر)` : ""}`}
+        />
+        {customer.recentOrders.length === 0 ? (
           <EmptyState text="سفارشی ثبت نشده است" />
         ) : (
           <Table>
@@ -84,10 +119,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             </TR>
           </THead>
           <TBody>
-            {customer.orders.map((o) => (
+            {customer.recentOrders.map((o) => (
               <TR key={o.id}>
                 <TD dir="ltr" className="font-medium">{o.orderNumber}</TD>
-                <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(o.createdAt)}</TD>
+                <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(o.placedAt))}</TD>
                 <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
                 <TD><StatusBadge status={o.paymentStatus} /></TD>
                 <TD className="font-medium">{formatToman(o.total)}</TD>

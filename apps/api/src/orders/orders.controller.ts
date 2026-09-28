@@ -20,7 +20,14 @@ import {
   SettlePaymentBodyDto,
   StatusChangeDto,
 } from "./dto/order-query.dto.js";
-import type { OrderDetail, OrderSummary, SettlementResponse } from "./dto/order.dto.js";
+import { ManualOrderDto } from "./dto/manual-order.dto.js";
+import type {
+  OrderAdminDetail,
+  OrderAdminListResponse,
+  OrderDetail,
+  OrderSummary,
+  SettlementResponse,
+} from "./dto/order.dto.js";
 import {
   OrderChangedException,
   OrderNotFoundException,
@@ -127,8 +134,18 @@ export class OrdersController {
     };
   }
 
+  /**
+   * Every order, for an operator.
+   *
+   * Filterable by the two statuses an operator actually filters on and by one term matched against an
+   * order number or a customer's phone. The rows carry the customer and the payment method because
+   * those are two of the seven columns the table prints.
+   */
   @Get()
-  async list(@Req() req: Request, @Query() query: OrderAdminQueryDto): Promise<OrderListResponse> {
+  async list(
+    @Req() req: Request,
+    @Query() query: OrderAdminQueryDto,
+  ): Promise<OrderAdminListResponse> {
     await requireAdmin(this.auth, req);
     return this.orders.listOrdersForAdmin({
       limit: query.limit,
@@ -139,8 +156,76 @@ export class OrdersController {
     });
   }
 
+  /**
+   * Place an order on an operator's behalf.
+   *
+   * `POST /orders/manual` and not a query on the collection, because a manual order is a creation with
+   * its own vocabulary — a named customer, a quoted delivery fee, a note — and a path that says so is
+   * the one a reader of the route map can recognise.
+   *
+   * The reserve window is read here rather than passed in by the panel. It is a shop setting, the
+   * panel was reading it to compute an expiry date and sending the date across, and that made the
+   * inventory module's window a value the caller chose: anything that could reach this route could
+   * name its own hold expiry. Reading the setting on this side means the hold lasts as long as the
+   * shop says it does, whatever the caller asks for.
+   */
+  @Post("manual")
+  async manual(
+    @Req() req: Request,
+    @Body() body: ManualOrderDto,
+  ): Promise<{ id: string; orderNumber: string }> {
+    const admin = await requireAdmin(this.auth, req);
+    const paymentMethod = body.paymentMethod;
+    const [onlineReserveMinutes, c2cReserveHours] = await Promise.all([
+      this.numericSetting("checkout.onlineReserveMinutes", 30),
+      this.numericSetting("checkout.c2cReserveHours", 48),
+    ]);
+    const expiresAt = new Date(
+      Date.now() +
+        (paymentMethod === "ONLINE" ? onlineReserveMinutes * 60_000 : c2cReserveHours * 3_600_000),
+    );
+
+    return this.orders.createManualOrder({
+      customerId: body.customerId,
+      address: body.address,
+      paymentMethod,
+      shippingMethod: body.shippingMethod,
+      deliveryFeeMode: body.deliveryFeeMode,
+      deliveryFee: body.deliveryFee,
+      adminNote: body.adminNote ?? null,
+      lines: body.lines,
+      actor: admin.email,
+      reserveWindow: { expiresAt },
+      meta: { adminUserId: admin.id, ...metaFrom(req.headers) },
+    });
+  }
+
+  /**
+   * A setting as a number, or the fallback.
+   *
+   * A `Json` column holding `"30"` and one holding `30` are the same setting to a person and not the
+   * same value to `Number.isFinite`, so a hand-edited row is read rather than ignored — the alternative
+   * is an operator who set thirty and got the fallback, with nothing saying so.
+   */
+  private async numericSetting(key: string, fallback: number): Promise<number> {
+    const row = await this.db.setting.findFirst({ where: { key } });
+    const value = row?.value;
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+    return fallback;
+  }
+
+  /**
+   * One order, for an operator.
+   *
+   * The same read `GET /orders/mine/:id` serves, with the customer, the address, the parts the total
+   * is made of and the stock holds behind it added — and with the legal transitions included, resolved
+   * from the table `POST /orders/:id/status` enforces. A status form rendered from this answer cannot
+   * offer a step the server would refuse, which is the whole reason the page reads it rather than
+   * carrying a table of its own.
+   */
   @Get(":id")
-  async one(@Req() req: Request, @Param("id") id: string): Promise<OrderDetail> {
+  async one(@Req() req: Request, @Param("id") id: string): Promise<OrderAdminDetail> {
     await requireAdmin(this.auth, req);
     const detail = await this.orders.readOrderForAdmin(id);
     if (!detail) throw new OrderNotFoundException();
@@ -223,4 +308,14 @@ export class OrdersController {
     }
     return result;
   }
+}
+
+/** The caller's address as the proxy reported it, for the session and audit rows. */
+function metaFrom(headers: Record<string, string | string[] | undefined>): {
+  ip: string | null;
+  userAgent: string | null;
+} {
+  const first = (value: string | string[] | undefined): string | null =>
+    (Array.isArray(value) ? value[0] : value) ?? null;
+  return { ip: first(headers["x-forwarded-for"]), userAgent: first(headers["user-agent"]) };
 }

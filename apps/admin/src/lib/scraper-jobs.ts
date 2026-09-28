@@ -17,7 +17,6 @@ import {
 import type {
   ScraperCatalogItem,
   ScraperJobOptions,
-  ScraperJobPhase,
   ScraperJobSnapshot,
   ScraperJobStatus,
   ScrapeFilters,

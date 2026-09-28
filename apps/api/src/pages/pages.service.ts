@@ -21,6 +21,7 @@
 import { blockSchema, componentSchemas, type ComponentType } from "@kmodern/schema";
 import { MAX_SAFE_HTML_LENGTH, sanitizeAdminHtml } from "@kmodern/schema/sanitize";
 import { seoSchema } from "@kmodern/schema";
+import type { Prisma } from "../generated/prisma/client.js";
 import { PageRuleException } from "./exceptions/page.exception.js";
 
 /**
@@ -142,4 +143,27 @@ export function assertBlockPayloadSize(serialized: string): void {
   if (serialized.length > MAX_BLOCK_BYTES) {
     throw new PageRuleException("حجم بلوک‌های صفحه بیش از حد مجاز است");
   }
+}
+
+// ---- The panel's list ----
+//
+// The panel's page table was a query in a page: a `where` assembled beside a table, an unbounded
+// `findMany`, and a split into system and custom rows the page did itself. None of that could be
+// given a different meaning without editing the page, and none of it was bounded. The predicate is
+// here; the two numbers that hold a list to a page are the DTO's, beside the `@Max` that refuses the
+// larger of them.
+
+/**
+ * The title search, as the panel's own search box meant it.
+ *
+ * The title only, and case-insensitively — the panel searched `title` with `contains` and
+ * `mode: "insensitive"`, carried over whole rather than tidied. The slug is not searched, because
+ * the panel did not search it and an operator looking for an address types it into the slug box
+ * expecting the row, and widening this is a change of meaning dressed as a convenience.
+ *
+ * Exported so a test can state what the predicate matches rather than inferring it from whichever row
+ * happened to be found.
+ */
+export function matchesSearch(q: string): Prisma.PageWhereInput {
+  return { title: { contains: q, mode: "insensitive" } };
 }

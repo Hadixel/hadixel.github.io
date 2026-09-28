@@ -198,6 +198,12 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
         signal: options?.signal ?? AbortSignal.timeout(options?.timeoutMs ?? defaultTimeout),
       });
     } catch (cause) {
+      // Next throws a sentinel from inside `fetch` to say "this route cannot be rendered statically,
+      // switch it to dynamic". It is control flow, not a fault: swallowed here it becomes an
+      // "unreachable gateway", and every server component that catches one would report a working
+      // server as down — and a build would fail on a route that is correct at runtime. So it is
+      // recognised by its own shape and passed straight back up, where Next is listening for it.
+      if (isDynamicSignal(cause)) throw cause;
       const error = new GatewayError(
         `درگاه در دسترس نیست: ${cause instanceof Error ? cause.message : String(cause)}`,
         0,
@@ -284,4 +290,21 @@ function defaultMessage(status: number): string {
   if (status === 409) return "این کار قبلاً انجام شده یا با وضعیت فعلی سازگار نیست.";
   if (status >= 500) return "درگاه خطای داخلی دارد؛ کمی بعد دوباره تلاش کنید.";
   return `درگاه درخواست را نپذیرفت (کد ${status}).`;
+}
+
+/**
+ * Whether a thrown value is Next's "render this dynamically" sentinel rather than a fault.
+ *
+ * Matched on the message and the `digest` together because neither is a documented contract: Next has
+ * changed the wording across versions, and a check against only one of them is a check that will
+ * quietly stop working. The cost of a false negative is the behaviour this replaced — a build
+ * failing on "gateway unreachable" — and the cost of a false positive is that a real network error
+ * whose message happens to match is reported as dynamic, which Next will then act on by rendering the
+ * route dynamically. Both are recoverable; neither is worth a more elaborate guess.
+ */
+function isDynamicSignal(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const digest = (error as Error & { digest?: unknown }).digest;
+  const tagged = typeof digest === "string" && /NEXT_DYNAMIC|Bailout|BAILOUT/i.test(digest);
+  return tagged || /dynamic server usage|couldn't be rendered statically/i.test(error.message);
 }

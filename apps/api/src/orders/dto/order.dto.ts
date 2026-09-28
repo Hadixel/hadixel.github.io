@@ -47,6 +47,81 @@ export interface OrderDetail extends OrderSummary {
   shippingAddress: unknown;
 }
 
+// ---- the operator's views ----
+//
+// A shopper's order and an operator's order are the same order and not the same read. The operator
+// decides what happens to this one next, so their list carries the customer, the method and the
+// money, and their detail carries the address, the money's parts and the stock holds behind it.
+// Widening `OrderSummary` itself would hand all of that to every shopper's `/orders/mine`, so the
+// operator's rows extend it instead and the storefront's response is unchanged.
+
+/** One row of the operator's order table. */
+export interface OrderAdminSummary extends OrderSummary {
+  paymentMethod: string;
+  /**
+   * The customer, nested.
+   *
+   * Nested because the table's cell reads a name and falls back to a phone off the same object, and
+   * a read that answered a different shape is a translation the panel has to write.
+   */
+  customer: { id: string; name: string | null; phone: string };
+}
+
+export interface OrderAdminListResponse {
+  orders: OrderAdminSummary[];
+  total: number;
+}
+
+/** One stock hold behind an order. */
+export interface OrderReservation {
+  id: string;
+  qty: number;
+  status: string;
+  expiresAt: string;
+}
+
+/**
+ * The address as it was when the order was placed.
+ *
+ * Typed rather than `unknown`, and narrowed here rather than cast in the client. It is a `Json`
+ * snapshot, so it can genuinely be anything — the page used to assert it was a `Record<string,
+ * string>` and read five keys off it, which is a rule about a column the client cannot check. Each
+ * field is a string or nothing, and a snapshot missing one renders as a missing line.
+ */
+export interface OrderShippingAddress {
+  province: string | null;
+  city: string | null;
+  addressLine: string | null;
+  recipientName: string | null;
+  recipientPhone: string | null;
+  postalCode: string | null;
+}
+
+/**
+ * One order for an operator, in full.
+ *
+ * `transitions` is inherited rather than re-fetched: it is the gateway's own table resolved for this
+ * order's state, and the status form is rendered from it so the form cannot offer a transition the
+ * server would refuse. Everything the amounts are made of — the subtotal, the discount, the delivery
+ * fee — crosses alongside the total, because the page prints how a total was reached and a total on
+ * its own is a number an operator has to take on trust.
+ */
+export interface OrderAdminDetail extends OrderDetail {
+  customerId: string;
+  customer: { id: string; name: string | null; phone: string; email: string | null };
+  subtotal: number;
+  discountAmount: number;
+  deliveryFee: number;
+  paymentMethod: string;
+  shippingMethod: string;
+  deliveryFeeMode: string;
+  gatewayRefId: string | null;
+  shippingTracking: string | null;
+  adminNote: string | null;
+  reservations: OrderReservation[];
+  shippingAddress: OrderShippingAddress;
+}
+
 /**
  * What a settlement did, for the caller to act on.
  *

@@ -91,6 +91,35 @@ export class SettingsController {
   }
 
   /**
+   * Every stored setting, by column key, at its stored type.
+   *
+   * The read above answers the *form*: field names, stringified, because a form renders text. This one
+   * answers the *code*, and the two are not the same question. The inventory page asks what the low
+   * stock threshold is as a number and compares a variant's stock against it; the order action asks
+   * for a reserve window in minutes and adds it to a date. Both were reading the row directly and
+   * carrying a cast table to undo the JSON column, and both then hardcoded the fallback — so the panel
+   * was answering "what is the low stock threshold" with a `3` written next to the question, and
+   * changing the setting in the shop's own settings form did not change the number the panel used.
+   *
+   * Keyed by column key because that is how code addresses a setting, and typed because the point of
+   * the read is that the caller does not have to know it came out of a `Json` column. A value that is
+   * neither scalar nor known is left out, exactly as in the form read.
+   */
+  @Get("values")
+  async values(@Req() req: Request): Promise<Record<string, string | number | boolean>> {
+    await requireAdmin(this.auth, req);
+
+    const rows = await this.db.setting.findMany();
+    const out: Record<string, string | number | boolean> = {};
+    for (const row of rows) {
+      const value = row.value;
+      if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") continue;
+      out[row.key] = value;
+    }
+    return out;
+  }
+
+  /**
    * Save a section's fields.
    *
    * `PATCH` rather than `PUT` because the form sends the fields it rendered and leaves the rest of the

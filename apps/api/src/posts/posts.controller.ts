@@ -8,7 +8,7 @@
 // The vocabulary moves too: `postBodySchema` was run by the panel as a fast-fail before its own
 // write, which is a rule a client may skip, and it is now the only check there is.
 
-import { Body, Controller, Delete, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -16,11 +16,44 @@ import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { PostStatus } from "../generated/prisma/enums";
-import { SavePostDto } from "./dto/post.dto.js";
+import { PostListQueryDto, SavePostDto } from "./dto/post.dto.js";
+import { normaliseTags, matchesSearch, parseBody, parsePostSeo, searchTextFor } from "./posts.service.js";
 import { PostNotFoundException, PostSlugTakenException } from "./exceptions/post.exception.js";
-import { normaliseTags, parseBody, parsePostSeo, searchTextFor } from "./posts.service.js";
 
 type Tx = Prisma.TransactionClient;
+
+/**
+ * One post as the blog table renders it.
+ *
+ * `tags` is a list of names and not a list of `{ tag: { name } }`, because the column shows names and
+ * the nesting was the panel's to reach through. `publishAt` is a `Date` here and an ISO string on the
+ * wire; the panel's formatter takes a `Date` and the page converts.
+ */
+export interface PostSummary {
+  id: string;
+  title: string;
+  status: string;
+  featured: boolean;
+  publishAt: Date | null;
+  tags: string[];
+}
+
+/** One post in full, as the editor seeds itself from it. */
+export interface PostDetail {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverImage: string;
+  byline: string;
+  status: string;
+  featured: boolean;
+  commentsEnabled: boolean;
+  publishAt: Date | null;
+  tags: string[];
+  seo: Record<string, unknown>;
+  body: { type: string; content?: unknown[] };
+}
 
 @Controller("posts")
 export class PostsController {
@@ -30,6 +63,97 @@ export class PostsController {
     @Inject(DATA_CLIENT) private readonly db: PrismaClient,
   ) {}
 
+  /**
+   * The blog list: the posts, filtered and paged, with the count the panel's pager divides by.
+   *
+   * One read rather than the page's own `findMany` plus `count`, because the two were two statements
+   * about the same predicate and a post saved between them produced a pager whose page count
+   * disagreed with the rows on it. The count travels with the rows for that reason alone.
+   *
+   * The tag names are flattened here rather than left as `tags[].tag.name` for the JSX to reach into:
+   * a list that answers with the shape the table renders leaves nothing for the page to translate.
+   */
+  @Get()
+  async list(
+    @Req() req: Request,
+    @Query() query: PostListQueryDto,
+  ): Promise<{ rows: PostSummary[]; total: number; page: number; size: number }> {
+    await requireAdmin(this.auth, req);
+
+    const q = query.q?.trim();
+    const where: Prisma.PostWhereInput = {
+      ...(query.status ? { status: query.status as PostStatus } : {}),
+      ...(q ? matchesSearch(q) : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.db.post.findMany({
+        where,
+        // Featured first, then newest: the panel's own order, and the one the table was drawn to.
+        orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+        skip: (query.page - 1) * query.size,
+        take: query.size,
+        include: { tags: { include: { tag: { select: { name: true } } } } },
+      }),
+      this.db.post.count({ where }),
+    ]);
+
+    return {
+      rows: rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        status: row.status,
+        featured: row.featured,
+        publishAt: row.publishAt,
+        tags: row.tags.map((entry) => entry.tag.name),
+      })),
+      total,
+      page: query.page,
+      size: query.size,
+    };
+  }
+
+  /**
+   * One post, whole, for the editor to seed itself from.
+   *
+   * The write answers `{ id, slug }` because a form that saved does not need the row back. The editor
+   * does: it renders the title, the byline, the tags, the SEO block and the body, and it was fetching
+   * each of those from the panel's own copy of the row. One read, and the form cannot be seeded from
+   * a shape the gateway does not serve.
+   *
+   * A 404 rather than a null, for the reason the discount read is: an empty form rendered against an
+   * id that names nothing is a form that saves over whatever the id actually was.
+   */
+  @Get(":id")
+  async one(@Req() req: Request, @Param("id") id: string): Promise<PostDetail> {
+    await requireAdmin(this.auth, req);
+
+    const post = await this.db.post.findUnique({
+      where: { id },
+      include: { tags: { include: { tag: { select: { name: true } } } } },
+    });
+    if (!post) throw new PostNotFoundException();
+
+    return {
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      // Empty rather than null: every one of these is a text input in the editor, and "no byline" is
+      // an empty box rather than an absent field the form has to decide what to do with.
+      excerpt: post.excerpt ?? "",
+      coverImage: post.coverImage ?? "",
+      byline: post.byline ?? "",
+      status: post.status,
+      featured: post.featured,
+      commentsEnabled: post.commentsEnabled,
+      publishAt: post.publishAt,
+      tags: post.tags.map((entry) => entry.tag.name),
+      seo: (post.seo ?? {}) as Record<string, unknown>,
+      // The stored document, defaulted to an empty one. A post with no body is a post the editor can
+      // still open and write into; a read that refused it would leave no way to fix it.
+      body: (post.body ?? { type: "doc", content: [] }) as { type: string; content?: unknown[] },
+    };
+  }
   @Post()
   async create(@Req() req: Request, @Body() body: SavePostDto): Promise<{ id: string; slug: string }> {
     const admin = await requireAdmin(this.auth, req);

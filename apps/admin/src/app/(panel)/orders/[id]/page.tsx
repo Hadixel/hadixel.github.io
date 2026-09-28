@@ -1,37 +1,92 @@
+// One order, for an operator, read through the gateway.
+//
+// This page used to import the data tier and run one `findUnique` with four `include`s over it, then
+// cast the address snapshot to a `Record<string, string>` and read five keys off a `Json` column — a
+// claim about the data that no client can check. It is a gateway read now, and the read answers this
+// page's own shape: the customer beside the order, the address as six named fields, the parts the
+// total is made of, and the stock holds behind it.
+//
+// The status form's options are the part worth stating. This page used to render a `<Select>` from a
+// byte-identical copy of the transition table the server enforces, and the two were free to disagree
+// about which step is legal from here. The gateway resolves the legal transitions from that same
+// table and includes them on this read, so what the form offers is what the server will accept. There
+// is no table on this side, and there is nothing to recompute: an order whose legal list is empty is
+// a terminal one, and the gateway says so rather than this page guessing it.
+//
+// The money is rendered as the server sent it. The total was frozen in TOMAN when the order was
+// placed, and a page that multiplied its way to a figure the server never wrote is how a shop and
+// its own invoice end up disagreeing.
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@kmodern/db";
 import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
+import { readThrough } from "@/lib/reads";
 import { Badge, Card, CardBody, CardHeader, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
-import { STATUS_LABELS, StatusBadge } from "@/components/status";
+import { StatusBadge } from "@/components/status";
 import { OrderStatusTransitions } from "./transitions";
-import { readOrderTransitions } from "@/lib/actions/order-status";
+
+/** One order in full, as the gateway's `GET /orders/:id` answers. */
+interface OrderAdminDetail {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  customer: { id: string; name: string | null; phone: string; email: string | null };
+  fulfillmentStatus: string;
+  fulfillmentLabel: string;
+  paymentStatus: string;
+  paymentLabel: string;
+  subtotal: number;
+  discountAmount: number;
+  deliveryFee: number;
+  total: number;
+  paymentMethod: string;
+  shippingMethod: string;
+  deliveryFeeMode: string;
+  gatewayRefId: string | null;
+  shippingTracking: string | null;
+  adminNote: string | null;
+  items: {
+    productName: string;
+    colorName: string | null;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+  }[];
+  events: {
+    dimension: string;
+    from: string;
+    to: string;
+    actor: string;
+    note: string | null;
+    at: string;
+  }[];
+  /** Resolved by the gateway from the table `POST /orders/:id/status` enforces. Rendered, not decided. */
+  transitions: { fulfillment: string[]; payment: string[] };
+  reservations: { id: string; qty: number; status: string }[];
+  shippingAddress: {
+    province: string | null;
+    city: string | null;
+    addressLine: string | null;
+    recipientName: string | null;
+    recipientPhone: string | null;
+    postalCode: string | null;
+  };
+}
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // The steps the form may offer, from the server that will apply them. Served rather than tabulated
-  // here: this page used to render a `<Select>` from a local copy of the transition table, which is a
-  // second implementation of a rule the gateway owns and the one thing this form must not get wrong.
-  // Read alongside the row below rather than after it, so a gateway that is slow does not hold up the
-  // page — the row is what the operator came for, and the form is usable without the extra list.
-  const transitionsPromise = readOrderTransitions(id);
-  const order = await db().order.findUnique({
-    where: { id },
-    include: {
-      customer: { select: { id: true, name: true, phone: true, email: true } },
-      items: true,
-      events: { orderBy: { at: "desc" } },
-      reservations: true,
-    },
-  });
-  if (!order) notFound();
 
-  // Nothing offered rather than a locally-guessed list. An order with no allowed transitions is a
-  // terminal one, and an order the gateway would not answer for has nothing this form can do anyway —
-  // either way the honest rendering is the same: this status is final.
-  const transitions = (await transitionsPromise) ?? { fulfillment: [], payment: [] };
-  const address = (order.shippingAddress ?? {}) as Record<string, string>;
+  let order: OrderAdminDetail;
+  try {
+    order = await readThrough<OrderAdminDetail>(`/orders/${encodeURIComponent(id)}`);
+  } catch (error) {
+    // A 404 is this page's answer and anything else is a fault, so the two are told apart rather than
+    // collapsed: a gateway that is down must not look like an order that does not exist.
+    if (isNotFound(error)) notFound();
+    throw error;
+  }
+  const { shippingAddress: address } = order;
 
   return (
     <div className="space-y-5">
@@ -42,11 +97,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          {/* status transitions */}
+          {/* The steps the form may offer, as the gateway resolved them for this order's two states. */}
           <Card>
-            <CardHeader title="وضعیت و انتقال" subtitle={`اجرا: ${STATUS_LABELS[order.fulfillmentStatus] ?? order.fulfillmentStatus} • پرداخت: ${STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}`} />
+            <CardHeader title="وضعیت و انتقال" subtitle={`اجرا: ${order.fulfillmentLabel} • پرداخت: ${order.paymentLabel}`} />
             <CardBody>
-              <OrderStatusTransitions orderId={order.id} fulfilled={order.fulfillmentStatus} paid={order.paymentStatus} allowed={transitions} />
+              <OrderStatusTransitions
+                orderId={order.id}
+                fulfilled={order.fulfillmentStatus}
+                paid={order.paymentStatus}
+                allowed={order.transitions}
+              />
             </CardBody>
           </Card>
 
@@ -64,8 +124,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   </TR>
                 </THead>
                 <TBody>
-                  {order.items.map((it) => (
-                    <TR key={it.id}>
+                  {order.items.map((it, i) => (
+                    <TR key={`${order.id}-${i}`}>
                       <TD>{it.productName}</TD>
                       <TD>{it.colorName || "—"}</TD>
                       <TD>{formatToman(it.unitPrice)}</TD>
@@ -91,8 +151,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <p className="px-5 py-6 text-sm text-ash">رویدادی ثبت نشده است</p>
               ) : (
                 <ul className="divide-y divide-plaster">
-                  {order.events.map((ev) => (
-                    <li key={ev.id} className="flex items-start justify-between gap-4 px-5 py-3 text-sm">
+                  {order.events.map((ev, i) => (
+                    <li key={`${order.id}-${ev.at}-${i}`} className="flex items-start justify-between gap-4 px-5 py-3 text-sm">
                       <div>
                         <span className="ml-2 rounded bg-plaster px-2 py-0.5 text-xs font-medium">{ev.dimension === "FULFILLMENT" ? "اجرا" : "پرداخت"}</span>
                         <span dir="ltr" className="text-ink">{ev.from === "" ? "—" : ev.from} → {ev.to}</span>
@@ -100,7 +160,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       </div>
                       <div className="text-left text-xs text-ash">
                         <div>{ev.actor}</div>
-                        <div>{formatJalaliDateTime(ev.at)}</div>
+                        <div>{formatJalaliDateTime(new Date(ev.at))}</div>
                       </div>
                     </li>
                   ))}
@@ -138,7 +198,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {address.province && address.city && (
                 <p>{address.province} — {address.city}</p>
               )}
-              <p>{address.addressLine}</p>
+              {address.addressLine && <p>{address.addressLine}</p>}
               {address.recipientName && <p>{address.recipientName}</p>}
               {address.recipientPhone && <p dir="ltr" className="text-left text-ash">{address.recipientPhone}</p>}
               {address.postalCode && <p dir="ltr" className="text-left text-ash">{address.postalCode}</p>}
@@ -169,6 +229,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
     </div>
   );
+}
+
+/** Is this the gateway saying the order is not there? */
+function isNotFound(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("پیدا نشد");
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {

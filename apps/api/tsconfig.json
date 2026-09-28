@@ -23,10 +23,15 @@
     "src/posts",
     "src/products",
     "src/settings",
+    "src/audit",
+    "src/customers",
+    "src/dashboard",
+    "src/scraper",
+    "src/stock-levels",
     "src/app.module.ts",
     "src/main.ts",
     "prisma.config.ts",
     "vitest.config.ts",
-    "tests"
+    "tests",
   ]
 }

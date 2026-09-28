@@ -12,16 +12,20 @@
 // still be stored by any other caller. The gateway runs the vocabulary now, so there is one place it
 // runs, and a caller that skips it cannot store a page at all.
 
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   IsArray,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
   Length,
   Matches,
+  Max,
+  Min,
 } from "class-validator";
 
 /**
@@ -41,6 +45,19 @@ const HAS_CONTENT = /\S/;
  * client takes to send it, and the storefront renders every block of a published page.
  */
 const MAX_BLOCKS = 200;
+
+/**
+ * The page size the panel's page table renders when it does not ask for one, and the most this read
+ * will serve.
+ *
+ * Both here rather than in the service, because this is the file that refuses the larger of the two.
+ * A caller that chooses its own ceiling is not a caller being served, it is a caller setting the
+ * gateway's memory limit. The panel asks for 25; 100 is the largest list its pager still renders as a
+ * list of rows.
+ */
+export const PAGE_PAGE_SIZE = 25;
+export const MAX_PAGE_PAGE_SIZE = 100;
+
 
 /**
  * Which button the operator pressed.
@@ -104,6 +121,47 @@ export class SavePageDto {
   @IsOptional()
   @IsObject({ message: "داده‌های SEO نامعتبر است." })
   seo?: Record<string, unknown>;
+}
+
+/**
+ * The page list's search, its filter and its paging.
+ *
+ * Every field optional, because the list is useful with none of them. `size` is bounded rather than
+ * trusted: a caller that picks its own ceiling is not being served, it is setting the gateway's
+ * memory limit, and the panel asks for 25.
+ */
+export class PageListQueryDto {
+  /**
+   * What the operator typed into the search box.
+   *
+   * Length-bounded and not pattern-bounded, because it feeds a `contains` over a title, which is text
+   * in two scripts and has no single character class. An empty value means "no filter" — the same
+   * thing a cleared box meant, and refusing it would turn clearing the box into an error page.
+   */
+  @IsOptional()
+  @IsString({ message: "عبارت جست‌وجو باید متن باشد." })
+  @Length(0, 200, { message: "عبارت جست‌وجو بیش از حد طولانی است." })
+  q?: string;
+
+  @IsOptional()
+  @IsEnum(PageStatusDto, { message: "وضعیت صفحه نامعتبر است." })
+  status?: PageStatusDto;
+
+  /** Which page, counting from one. */
+  @IsOptional()
+  @IsInt({ message: "شمارهٔ صفحه باید عدد صحیح باشد." })
+  @Min(1, { message: "شمارهٔ صفحه باید از ۱ شروع شود." })
+  @Max(100_000, { message: "شمارهٔ صفحه بیش از حد بزرگ است." })
+  @Type(() => Number)
+  page: number = 1;
+
+  /** How many rows on it, and the most this read will serve. */
+  @IsOptional()
+  @IsInt({ message: "تعداد ردیف باید عدد صحیح باشد." })
+  @Min(1, { message: "تعداد ردیف باید بزرگ‌تر از صفر باشد." })
+  @Max(MAX_PAGE_PAGE_SIZE, { message: "تعداد ردیف بیش از حد مجاز است." })
+  @Type(() => Number)
+  size: number = PAGE_PAGE_SIZE;
 }
 
 export class DeletePageDto {

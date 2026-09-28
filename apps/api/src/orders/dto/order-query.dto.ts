@@ -5,7 +5,7 @@
 // and a class would imply otherwise.
 
 import { Type } from "class-transformer";
-import { IsIn, IsInt, IsOptional, IsString, Length, Matches, Max, Min } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString, Length, Max, Min } from "class-validator";
 
 /**
  * Paging, bounded.
@@ -43,13 +43,15 @@ export class OrderAdminQueryDto extends OrderQueryDto {
   /**
    * An order number or a phone number.
    *
-   * Bounded tightly: this is a substring match against a column, and an unbounded pattern is a scan
-   * the operator triggers by accident.
+   * Bounded, and not shaped. The panel's search box takes whatever an operator types and the match is
+   * a parameterised `contains` against two columns, so the length bound is what keeps it from being
+   * the scan an operator triggers by accident. A character class on top of that was narrowing the box
+   * to a shape the box never advertised: an operator who typed a name got a validation error from the
+   * server instead of an empty list, which is a worse answer than the honest one.
    */
   @IsOptional()
   @IsString()
-  @Length(1, 40)
-  @Matches(/^[0-9\-+() ]{0,20}$|^1404-\d{1,8}$/, { message: "عبارت جست‌وجو معتبر نیست." })
+  @Length(1, 40, { message: "عبارت جست‌وجو معتبر نیست." })
   q?: string;
 }
 

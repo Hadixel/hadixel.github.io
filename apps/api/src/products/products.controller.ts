@@ -18,7 +18,7 @@
 // failures into "ذخیره انجام نشد؛ دوباره تلاش کنید" and the operator had no way to tell a typo from a
 // database being down.
 
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -26,6 +26,8 @@ import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { SaveProductDto } from "./dto/product.dto.js";
+import { MAX_PRODUCT_PAGE_SIZE, ProductListQueryDto } from "./dto/product-query.dto.js";
+import type { ProductDetail, ProductListRow, ProductPage } from "./dto/product-read.dto.js";
 import { ProductNotFoundException, ProductRuleException } from "./exceptions/product.exception.js";
 import {
   assertCategoryExists,
@@ -67,6 +69,129 @@ export class ProductsController {
       select: { id: true, name: true },
       take: 500,
     });
+  }
+
+  /**
+   * One page of the operator's product table.
+   *
+   * The panel's page used to run the rows and the total itself, over a `where` it assembled out of its
+   * own `searchParams`. Both are answered here, together, for the reason every one of this gateway's
+   * lists answers its count beside its rows: a total fetched separately can disagree with them. The
+   * filter belongs here too — which columns a search box covers is the gateway's decision, and a
+   * page holding a copy of it is a page that quietly stops matching what the box says.
+   *
+   * The page size is the caller's to name within a bound and the server's to hold: a route that reads
+   * whatever `size` says is a route anything that can reach it can ask the whole catalogue of. The
+   * size actually used comes back on the answer, so the pager divides by the slice that was read.
+   */
+  @Get()
+  async list(@Req() req: Request, @Query() query: ProductListQueryDto): Promise<ProductPage> {
+    await requireAdmin(this.auth, req);
+
+    const size = Math.min(query.size, MAX_PRODUCT_PAGE_SIZE);
+    const where = {
+      ...(query.status ? { status: query.status as never } : {}),
+      ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      // The four columns the panel's search box has always covered, with the case-insensitive match it
+      // has always used. Both carried over on purpose: a search that quietly stopped matching a brand,
+      // or started matching only one case of a model number, reads as a shop with fewer products in it
+      // rather than as a search that got narrower.
+      ...(query.q
+        ? {
+            OR: [
+              { name: { contains: query.q, mode: "insensitive" as const } },
+              { model: { contains: query.q, mode: "insensitive" as const } },
+              { brand: { contains: query.q, mode: "insensitive" as const } },
+              { slug: { contains: query.q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.db.product.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        skip: (query.page - 1) * size,
+        take: size,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          model: true,
+          status: true,
+          updatedAt: true,
+          category: { select: { id: true, name: true } },
+          _count: { select: { variants: true } },
+        },
+      }),
+      this.db.product.count({ where }),
+    ]);
+
+    const products: ProductListRow[] = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      model: row.model,
+      status: row.status,
+      category: row.category,
+      // The count is a number the table prints. `_count.variants` is the query that produced it, and
+      // is not a name the page should have to know.
+      variantCount: row._count.variants,
+      updatedAt: row.updatedAt.toISOString(),
+    }));
+
+    return { products, total, page: query.page, size };
+  }
+
+  /**
+   * One product in full, for the edit form to seed itself from.
+   *
+   * A 404 rather than an empty object, because the page answers a missing product with `notFound()`
+   * and an empty one would render a blank form that saves over whatever the id actually named.
+   *
+   * The spec values cross as a record keyed by spec-field id, which is the shape the form holds. The
+   * panel used to build that record here — `Object.fromEntries(rows.map(...))` — in the page, and a
+   * projection performed by the client is one performed wrongly the first time someone edits it.
+   */
+  @Get(":id")
+  async one(@Req() req: Request, @Param("id") id: string): Promise<ProductDetail> {
+    await requireAdmin(this.auth, req);
+
+    const product = await this.db.product.findUnique({
+      where: { id },
+      include: { variants: { orderBy: { colorName: "asc" } }, specValues: true },
+    });
+    if (!product) throw new ProductNotFoundException();
+
+    return {
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      model: product.model,
+      slug: product.slug,
+      categoryId: product.categoryId,
+      description: product.description,
+      features: product.features,
+      status: product.status,
+      allowBackorder: product.allowBackorder,
+      // A `Json` column the panel cast to a record on the way in. Read as a record or nothing, so the
+      // form's prop type is the response's type and no cast survives the move.
+      seo: (product.seo ?? null) as Record<string, unknown> | null,
+      variants: product.variants.map((variant) => ({
+        id: variant.id,
+        colorName: variant.colorName,
+        colorCode: variant.colorCode,
+        sku: variant.sku,
+        price: variant.price,
+        stock: variant.stock,
+        allowBackorder: variant.allowBackorder,
+        images: variant.images,
+      })),
+      specValues: Object.fromEntries(
+        product.specValues.map((value) => [value.specFieldId, value.value]),
+      ),
+    };
   }
 
   @Post()

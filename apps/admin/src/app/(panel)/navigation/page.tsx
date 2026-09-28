@@ -1,85 +1,64 @@
-import { db } from "@kmodern/db";
-import { NavEditor, type ItemState, type NavSeed } from "@/components/nav-editor";
+// The navigation editor's seeds, read through the gateway.
+//
+// This page was the densest holdout in the panel: it imported the data tier and did everything. It
+// fetched the three locations one at a time, fetched pages, root categories and collections to label
+// the ids its own tree held, and then *built each tree itself* — grouping the flat rows by which
+// row each one hangs from, sorting each group by its stored position, recursing — and decided what a
+// stored `target` meant against a hand-written array of link type names, matched with an `includes`
+// and defaulting to "no link", sitting beside the table.
+// That list was a second copy of the link vocabulary the schema package holds and the write goes
+// through, and the page defaulted anything it did not recognise to
+// "no link at all" — so a menu item pointing at a page it had never heard of came back with no link
+// and no warning.
+//
+// All of it is the gateway's now (`GET /nav`), which answers with the trees already nested and already
+// in the field names the editor's form draws. There is nothing left to translate, so this page is the
+// read and the render.
 
-interface SharedNavData {
-  pages: Array<{ id: string; slug: string; title: string }>;
-  categories: Array<{ id: string; name: string; slug: string }>;
-  collections: Array<{ id: string; name: string }>;
+import { readThrough } from "@/lib/reads";
+import { NavEditor, type NavSeed } from "@/components/nav-editor";
+
+/** The three pickers the editor offers ids from, as the read answers them once beside the menus. */
+interface NavPickers {
+  categories: NavSeed["categories"];
+  pages: NavSeed["pages"];
+  collections: NavSeed["collections"];
 }
 
-async function seedFor(location: string, shared: SharedNavData): Promise<NavSeed | null> {
-  const menu = await db().menu.findUnique({
-    where: { location: location as never },
-    include: { items: { include: { promos: true } } },
-  });
-  if (!menu) return null;
+/** One menu at one location, its tree already nested and ordered by the position it was saved at. */
+interface NavMenuRead {
+  location: string;
+  name: string;
+  items: NavSeed["items"];
+}
 
-  const { pages, categories, collections } = shared;
-
-  const itemsByParent = new Map<string | null, (typeof menu.items)[number][]>();
-  for (const it of menu.items) {
-    const key = it.parentId ?? null;
-    const list = itemsByParent.get(key) ?? [];
-    list.push(it);
-    itemsByParent.set(key, list);
-  }
-  const sorted = (list?: (typeof menu.items)[number][]) =>
-    (list ?? []).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-
-  const build = (parentId: string | null): ItemState[] =>
-    sorted(itemsByParent.get(parentId)).map((it) => {
-      const t = (it.target ?? { type: "PAGE", targetId: "" }) as { type?: string; targetId?: unknown; url?: unknown; value?: unknown };
-      const rawType = t.type ?? "PAGE";
-      const targetType = (["PAGE", "CATEGORY", "COLLECTION", "BLOG_INDEX", "BLOG_POST", "EXTERNAL", "NONE"].includes(rawType) ? rawType : "NONE") as ItemState["targetType"];
-      return {
-        key: it.id,
-        label: it.label,
-        targetType,
-        targetValue: String(targetType === "EXTERNAL" ? t.url ?? t.value ?? "" : t.targetId ?? t.value ?? ""),
-        childSource: it.childSource as "STATIC" | "CATEGORY",
-        categoryId: it.categoryId ?? "",
-        display: it.display as "DROPDOWN" | "MEGA",
-        visible: it.visible,
-        mobileVisible: it.mobileVisible,
-        children: build(it.id),
-        promos: (it.promos ?? []).map((p) => {
-          const pl = (p.link ?? { type: "EXTERNAL", url: "" }) as { type?: string; targetId?: unknown; url?: unknown; value?: unknown };
-          const rawPromoType = pl.type ?? "EXTERNAL";
-          const linkType = (["PAGE", "CATEGORY", "COLLECTION", "BLOG_INDEX", "BLOG_POST", "EXTERNAL", "NONE"].includes(rawPromoType) ? rawPromoType : "NONE") as ItemState["promos"][number]["linkType"];
-          return {
-            imageUrl: p.imageUrl,
-            alt: p.alt ?? "",
-            linkType,
-            linkValue: String(linkType === "EXTERNAL" ? pl.url ?? pl.value ?? "" : pl.targetId ?? pl.value ?? ""),
-            heading: p.heading ?? "",
-            subtext: p.subtext ?? "",
-            mobileVisible: p.mobileVisible,
-          };
-        }),
-      };
-    });
-
-  return { location, name: menu.name, items: build(null), categories, pages, collections };
+/**
+ * The editor's whole seed, as `GET /nav` answers it: the three menus, and the three pickers once
+ * beside them rather than repeated inside each. Mirrored rather than imported — this file is a
+ * client and the gateway is a separate process that does not share a module with it.
+ */
+interface NavRead extends NavPickers {
+  menus: NavMenuRead[];
 }
 
 export default async function NavigationPage() {
-  const [pages, categories, collections] = await Promise.all([
-    db().page.findMany({ select: { id: true, slug: true, title: true } }),
-    db().category.findMany({ select: { id: true, name: true, slug: true }, where: { parentId: null } }),
-    db().collection.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" }, take: 200 }),
-  ]);
-  const shared: SharedNavData = { pages, categories, collections };
-  const seeds = (await Promise.all([seedFor("HEADER", shared), seedFor("FOOTER", shared), seedFor("MOBILE", shared)])).filter(
-    (s): s is NavSeed => s !== null,
-  );
+  // Throws rather than rendering "no menu found" when the gateway is down: an unreachable gateway and
+  // a shop with no menus are different facts, and only one of them is worth an operator's attention.
+  const nav = await readThrough<NavRead>("/nav");
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <h1 className="text-xl font-bold text-ink">مدیریت منوها</h1>
       <p className="text-sm text-ash">هر منو به‌صورت کامل ذخیره می‌شود؛ تغییرات بلافاصله در فروشگاه اعمال می‌شود.</p>
-      {seeds.length === 0 && <p className="text-sm text-ash">منویی یافت نشد.</p>}
-      {seeds.map((s) => (
-        <NavEditor key={s.location} seed={s} />
+      {nav.menus.length === 0 && <p className="text-sm text-ash">منویی یافت نشد.</p>}
+      {nav.menus.map((menu) => (
+        <NavEditor
+          key={menu.location}
+          // The three pickers are the same for every menu, so the read answers them once beside the
+          // menus rather than inside each of them. Attaching them here is assembly, not translation:
+          // no value is reshaped, named or defaulted on the way to the editor.
+          seed={{ ...menu, categories: nav.categories, pages: nav.pages, collections: nav.collections }}
+        />
       ))}
     </div>
   );

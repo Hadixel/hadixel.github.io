@@ -1,4 +1,4 @@
-import { db } from "@kmodern/db";
+import { readThrough } from "@/lib/reads";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
 import { Badge, Card, CardHeader, EmptyState, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { pageParam } from "@/lib/pagination";
@@ -61,23 +61,21 @@ export default async function AuditPage({
   const adminId = params.admin && params.admin !== "ALL" ? params.admin : undefined;
   const page = pageParam(params.page);
 
-  const where = {
-    ...(action ? { action } : {}),
-    ...(adminId ? { adminUserId: adminId } : {}),
-  };
+  const answer = await readThrough<{
+    rows: Array<{
+      id: string;
+      action: string;
+      entityType: string | null;
+      entityId: string | null;
+      ip: string | null;
+      at: string;
+      adminUser: { name: string | null; email: string } | null;
+    }>;
+    total: number;
+    admins: Array<{ id: string; name: string | null; email: string }>;
+  }>(`/audit?${new URLSearchParams({ page: String(page), size: String(PAGE_SIZE), ...(action ? { action } : {}), ...(adminId ? { admin: adminId } : {}) })}`);
 
-  const [logs, total, admins] = await Promise.all([
-    db().adminAuditLog.findMany({
-      where,
-      include: { adminUser: { select: { name: true, email: true } } },
-      orderBy: { at: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    db().adminAuditLog.count({ where }),
-    db().adminUser.findMany({ select: { id: true, name: true, email: true } }),
-  ]);
-
+  const { rows: logs, total, admins } = answer;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -125,7 +123,7 @@ export default async function AuditPage({
               <TBody>
                 {logs.map((l) => (
                   <TR key={l.id}>
-                    <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(l.at)}</TD>
+                    <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(l.at))}</TD>
                     <TD><Badge>{ACTION_LABELS[l.action] ?? l.action}</Badge></TD>
                     <TD>{l.adminUser ? (l.adminUser.name || l.adminUser.email) : faDigits("—")}</TD>
                     <TD className="text-xs text-ash" dir="ltr">

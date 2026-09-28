@@ -39,3 +39,20 @@ export class InsufficientStockException extends GatewayException {
     super(HttpStatus.CONFLICT, message);
   }
 }
+
+/**
+ * A manual order that cannot be placed, with the operator's own sentence attached.
+ *
+ * The panel used to throw bare strings from inside a transaction and map them back to Persian in a
+ * catch block, so the message travelled in two pieces that could disagree — and a message the panel
+ * invented for a rule it did not hold. Carrying it on the exception means the server that knows why
+ * also says why, and the operator is never told "try again" for a missing customer.
+ */
+export class OrderRuleViolation extends GatewayException {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(HttpStatus.UNPROCESSABLE_ENTITY, message);
+  }
+}

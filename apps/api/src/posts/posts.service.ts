@@ -9,6 +9,8 @@ import { postBodySchema, seoSchema } from "@kmodern/schema";
 import { tagSlug } from "@kmodern/schema/slug";
 import { PostRuleException } from "./exceptions/post.exception.js";
 import { MAX_BODY_NODES, MAX_TAG_LENGTH } from "./dto/post.dto.js";
+import type { Prisma } from "../generated/prisma/client.js";
+
 
 /** The document shape `postBodySchema` validates to. Named here because the schema exports the value
  *  and not the type. */
@@ -96,4 +98,25 @@ export function searchTextFor(body: PostBody): string {
 
   walk(body.content);
   return parts.join(" ").slice(0, 2000);
+}
+
+// ---- The panel's list ----
+//
+// The panel's blog table was a query in a page: a `where` assembled beside a table, an unbounded
+// `findMany`, and a set of tags flattened in the JSX. None of that could be given a different meaning
+// without editing the page, and none of it was bounded. The predicate is here; the two numbers that
+// hold a list to a page are the DTO's, beside the `@Max` that refuses the larger of them.
+
+/**
+ * The title search, as the panel's own search box meant it.
+ *
+ * The title only, and case-insensitively — the panel searched `title` with `contains` and
+ * `mode: "insensitive"`, carried over whole rather than tidied. The body is searchable through
+ * `searchText`, which is the storefront's index and not the panel's to widen.
+ *
+ * Exported so a test can state what the predicate matches rather than inferring it from whichever row
+ * happened to be found.
+ */
+export function matchesSearch(q: string): Prisma.PostWhereInput {
+  return { title: { contains: q, mode: "insensitive" } };
 }

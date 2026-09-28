@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 import { mediaKey, saveMediaFile } from "@/lib/media";
+import { sameOrigin } from "@/lib/origin";
 
 export const runtime = "nodejs";
 
@@ -19,19 +20,6 @@ const MIME_EXTENSIONS = new Map([
   ["video/webm", "webm"],
   ["application/pdf", "pdf"],
 ]);
-
-function sameOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "")
-    .split(",")[0]
-    .trim();
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
-}
 
 function hasExpectedSignature(bytes: Buffer, extension: string): boolean {
   if (extension === "jpg") return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;

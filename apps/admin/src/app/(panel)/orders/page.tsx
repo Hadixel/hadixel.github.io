@@ -1,14 +1,46 @@
+// The order table, read through the gateway.
+//
+// This page used to import the data tier and run two queries of its own — a page of orders and the
+// total for the pager — over a `where` it assembled out of its own `searchParams`. Both are one
+// gateway read now, answered together: a total fetched beside the rows it describes can disagree with
+// them.
+//
+// The filters travel as a query string. Which columns the search box covers — an order number or a
+// customer's phone, either case — is the gateway's to say, and the page says nothing about it beyond
+// carrying what the operator typed. The gateway's `limit` is bounded and this page names its own page
+// size within that bound, so the slice the pager divides by is the slice the gateway read.
+//
+// A read that fails fails the page. A silent empty table here is an operator deciding a shop has no
+// orders and a customer service answer built on that.
+
 import Link from "next/link";
-import { db } from "@kmodern/db";
 import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliDateTime } from "@/lib/date";
+import { readThrough } from "@/lib/reads";
 import { Button, Card, CardHeader, EmptyState, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { STATUS_LABELS, StatusBadge } from "@/components/status";
 import { enumParam, pageParam } from "@/lib/pagination";
 
+/** The page size the table renders. Named here and sent as a bounded value; the gateway clamps it. */
 const PAGE_SIZE = 25;
 const FULFILLMENT_STATUSES = ["ALL", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "RETURNED"];
 const PAYMENT_STATUSES = ["ALL", "AWAITING", "PAID", "REFUNDED", "FAILED"];
+
+/** One page of the order table, as the gateway's `GET /orders` answers. */
+interface OrderPage {
+  orders: {
+    id: string;
+    orderNumber: string;
+    fulfillmentStatus: string;
+    paymentStatus: string;
+    /** The server's own total. Rendered as it came, with no factor applied on the way. */
+    total: number;
+    placedAt: string;
+    paymentMethod: string;
+    customer: { id: string; name: string | null; phone: string };
+  }[];
+  total: number;
+}
 
 export default async function OrdersPage({
   searchParams,
@@ -21,32 +53,26 @@ export default async function OrdersPage({
   const payment = enumParam(params.payment, ["AWAITING", "PAID", "REFUNDED", "FAILED"]);
   const search = params.search?.trim();
 
-  const where = {
-    ...(fulfillment ? { fulfillmentStatus: fulfillment as never } : {}),
-    ...(payment ? { paymentStatus: payment as never } : {}),
-    ...(search ? { orderNumber: { contains: search, mode: "insensitive" as const } } : {}),
-  };
+  // The filters on their own — no page — because the form must submit a fresh search onto page one.
+  const baseQs = new URLSearchParams({
+    ...(fulfillment ? { status: fulfillment } : {}),
+    ...(payment ? { payment: payment } : {}),
+    ...(search ? { search } : {}),
+  });
 
-  const [orders, total] = await Promise.all([
-    db().order.findMany({
-      where,
-      orderBy: { placedAt: "desc" },
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      include: { customer: { select: { name: true, phone: true } } },
-    }),
-    db().order.count({ where }),
-  ]);
+  const query = new URLSearchParams({
+    limit: String(PAGE_SIZE),
+    offset: String((page - 1) * PAGE_SIZE),
+    ...(fulfillment ? { fulfillmentStatus: fulfillment } : {}),
+    ...(payment ? { paymentStatus: payment } : {}),
+    ...(search ? { q: search } : {}),
+  });
+
+  const { orders, total } = await readThrough<OrderPage>(`/orders?${query.toString()}`);
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const hasFilters = Boolean(fulfillment || payment || search);
 
-  const basePath = hasFilters
-    ? `/orders?${new URLSearchParams({
-        ...(fulfillment ? { status: fulfillment } : {}),
-        ...(payment ? { payment: payment } : {}),
-        ...(search ? { search } : {}),
-      })}`
-    : "/orders";
+  const basePath = hasFilters ? `/orders?${baseQs.toString()}` : "/orders";
 
   return (
     <div className="space-y-4">
@@ -119,7 +145,8 @@ export default async function OrdersPage({
                   <TD className="text-xs">{o.paymentMethod}</TD>
                   <TD><StatusBadge status={o.paymentStatus} /></TD>
                   <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                  <TD className="text-xs text-ash">{formatJalaliDateTime(o.placedAt)}</TD>
+                  {/* The date crossed as a string; the renderer's own parser takes a Date. */}
+                  <TD className="text-xs text-ash">{formatJalaliDateTime(new Date(o.placedAt))}</TD>
                 </TR>
               ))}
             </TBody>

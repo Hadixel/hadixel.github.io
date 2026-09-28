@@ -10,17 +10,23 @@
 // was not one: the panel is a client, the schema is in a package the storefront also imports, and a
 // fast-fail a client owns is a rule a client may skip.
 
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsEnum,
+  IsInt,
   IsISO8601,
   IsObject,
   IsOptional,
   IsString,
   Length,
   Matches,
+  Max,
+  Min,
 } from "class-validator";
+
 
 /**
  * A name with something in it.
@@ -39,6 +45,73 @@ const MAX_TAG_LENGTH = 50;
 
 /** The most characters a post body may occupy before it is parsed. A megabyte, as the panel had it. */
 const MAX_BODY_BYTES = 1_000_000;
+
+/**
+ * The page size the panel's blog table renders when it does not ask for one, and the most this read
+ * will serve.
+ *
+ * Both here rather than in the service, because this is the file that refuses the larger of the two:
+ * a caller that chooses its own ceiling is not a caller being served, it is a caller setting the
+ * gateway's memory limit. The panel asks for 25; 100 is the largest list its pager still renders as a
+ * list of rows.
+ */
+export const POST_PAGE_SIZE = 25;
+export const MAX_POST_PAGE_SIZE = 100;
+
+/**
+ * The statuses a list may be filtered by.
+ *
+ * Declared here rather than taken from the generated enum, because the generated ones are
+ * string-literal *unions* and `@IsEnum` needs a runtime object to read. The values are the
+ * generated union's, so the service that builds the predicate needs no conversion of its own.
+ */
+export enum PostStatusDto {
+  DRAFT = "DRAFT",
+  PUBLISHED = "PUBLISHED",
+  ARCHIVED = "ARCHIVED",
+}
+
+/**
+ * The post list's search, its filter and its paging.
+ *
+ * Every field optional, because the list is useful with none of them. `size` is bounded rather than
+ * trusted: a caller that picks its own ceiling is not being served, it is setting the gateway's
+ * memory limit, and the panel asks for 25.
+ */
+export class PostListQueryDto {
+  /**
+   * What the operator typed into the search box.
+   *
+   * Length-bounded and not pattern-bounded, because it feeds a `contains` over a title, which is text
+   * in two scripts and has no single character class. An empty value means "no filter" — the same
+   * thing a cleared box meant, and refusing it would turn clearing the box into an error page.
+   */
+  @IsOptional()
+  @IsString({ message: "عبارت جست‌وجو باید متن باشد." })
+  @Length(0, 200, { message: "عبارت جست‌وجو بیش از حد طولانی است." })
+  q?: string;
+
+  @IsOptional()
+  @IsEnum(PostStatusDto, { message: "وضعیت نوشته نامعتبر است." })
+  status?: PostStatusDto;
+
+  /** Which page, counting from one. */
+  @IsOptional()
+  @IsInt({ message: "شمارهٔ صفحه باید عدد صحیح باشد." })
+  @Min(1, { message: "شمارهٔ صفحه باید از ۱ شروع شود." })
+  @Max(100_000, { message: "شمارهٔ صفحه بیش از حد بزرگ است." })
+  @Type(() => Number)
+  page: number = 1;
+
+  /** How many rows on it, and the most this read will serve. */
+  @IsOptional()
+  @IsInt({ message: "تعداد ردیف باید عدد صحیح باشد." })
+  @Min(1, { message: "تعداد ردیف باید بزرگ‌تر از صفر باشد." })
+  @Max(MAX_POST_PAGE_SIZE, { message: "تعداد ردیف بیش از حد مجاز است." })
+  @Type(() => Number)
+  size: number = POST_PAGE_SIZE;
+}
+
 
 /** The most top-level nodes a body may have. A thousand, as the panel had it. */
 const MAX_BODY_NODES = 1000;
