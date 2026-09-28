@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
-    "start": "next start",
+    "dev": "next dev -p 3100",
+    "start": "next start -p 3100",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -14,7 +14,6 @@
     "@heroui/react": "^3.2.4",
     "@heroui/styles": "^3.2.4",
     "@kmodern/adapters": "workspace:*",
-    "@kmodern/db": "workspace:*",
     "@kmodern/schema": "workspace:*",
     "@kmodern/transport": "workspace:*",
     "@kmodern/ui": "workspace:*",

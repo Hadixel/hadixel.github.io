@@ -9,7 +9,7 @@ import type { NextConfig } from "next";
 // directory it was run from, and nothing said so.
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@kmodern/db", "@kmodern/schema", "@kmodern/adapters", "@kmodern/scraper", "@kmodern/ui"],
+  transpilePackages: ["@kmodern/schema", "@kmodern/adapters", "@kmodern/scraper", "@kmodern/ui"],
   allowedDevOrigins: [process.env.ADMIN_DEV_ORIGIN ?? "192.168.70.176", "localhost", "127.0.0.1"],
   async headers() {
     return [

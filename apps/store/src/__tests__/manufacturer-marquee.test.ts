@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { uspRowProps } from "@kmodern/schema";
-import { IRANIAN_MANUFACTURERS } from "@kmodern/db/manufacturers";
+import { IRANIAN_MANUFACTURERS } from "@kmodern/schema/manufacturers";
 
 const CATEGORIES = new Set(["هود", "سینک", "فر", "اجاق"]);
 const REMOVED = new Set([

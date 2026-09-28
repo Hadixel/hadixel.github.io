@@ -55,9 +55,6 @@ importers:
       '@kmodern/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
-      '@kmodern/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -171,9 +168,6 @@ importers:
       '@kmodern/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
-      '@kmodern/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -229,16 +223,6 @@ importers:
         version: 24.13.3
 
   packages/config: {}
-
-  packages/db:
-    dependencies:
-      '@kmodern/api':
-        specifier: workspace:*
-        version: link:../../apps/api
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.13.3
 
   packages/schema:
     dependencies:

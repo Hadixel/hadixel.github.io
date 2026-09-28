@@ -7,7 +7,6 @@
   "exports": {
     "./prisma": "./src/prisma/index.ts",
     "./prisma/client": "./src/prisma/client.ts",
-    "./manufacturers": "./seed/iranian-manufacturers.ts",
     "./storage": "./src/storage/storage.ts",
     "./payments": "./src/payments/zarinpal.ts",
     "./sms": "./src/sms/kavenegar.ts",

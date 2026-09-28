@@ -4,18 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3101",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3101",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@kmodern/adapters": "workspace:*",
-    "@kmodern/db": "workspace:*",
     "@kmodern/schema": "workspace:*",
-    "@kmodern/transport": "workspace:*",
     "@kmodern/scraper": "workspace:*",
+    "@kmodern/transport": "workspace:*",
     "@kmodern/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "next": "^16.3.6",

@@ -8,7 +8,8 @@
     "./format": "./src/format.ts",
     "./setting-keys": "./src/setting-keys.ts",
     "./sanitize": "./src/sanitize.ts",
-    "./slug": "./src/slug.ts"
+    "./slug": "./src/slug.ts",
+    "./manufacturers": "./src/manufacturers.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
