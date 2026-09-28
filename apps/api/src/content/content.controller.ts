@@ -67,6 +67,23 @@ export class ContentController {
    * An unpublished or absent page is a 404, not an empty page. The distinction matters — a draft
    * that renders as a blank page looks like a broken site rather than a page that does not exist.
    */
+  /**
+   * The shop's current offers, priced here.
+   *
+   * A thin route over `activeDeals`, which the home read already used. The storefront used to compute
+   * this itself — the same filter, the same "best discount wins" comparison and the same cap — in its
+   * own process, so a cap rule applied here and not there would show a shopper one price and charge
+   * another. The block renderer that asks for offers is not the home page, which is why this is a
+   * route and not "read the home payload and take the deals field".
+   */
+  @Get("deals")
+  async deals(@Query("limit") limit?: string): Promise<HomeDeal[]> {
+    // Bounded and defaulted, because `take`-by-string is a caller choosing the gateway's limit.
+    const asked = Number(limit);
+    const bounded = Number.isInteger(asked) && asked > 0 ? Math.min(asked, 24) : 6;
+    return this.content.activeDeals(bounded);
+  }
+
   @Get("pages/:slug")
   async page(@Param() params: PageSlugParamDto): Promise<PageResponse> {
     const page = await this.content.publishedPageWithTitle(params.slug);

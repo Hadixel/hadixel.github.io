@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Drawer } from "@heroui/react";
-import type { Category } from "@kmodern/db";
+import type { CategorySummary } from "@/lib/gateway-catalogue";
 import { cn } from "@kmodern/ui";
 
 export function MobileCategoryFilter({
   categories,
   activeSlug,
 }: {
-  categories: Array<Pick<Category, "id" | "name" | "slug" | "parentId">>;
+  categories: CategorySummary[];
   activeSlug?: string;
 }) {
   const [open, setOpen] = useState(false);

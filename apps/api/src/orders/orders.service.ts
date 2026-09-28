@@ -11,9 +11,15 @@
 // and it moves inside the same transaction as the status change that justified it. So a settlement is
 // taken with a compare-and-set on the status, the side effect runs only if that claim succeeded, and a
 // caller that loses the race is told what happened instead of being allowed to repeat the work.
-
+import {
+  formatToman,
+  fulfillmentLabel,
+  orderEventLabel,
+  paymentLabel,
+  paymentMethodLabel,
+  tomanToRial,
+} from "@kmodern/schema";
 import { Inject, Injectable } from "@nestjs/common";
-import { formatToman, tomanToRial, fulfillmentLabel, paymentLabel } from "@kmodern/schema";
 import { PaymentStatus, type PaymentMethod, type ShippingMethod, type DeliveryFeeMode } from "../generated/prisma/enums.js";
 import { commitStock, releaseStock, reserveStock, restock } from "../inventory/inventory.service.js";
 import { nextOrderNumber } from "../checkout/order-number.js";
@@ -67,12 +73,22 @@ export interface ManualOrderInput {
 }
 
 
-/** The order row fields both read models are built from. Named so a projection change is one edit. */
+/**
+ * The order row fields every read model is built from. Named so a projection change is one edit.
+ *
+ * The money is here rather than in the operator's row because a shopper's order page prints how its
+ * total was reached too: the storefront read those three columns itself and formatted them, which is
+ * the same translation in a second place.
+ */
 type OrderBase = {
   id: string;
   orderNumber: string;
   fulfillmentStatus: string;
   paymentStatus: string;
+  paymentMethod: string;
+  subtotal: number;
+  discountAmount: number;
+  deliveryFee: number;
   total: number;
   placedAt: Date;
   shippingAddress: unknown;
@@ -97,16 +113,12 @@ type OrderEventRow = {
   at: Date;
 };
 
-/** The fields the operator's detail adds to the row: who ordered it, how, and what it added up to. */
+/** The fields the operator's detail adds to the row: who ordered it, how it ships, and what is behind it. */
 type OrderAdminRow = OrderBase & {
   customerId: string;
   customer: { id: string; name: string | null; phone: string; email: string | null };
-  paymentMethod: string;
   shippingMethod: string;
   deliveryFeeMode: string;
-  subtotal: number;
-  discountAmount: number;
-  deliveryFee: number;
   gatewayRefId: string | null;
   shippingTracking: string | null;
   adminNote: string | null;
@@ -114,6 +126,15 @@ type OrderAdminRow = OrderBase & {
   events: OrderEventRow[];
   reservations: { id: string; qty: number; status: string; expiresAt: Date }[];
 };
+
+/**
+ * What one order's read model is built from: its lines, and its history in the order a reader reads.
+ *
+ * Named because the two shopper reads — by id and by order number — must project the same thing. A
+ * detail assembled from one query here and a second query there is a detail whose two callers
+ * disagree about what an order is.
+ */
+const ORDER_DETAIL_INCLUDE = { items: true, events: { orderBy: { at: "asc" } } } as const;
 
 /** How a settlement ended. Each is a decision the caller has to act on differently. */
 export type SettlementResult =
@@ -313,7 +334,28 @@ export class OrdersService {
   ): Promise<OrderDetail | null> {
     const order = await this.db.order.findFirst({
       where: { id: orderId, customerId },
-      include: { items: true, events: { orderBy: { at: "asc" } } },
+      include: ORDER_DETAIL_INCLUDE,
+    });
+    if (!order) return null;
+    return this.toDetail(order);
+  }
+
+  /**
+   * The same read, keyed the way a shopper's own link is.
+   *
+   * `/order/1404-000123` is the address of an order; its id is not in it, and a page that resolved
+   * the number to an id in the client would be doing a lookup whose only outcome is a second read
+   * with the same authorisation question. So the number is looked up here, scoped to the customer in
+   * the query for the reason the one above gives: someone's order number is guessable, and a refusal
+   * that named the order would confirm it exists.
+   */
+  async readOrderByNumberForCustomer(
+    orderNumber: string,
+    customerId: string,
+  ): Promise<OrderDetail | null> {
+    const order = await this.db.order.findFirst({
+      where: { orderNumber, customerId },
+      include: ORDER_DETAIL_INCLUDE,
     });
     if (!order) return null;
     return this.toDetail(order);
@@ -596,6 +638,7 @@ export class OrdersService {
         dimension: event.dimension,
         from: event.from,
         to: event.to,
+        label: orderEventLabel(event.dimension, event.to),
         actor: event.actor,
         note: event.note,
         at: event.at.toISOString(),
@@ -604,31 +647,31 @@ export class OrdersService {
         fulfillment: [...allowedTransitions("FULFILLMENT", row.fulfillmentStatus)],
         payment: [...allowedTransitions("PAYMENT", row.paymentStatus)],
       },
-      shippingAddress: row.shippingAddress,
+      paymentMethod: row.paymentMethod,
+      paymentMethodLabel: paymentMethodLabel(row.paymentMethod),
+      subtotal: row.subtotal,
+      subtotalFormatted: formatToman(row.subtotal),
+      discountAmount: row.discountAmount,
+      discountAmountFormatted: formatToman(row.discountAmount),
+      deliveryFee: row.deliveryFee,
+      deliveryFeeLabel: row.deliveryFee === 0 ? "رایگان" : formatToman(row.deliveryFee),
+      shippingAddress: toShippingAddress(row.shippingAddress),
     };
   }
 
   /**
    * The operator's view of one order.
    *
-   * Built on the shopper's read model rather than beside it, so the items, the events and — the part
-   * that matters — the legal transitions are one implementation. The transitions are resolved here
-   * from the same table `POST /orders/:id/status` enforces, so a status form rendered from this
-   * answer cannot offer a step the server will refuse.
-   *
-   * The money crosses as four numbers that add up, never as a scaled one: the order's total was
-   * frozen in TOMAN when it was placed, and a client multiplying its way to a figure the server never
-   * wrote is how a shop and its own invoice disagree.
+   * Built on the shopper's read model rather than beside it, so the items, the events, the money's
+   * parts and — the part that matters — the legal transitions are one implementation. The transitions
+   * are resolved here from the same table `POST /orders/:id/status` enforces, so a status form
+   * rendered from this answer cannot offer a step the server will refuse.
    */
   private toAdminDetail(row: OrderAdminRow): OrderAdminDetail {
     return {
       ...this.toDetail(row),
       customerId: row.customerId,
       customer: row.customer,
-      subtotal: row.subtotal,
-      discountAmount: row.discountAmount,
-      deliveryFee: row.deliveryFee,
-      paymentMethod: row.paymentMethod,
       shippingMethod: row.shippingMethod,
       deliveryFeeMode: row.deliveryFeeMode,
       gatewayRefId: row.gatewayRefId,
@@ -640,7 +683,6 @@ export class OrdersService {
         status: reservation.status,
         expiresAt: reservation.expiresAt.toISOString(),
       })),
-      shippingAddress: toShippingAddress(row.shippingAddress),
     };
   }
 }

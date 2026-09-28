@@ -135,6 +135,21 @@ export async function reserveStock(
 }
 
 /**
+ * When a hold taken now for this payment method would expire, from the merchant's own setting.
+ *
+ * Exported because an order's `paymentExpiresAt` — the window a shopper's money has to arrive in — is
+ * the same rule as the hold's, and it was being read and written by the storefront's payment route
+ * while the hold it describes was resolved here. Two readers of one setting is how the window a
+ * shopper is shown and the hold that backs it end up disagreeing.
+ */
+export async function holdExpiry(
+  paymentMethod: PaymentMethod,
+  client?: InventoryClient,
+): Promise<Date> {
+  return resolveExpiry(client ?? db(), paymentMethod);
+}
+
+/**
  * Commit on payment: a hold becomes sold.
  *
  * Idempotent for a repeat: a reservation that is already COMMITTED is skipped, so a duplicate

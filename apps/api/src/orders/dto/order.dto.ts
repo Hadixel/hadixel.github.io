@@ -36,6 +36,14 @@ export interface OrderEvent {
   to: string;
   actor: string;
   note: string | null;
+  /**
+   * Persian, resolved: a shopper's history reads as sentences.
+   *
+   * The storefront rendered this from a local table over the same two dimensions, which is how an
+   * order's history came to name a fulfilment status the schema does not have while staying silent
+   * about three it does.
+   */
+  label: string;
   at: string;
 }
 
@@ -44,16 +52,36 @@ export interface OrderDetail extends OrderSummary {
   events: OrderEvent[];
   /** The transitions the server will accept from here — so a client never offers one it will refuse. */
   transitions: { fulfillment: string[]; payment: string[] };
-  shippingAddress: unknown;
+  /** How it is being paid for, and that method's name. */
+  paymentMethod: string;
+  paymentMethodLabel: string;
+  /**
+   * How the total was reached, and each part of it already formatted.
+   *
+   * The order's total was frozen in TOMAN when it was placed, so a client adding the parts up itself
+   * is a client that can disagree with the invoice. The numbers cross beside the sentences because a
+   * client may need to compare rather than to print — the panel prices a refund off them.
+   */
+  subtotal: number;
+  subtotalFormatted: string;
+  discountAmount: number;
+  discountAmountFormatted: string;
+  deliveryFee: number;
+  /**
+   * The fee as a shopper reads it: "رایگان" when there is none, because a formatted zero on a
+   * delivery row is a fact about the number rather than about the delivery.
+   */
+  deliveryFeeLabel: string;
+  shippingAddress: OrderShippingAddress;
 }
 
 // ---- the operator's views ----
 //
 // A shopper's order and an operator's order are the same order and not the same read. The operator
-// decides what happens to this one next, so their list carries the customer, the method and the
-// money, and their detail carries the address, the money's parts and the stock holds behind it.
-// Widening `OrderSummary` itself would hand all of that to every shopper's `/orders/mine`, so the
-// operator's rows extend it instead and the storefront's response is unchanged.
+// decides what happens to this one next, so their list carries the customer and their detail carries
+// the stock holds and the gateway's own references behind it. Widening `OrderSummary` — which every
+// list row in both apps is built from — would hand all of that to every order table in the shop, so
+// the operator's rows extend the detail instead.
 
 /** One row of the operator's order table. */
 export interface OrderAdminSummary extends OrderSummary {
@@ -100,19 +128,14 @@ export interface OrderShippingAddress {
 /**
  * One order for an operator, in full.
  *
- * `transitions` is inherited rather than re-fetched: it is the gateway's own table resolved for this
- * order's state, and the status form is rendered from it so the form cannot offer a transition the
- * server would refuse. Everything the amounts are made of — the subtotal, the discount, the delivery
- * fee — crosses alongside the total, because the page prints how a total was reached and a total on
- * its own is a number an operator has to take on trust.
+ * `transitions`, the amounts the total is made of and the address are inherited rather than
+ * re-declared: they are one order's facts, and an operator's page and a shopper's page are two
+ * renderings of the same row. What is added here is what only an operator may see — who the customer
+ * is, the stock holds behind the order, and the gateway's own references for it.
  */
 export interface OrderAdminDetail extends OrderDetail {
   customerId: string;
   customer: { id: string; name: string | null; phone: string; email: string | null };
-  subtotal: number;
-  discountAmount: number;
-  deliveryFee: number;
-  paymentMethod: string;
   shippingMethod: string;
   deliveryFeeMode: string;
   gatewayRefId: string | null;

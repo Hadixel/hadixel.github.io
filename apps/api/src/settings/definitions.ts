@@ -34,6 +34,18 @@ export interface SettingFieldDef {
   readonly integer?: boolean;
   /** The value must be at least this. Set where zero would mean "off" or "never". */
   readonly minimum?: number;
+  /**
+   * A shopper may read this without an operator session, so `GET /settings/public` serves it.
+   *
+   * Declared here, beside the field, rather than in a list on the route — so publishing a setting is
+   * something a person does to a setting rather than something they remember to add somewhere else.
+   * The default is `false`, so a field added to the shop is private until someone says otherwise.
+   *
+   * The bar for setting it: a value the storefront renders to a visitor who is not signed in. The
+   * card-to-card details qualify because the shopper is shown them to transfer money; the SMS
+   * provider's configured flag does not, and would tell a stranger whether the shop's SMS is live.
+   */
+  readonly public?: boolean;
 }
 
 export interface SettingSectionDef {
@@ -55,10 +67,10 @@ export const SETTING_SECTIONS: readonly SettingSectionDef[] = [
     icon: "🏪",
     description: "مشخصات کلی فروشگاه و SEO پیش‌فرض",
     fields: [
-      { key: "storeName", label: "نام فروشگاه", type: "text" },
+      { key: "storeName", label: "نام فروشگاه", type: "text", public: true },
       { key: "storeLogo", label: "آدرس لوگو", type: "text" },
-      { key: "storeTagline", label: "شعار فروشگاه", type: "text" },
-      { key: "storeContact", label: "راه‌های تماس", type: "text" },
+      { key: "storeTagline", label: "شعار فروشگاه", type: "text", public: true },
+      { key: "storeContact", label: "راه‌های تماس", type: "text", public: true },
       { key: "blogDefaultByline", label: "امضای پیش‌فرض وبلاگ", type: "text" },
       { key: "seoDefaultTitle", label: "عنوان پیش‌فرض SEO", type: "text" },
       { key: "seoDefaultDescription", label: "توضیح پیش‌فرض SEO", type: "text" },
@@ -72,23 +84,26 @@ export const SETTING_SECTIONS: readonly SettingSectionDef[] = [
     fields: [
       {
         key: "shippingLocalFeeMode",
+        public: true,
         label: "نحوه هزینه ارسال درون‌شهر",
         type: "enum",
         enumValues: ["FREE", "FLAT", "API_QUOTE", "FALLBACK_FLAT", "FREIGHT_COLLECT"],
       },
-      { key: "shippingLocalFlatFee", label: "کرایه ثابت درون‌شهر (تومان)", type: "number" },
+      { key: "shippingLocalFlatFee", label: "کرایه ثابت درون‌شهر (تومان)", type: "number", public: true },
       {
         key: "shippingPostWeightCap",
+        public: true,
         label: "سقف وزن باربری (کیلوگرم، 0=خاموش)",
         type: "number",
       },
       {
         key: "shippingPostFallbackFee",
+        public: true,
         label: "کرایه بازگشتی باربری (تومان، 0=ناموجود)",
         type: "number",
       },
-      { key: "shippingMaxCodTotal", label: "سقف مبلغ پرداخت در محل (تومان)", type: "number" },
-      { key: "shippingBarberiNote", label: "توضیح باربری", type: "text" },
+      { key: "shippingMaxCodTotal", label: "سقف مبلغ پرداخت در محل (تومان)", type: "number", public: true },
+      { key: "shippingBarberiNote", label: "توضیح باربری", type: "text", public: true },
     ],
   },
   {
@@ -97,9 +112,9 @@ export const SETTING_SECTIONS: readonly SettingSectionDef[] = [
     icon: "💳",
     description: "پرداخت کارت‌به‌کارت (C2C) درگاه انسانی",
     fields: [
-      { key: "paymentC2cCardNumber", label: "شماره کارت", type: "text" },
-      { key: "paymentC2cCardHolder", label: "نام دارنده کارت", type: "text" },
-      { key: "paymentC2cBankName", label: "نام بانک", type: "text" },
+      { key: "paymentC2cCardNumber", label: "شماره کارت", type: "text", public: true },
+      { key: "paymentC2cCardHolder", label: "نام دارنده کارت", type: "text", public: true },
+      { key: "paymentC2cBankName", label: "نام بانک", type: "text", public: true },
     ],
   },
   {
@@ -184,3 +199,16 @@ export function fieldForColumnKey(columnKey: string): string | undefined {
   }
   return undefined;
 }
+
+
+/**
+ * The fields a shopper may read without an operator session, derived from the table above.
+ *
+ * Derived rather than listed, so `public: true` on a field is the only thing that has to be added for
+ * the storefront to see it — and the only thing that has to be *removed* to stop it. A second list on
+ * the route would be a second thing to keep in step with the table, which is the whole problem this
+ * module was written to end.
+ */
+export const PUBLIC_SETTING_FIELDS: readonly string[] = SETTING_SECTIONS.flatMap((section) =>
+  section.fields.filter((field) => field.public).map((field) => field.key),
+);

@@ -20,7 +20,13 @@ import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { SaveSettingsDto } from "./dto/settings.dto.js";
-import { SETTING_SECTIONS, fieldForColumnKey, findSection } from "./definitions.js";
+import {
+  PUBLIC_SETTING_FIELDS,
+  SETTING_SECTIONS,
+  columnKeyFor,
+  fieldForColumnKey,
+  findSection,
+} from "./definitions.js";
 import { parseSettingsForm } from "./settings.service.js";
 import {
   SettingSectionNotFoundException,
@@ -115,6 +121,35 @@ export class SettingsController {
       const value = row.value;
       if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") continue;
       out[row.key] = value;
+    }
+    return out;
+  }
+
+  /**
+   * The settings a visitor may see, with no operator session.
+   *
+   * A storefront read that answered with everything would publish the shop's operational settings —
+   * whether its SMS provider is configured, its low-stock line, its reserve windows — to anyone who
+   * asked. So this is an allowlist rather than a filter, and the list is `public: true` on the field
+   * itself, so the decision is made once, next to the setting it is about.
+   *
+   * The card-to-card details are in it deliberately: a shopper paying by transfer is shown the number
+   * to transfer to, so a value that is not readable by the storefront is a value the shopper cannot be
+   * told. Answered in *field* names, like the operator read above, because the storefront's chrome is
+   * written against field names.
+   */
+  @Get("public")
+  async publicValues(): Promise<Record<string, string | number | boolean>> {
+    const wanted = new Set<string>(PUBLIC_SETTING_FIELDS.map((field) => columnKeyFor(field)));
+    const rows = await this.db.setting.findMany();
+    const out: Record<string, string | number | boolean> = {};
+    for (const row of rows) {
+      if (!wanted.has(row.key)) continue;
+      const value = row.value;
+      if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") continue;
+      const field = fieldForColumnKey(row.key);
+      if (field === undefined) continue;
+      out[field] = value;
     }
     return out;
   }

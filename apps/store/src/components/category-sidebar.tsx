@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Category } from "@kmodern/db";
+import type { CategorySummary } from "@/lib/queries";
 import { cn } from "@kmodern/ui";
 
 /* Hairline category list — active section ink, the rest ash (Zellerfeld nav idiom). */
@@ -7,7 +7,7 @@ export function CategorySidebar({
   categories,
   activeSlug,
 }: {
-  categories: Array<Pick<Category, "id" | "name" | "slug" | "parentId">>;
+  categories: CategorySummary[];
   activeSlug?: string;
 }) {
   const roots = categories.filter((c) => !c.parentId);

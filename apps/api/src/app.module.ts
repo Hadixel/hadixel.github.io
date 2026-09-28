@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AuditModule } from "./audit/audit.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
+import { CatalogueModule } from "./catalogue/catalogue.module.js";
 import { CollectionsModule } from "./collections/collections.module.js";
 import { CheckoutModule } from "./checkout/checkout.module.js";
 import { ConfigModule } from "./config/config.module.js";
@@ -20,7 +21,9 @@ import { PostsModule } from "./posts/posts.module.js";
 import { ProductsModule } from "./products/products.module.js";
 import { ScraperModule } from "./scraper/scraper.module.js";
 import { SettingsModule } from "./settings/settings.module.js";
+import { ShopperModule } from "./shopper/shopper.module.js";
 import { StockLevelsModule } from "./stock-levels/stock-levels.module.js";
+import { StorefrontModule } from "./storefront/storefront.module.js";
 
 /**
  * The composition module. It declares `imports` and nothing else.
@@ -40,7 +43,15 @@ import { StockLevelsModule } from "./stock-levels/stock-levels.module.js";
     DataModule,
     HealthModule,
     AuthModule,
+    // The public catalogue sits with the content read above it, because both answer a logged-out
+    // visitor and neither requires a session. It declares no auth module, and the comment on it says
+    // why: a public read behind a session check is a storefront nobody can look at.
+    CatalogueModule,
     ContentModule,
+    // Storefront sits beside the content read for the same reason and one more: it is the tables the
+    // chrome and the blog read with no session, and the rule that a public read may not see a draft
+    // lives in its own service rather than beside the operator's version of the same query.
+    StorefrontModule,
     // Audit sits directly below Auth, because the trail records what the auth feature's own
     // sign-ins and password changes did, and every other feature writes to it.
     AuditModule,
@@ -57,6 +68,9 @@ import { StockLevelsModule } from "./stock-levels/stock-levels.module.js";
     MediaModule,
     NavModule,
     OrdersModule,
+    // Shopper sits directly below Orders: it answers for one signed-in customer's own orders and
+    // reads the order read model rather than defining a second one.
+    ShopperModule,
     // Inventory sits below Orders because orders compose its lifecycle, and above nothing because
     // nothing composes an adjustment.
     InventoryModule,

@@ -1,8 +1,8 @@
-import { db } from "@kmodern/db";
-import { currentCustomer } from "@/lib/auth";
+import { currentCustomer } from "@/lib/customer-session";
+import { orderRows, readMyOrders } from "@/lib/my-orders";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { OrderRow, orderStatusKey, type OrderRowData } from "@/components/order-row";
+import { OrderRow } from "@/components/order-row";
 
 export const dynamic = "force-dynamic";
 
@@ -20,19 +20,11 @@ export default async function OrdersPage() {
     );
   }
 
-  const orders = await db().order.findMany({
-    where: { customerId: me.customer.id },
-    orderBy: { placedAt: "desc" },
-    include: { items: true },
-    take: 50,
-  });
-  const rows: OrderRowData[] = orders.map((order) => ({
-    orderNumber: order.orderNumber,
-    placedAt: order.placedAt.toISOString(),
-    itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
-    total: order.total,
-    statusKey: orderStatusKey({ fulfillmentStatus: order.fulfillmentStatus, paymentStatus: order.paymentStatus }),
-  }));
+  // The gateway scopes this to the caller's session and answers with the row this page prints. It
+  // used to query the order table here and assemble that row itself, which is where the item count,
+  // the status badge key and the formatted total each came from.
+  const { orders } = await readMyOrders();
+  const rows = orderRows(orders);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
