@@ -1,11 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@kmodern/db";
-import { createSessionToken, hashToken, login, requireAdmin, logout as doLogout, hashPassword, setAdminSessionCookie, verifyPassword, revokeSession } from "@/lib/auth";
+import { GatewayError, panelGateway } from "@/lib/gateway";
+import { clearAdminSessionCookie, login as signIn, revokeOwnSession, setAdminSessionCookie } from "@/lib/auth";
 import { actionContext } from "./ctx";
-import { recordAudit } from "@/lib/audit";
 
 export interface ActionState {
   ok?: boolean;
@@ -14,85 +12,87 @@ export interface ActionState {
   id?: string;
 }
 
-/** POST /login form action — 010 login with rate limiting + lockout */
+/** POST /login form action — the gateway's lockout, failure window and audit */
 export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "ایمیل و گذرواژه الزامی است" };
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || undefined;
-  const userAgent = h.get("user-agent") ?? undefined;
-  const result = await login(email, password, ip, userAgent);
-  if (!result.ok) return { error: result.error };
-  redirect(result.mustChangePassword ? "/change-password" : "/");
+  try {
+    const result = await signIn(email, password);
+    redirect(result.mustChangePassword ? "/change-password" : "/");
+  } catch (error) {
+    // `redirect` signals by throwing, so a catch around the sign-in would otherwise swallow the
+    // navigation and report a failed login for a successful one.
+    if (isRedirect(error)) throw error;
+    return { error: describe(error) };
+  }
 }
 
-/** change own password; atomically rotates the current session (010) */
+/**
+ * Change own password.
+ *
+ * The gateway verifies the current password, sets the new one, revokes every other session and rotates
+ * this one, in a single commit. The rotated token comes back here and has to be written to the cookie
+ * before the redirect — keeping the old cookie would leave the session that performed the change valid,
+ * which is the exact case the rotation exists for.
+ */
 export async function changePasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const { admin, session, ip, ua } = await actionContext({ allowPasswordChange: true });
+  await actionContext({ allowPasswordChange: true });
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
   if (next.length < 12) return { error: "گذرواژه جدید باید حداقل ۱۲ کاراکتر باشد" };
   if (next !== confirm) return { error: "تکرار گذرواژه یکسان نیست" };
-  if (next === current) return { error: "گذرواژه جدید نباید همان قبلی باشد" };
-  if (!verifyPassword(current, admin.passwordHash)) return { error: "گذرواژه فعلی اشتباه است" };
 
-  const nextToken = createSessionToken();
-  const nextTokenHash = hashToken(nextToken);
   try {
-    await db().$transaction(async (tx) => {
-      await tx.adminUser.update({
-        where: { id: admin.id },
-        data: { passwordHash: hashPassword(next), mustChangePassword: false },
-      });
-      // Rotate the current token as part of the same commit. This invalidates
-      // a cloned cookie even when it was the session used for the change.
-      await tx.adminSession.updateMany({
-        where: { adminUserId: admin.id, id: { not: session.id } },
-        data: { revokedAt: new Date() },
-      });
-      await tx.adminSession.update({
-        where: { id: session.id },
-        data: { tokenHash: nextTokenHash, lastSeenAt: new Date() },
-      });
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: admin.id,
-          action: "ADMIN_PASSWORD_CHANGED",
-          entityType: "ADMIN_USER",
-          entityId: admin.id,
-          ip,
-          userAgent: ua,
-        },
-      });
+    const client = await panelGateway();
+    const result = await client.post<{ token: string; ttlMs: number }>("/auth/admin/password", {
+      current,
+      next,
     });
-    await setAdminSessionCookie(nextToken);
-  } catch {
-    return { error: "تغییر گذرواژه انجام نشد؛ دوباره تلاش کنید" };
+    await setAdminSessionCookie(result.token, result.ttlMs);
+  } catch (error) {
+    if (isRedirect(error)) throw error;
+    return { error: describe(error) };
   }
   redirect("/");
 }
 
 /** revoke a specific admin session (account → sessions list) */
 export async function revokeSessionAction(formData: FormData) {
-  const { admin } = await requireAdmin();
   const sessionId = String(formData.get("sessionId") ?? "");
-  const target = await db().adminSession.findUnique({ where: { id: sessionId } });
-  if (!target || target.adminUserId !== admin.id) return { error: "نشست پیدا نشد" };
-  await revokeSession(sessionId);
-  await recordAudit({
-    adminUserId: admin.id,
-    action: "ADMIN_SESSION_REVOKED",
-    entityType: "ADMIN_SESSION",
-    entityId: sessionId,
-  });
-  return { ok: true };
+  try {
+    await revokeOwnSession(sessionId);
+    return { ok: true };
+  } catch (error) {
+    return { error: describe(error) };
+  }
 }
 
 /** POST /logout */
 export async function logoutAction() {
-  await doLogout();
+  const client = await panelGateway().catch(() => null);
+  if (client) await client.post("/auth/admin/sign-out").catch(() => undefined);
+  await clearAdminSessionCookie();
   redirect("/login");
+}
+
+/** Next signals a redirect by throwing a value with this digest. */
+function isRedirect(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  );
+}
+
+function describe(error: unknown): string {
+  if (error instanceof GatewayError) {
+    if (error.unreachable) return `درگاه در دسترس نیست؛ دوباره تلاش کنید (${error.message})`;
+    return error.message;
+  }
+  return "خطای ناشناخته؛ دوباره تلاش کنید";
 }

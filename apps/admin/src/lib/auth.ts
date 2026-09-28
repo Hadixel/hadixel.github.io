@@ -1,163 +1,126 @@
+// 010 admin auth, now entirely a client of the gateway's.
+//
+// This file used to be a second implementation of every rule below — scrypt hashes, Postgres sessions,
+// the httpOnly Secure SameSite=lax cookie, a 5-per-15-minutes failure window and a lockout after ten
+// consecutive failures — and it had its own sign-in, its own revocation and its own audit. None of that
+// was reachable from the gateway, so `POST /auth/admin` was a second way in that had no lockout at all:
+// the panel's sign-in was throttled, and the sign-in anyone could call directly was not. Two rules
+// existed and only one of them was attached to the door.
+//
+// What is left here is the part that genuinely cannot move: reading the operator's cookie off the
+// incoming request and writing the response cookie. An operator's session must never be reachable from
+// browser JavaScript, so there is no browser client in the panel and the cookie has to be set by the
+// server that receives the browser's request — which is this process, not the gateway.
+//
+// One distinction this file has to keep, and it is the reason `getAdminUser` does not use `readThrough`:
+// "not signed in" and "the gateway is down" both arrive as a failed request, and they mean opposite
+// things. The first sends the operator to the login form. The second must not — sending an operator
+// with a perfectly valid session to the login page because the gateway was briefly unreachable would
+// make a blip look like an expiry, and the natural next thing they do is sign in again.
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { db } from "@kmodern/db";
+import { GatewayError, panelGateway } from "@/lib/gateway";
 
-// 010 admin auth: scrypt password hashes + Postgres sessions + httpOnly,
-// Secure, SameSite=lax cookie host-scoped to admin.kmodern.ir (no `domain`,
-// so the browser sends it only to that host — a storefront XSS can't reach it).
-// Rate limit 5 fails / 15min / email; time-boxed lockout after 10 consecutive
-// failures.
+const ADMIN_COOKIE = "kmodern_admin";
 
-export const ADMIN_COOKIE = "kmodern_admin";
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const MAX_FAILS_WINDOW = 5; // per 15 minutes
-const FAIL_WINDOW_MS = 15 * 60 * 1000;
-const LOCKOUT_AFTER = 10; // consecutive failures
-const LOCKOUT_MS = 30 * 60 * 1000;
-const MAX_CONCURRENT_KDF = 4;
-let activeKdf = 0;
-const kdfWaiters: Array<() => void> = [];
-
-async function withKdfBudget<T>(work: () => Promise<T>): Promise<T> {
-  if (activeKdf >= MAX_CONCURRENT_KDF) {
-    await new Promise<void>((resolve) => kdfWaiters.push(resolve));
-  }
-  activeKdf += 1;
-  try {
-    return await work();
-  } finally {
-    activeKdf -= 1;
-    kdfWaiters.shift()?.();
-  }
+/** What the gateway says about the caller. Never the admin row: see `GET /auth/admin/me`. */
+export interface AdminContext {
+  session: { id: string };
+  admin: {
+    id: string;
+    email: string;
+    name: string;
+    /**
+     * The role, as the union of the values the gateway can send rather than as `string`.
+     *
+     * Narrowing it here is the point: `role: string` would let `role === "OWNER"` compile even if the
+     * gateway sent something else, and the three scraper routes and the panel layout all gate on
+     * exactly that comparison. The three values are written out because importing the generated enum
+     * would be the data dependency this whole change removes.
+     */
+    role: "OWNER" | "EDITOR" | "ORDER_MANAGER";
+    mustChangePassword: boolean;
+  };
 }
 
-export function createSessionToken(): string {
-  return randomBytes(32).toString("hex");
-}
-
-export async function setAdminSessionCookie(token: string, maxAge = SESSION_TTL_MS / 1000): Promise<void> {
+/** Set the operator's cookie from a token the gateway issued. */
+export async function setAdminSessionCookie(token: string, ttlMs: number): Promise<void> {
   const store = await cookies();
   store.set(ADMIN_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge,
-  });
-}
-
-export function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export function hashPassword(pw: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(pw, salt, 64).toString("hex");
-  return `scrypt$${salt}$${hash}`;
-}
-
-export function verifyPassword(pw: string, stored: string): boolean {
-  const parts = stored.split("$");
-  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
-  const [, salt, expectedHex] = parts;
-  const expected = Buffer.from(expectedHex, "hex");
-  const actual = scryptSync(pw, salt, 64);
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-}
-
-/** number of failed login attempts for this admin within the last 15 minutes */
-export async function countRecentFailures(adminUserId: string): Promise<number> {
-  const since = new Date(Date.now() - FAIL_WINDOW_MS);
-  return db().adminAuditLog.count({
-    where: { action: "LOGIN_FAILED", adminUserId, at: { gte: since } },
+    maxAge: Math.floor(ttlMs / 1000),
   });
 }
 
 /**
- * Authenticate an admin. Returns {ok, mustChangePassword?} or {ok:false,error}.
- * Audit entries (LOGIN_FAILED / LOGIN_SUCCESS) go to AdminAuditLog (010).
+ * Expire the operator's cookie.
+ *
+ * Awaited rather than fired: a cookie store writes into the outgoing response headers, so a clear that
+ * has not settled by the time the action returns never reaches the browser — which is the one outcome
+ * this exists to prevent.
  */
-export async function login(email: string, password: string, ip?: string, userAgent?: string) {
-  email = email.trim().toLowerCase();
-  const admin = await db().adminUser.findUnique({ where: { email } });
-  if (!admin || !admin.isActive) {
-    // Do not reveal account existence; still record a failure shape.
-    return { ok: false as const, error: "ایمیل یا گذرواژه اشتباه است" };
-  }
-
-  if (admin.lockedUntil && admin.lockedUntil > new Date()) {
-    return { ok: false as const, error: "حساب به‌طور موقت قفل شده است؛ بعداً دوباره تلاش کنید" };
-  }
-
-  const recentFails = await countRecentFailures(admin.id);
-  if (recentFails >= MAX_FAILS_WINDOW) {
-    return { ok: false as const, error: "تلاش‌های ناموفق زیاد؛ کمی بعد دوباره تلاش کنید" };
-  }
-
-  const valid = await withKdfBudget(async () => verifyPassword(password, admin.passwordHash));
-  if (!valid) {
-    const updatedAdmin = await db().adminUser.update({
-      where: { id: admin.id },
-      data: { failedAttempts: { increment: 1 } },
-    });
-    const locked = updatedAdmin.failedAttempts >= LOCKOUT_AFTER;
-    if (locked) {
-      await db().adminUser.update({
-        where: { id: admin.id },
-        data: { failedAttempts: 0, lockedUntil: new Date(Date.now() + LOCKOUT_MS) },
-      });
-    }
-    await db().adminAuditLog.create({
-      data: {
-        adminUserId: admin.id,
-        action: "LOGIN_FAILED",
-        entityType: "ADMIN",
-        entityId: admin.id,
-        ip,
-        userAgent,
-        meta: { email },
-      },
-    });
-    const error =
-      locked ? "تعداد تلاش‌های ناموفق از حد مجاز گذشت؛ حساب ۳۰ دقیقه قفل شد" : "ایمیل یا گذرواژه اشتباه است";
-    return { ok: false as const, error };
-  }
-
-  // success
-  const token = createSessionToken();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await db().adminSession.create({
-    data: { adminUserId: admin.id, tokenHash: hashToken(token), ip, userAgent, expiresAt },
+export async function clearAdminSessionCookie(): Promise<void> {
+  const store = await cookies();
+  store.set(ADMIN_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
   });
-  await db().adminUser.update({
-    where: { id: admin.id },
-    data: { failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
-  });
-  await db().adminAuditLog.create({
-    data: { adminUserId: admin.id, action: "LOGIN_SUCCESS", entityType: "ADMIN_USER", entityId: admin.id, ip, userAgent },
-  });
-
-  await setAdminSessionCookie(token);
-  return { ok: true as const, mustChangePassword: admin.mustChangePassword };
 }
 
-/** resolve the current admin session, or null. */
-export async function getAdminUser() {
-  const store = await cookies();
-  const token = store.get(ADMIN_COOKIE)?.value;
-  if (!token) return null;
-  const session = await db().adminSession.findFirst({
-    where: { tokenHash: hashToken(token), revokedAt: null, expiresAt: { gte: new Date() } },
-    include: { adminUser: true },
-  });
-  if (!session || !session.adminUser.isActive) return null;
-  // throttle lastSeenAt writes: only update if stale by a minute
-  const stale = Date.now() - session.lastSeenAt.getTime() > 60_000;
-  if (stale) {
-    await db().adminSession.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } });
+/**
+ * Sign in, and set the cookie the gateway's token belongs in.
+ *
+ * The lockout, the failure window and the audit are the gateway's now. This only relays the outcome and
+ * writes the cookie, which is the one part of a sign-in the gateway cannot do: the browser will answer
+ * the next request, and the panel is what owns the cookie.
+ */
+export async function login(email: string, password: string) {
+  const client = await panelGateway();
+  const result = await client.post<{
+    token: string;
+    cookie: string;
+    ttlMs: number;
+    mustChangePassword: boolean;
+  }>("/auth/admin", { email, password });
+  await setAdminSessionCookie(result.token, result.ttlMs);
+  return { ok: true as const, mustChangePassword: result.mustChangePassword };
+}
+
+/** The current operator, or null when there is no valid session. */
+export async function getAdminUser(): Promise<AdminContext | null> {
+  let client;
+  try {
+    client = await panelGateway();
+  } catch (error) {
+    // A build whose gateway address was never configured. Thrown, not returned as null: an operator
+    // sent to /login for a missing build variable would be told their session expired, and signing in
+    // again would fail in exactly the same way.
+    throw new Error(
+      error instanceof GatewayError ? error.message : "درگاه پیکربندی نشده است؛ دوباره تلاش کنید",
+    );
   }
-  return { session, admin: session.adminUser };
+
+  try {
+    return await client.get<AdminContext>("/auth/admin/me");
+  } catch (error) {
+    // 401 is the answer to the question, not a fault. Anything else is a fault, and a fault that
+    // becomes "not signed in" is how an operator ends up signing in again during an outage.
+    if (error instanceof GatewayError && error.statusCode === 401) return null;
+    throw new Error(
+      error instanceof GatewayError
+        ? error.unreachable
+          ? `درگاه در دسترس نیست؛ دوباره تلاش کنید (${error.message})`
+          : error.message
+        : "خطای ناشناخته؛ دوباره تلاش کنید",
+    );
+  }
 }
 
 /** server helper: current admin or redirect to /login */
@@ -181,19 +144,25 @@ export async function requireAdminApi() {
   return { ok: true as const, ctx };
 }
 
-/** revoke a session (logout / account session management) */
-export async function revokeSession(sessionId: string) {
-  await db().adminSession.update({ where: { id: sessionId }, data: { revokedAt: new Date() } });
+/** Revoke one of the calling operator's own sessions. */
+export async function revokeOwnSession(sessionId: string) {
+  const client = await panelGateway();
+  return client.post<{ ok: true }>("/auth/admin/sessions/revoke", { sessionId });
 }
 
-export async function logout() {
-  const ctx = await getAdminUser();
-  const store = await cookies();
-  if (ctx) {
-    await db().adminSession.update({
-      where: { id: ctx.session.id },
-      data: { revokedAt: new Date() },
-    });
+/**
+ * Sign out.
+ *
+ * The cookie is cleared whatever the gateway says. A sign-out that failed to reach the gateway has
+ * still removed the credential from the browser, which is the part the operator asked for; refusing to
+ * clear it would leave a credential on a shared machine because the server was down.
+ */
+export async function logout(): Promise<void> {
+  try {
+    const client = await panelGateway();
+    await client.post("/auth/admin/sign-out");
+  } catch {
+    // Deliberately swallowed — see above.
   }
-  store.set(ADMIN_COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
+  await clearAdminSessionCookie();
 }

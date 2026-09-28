@@ -32,6 +32,9 @@ export interface IssuedToken {
   tokenHash: string;
 }
 
+/** How stale `lastSeenAt` must be before a request rewrites it. */
+const LAST_SEEN_THROTTLE_MS = 60_000;
+
 /**
  * A token and its hash.
  *
@@ -147,13 +150,24 @@ export async function customerForToken(db: Db, token: string, now: Date = new Da
   return { session, customer: session.customer };
 }
 
+/**
+ * The admin a token belongs to, or null.
+ *
+ * Same contract as `customerForToken`, and the same reason for touching `lastSeenAt` only when it has
+ * gone stale: a panel page render calls this, and a render per request would write the session row on
+ * every one. The minute is the panel's threshold, kept here now that this is the only implementation.
+ *
+ * An inactive admin is null. A session that outlived its account's deactivation is not a session.
+ */
 export async function adminForToken(db: Db, token: string, now: Date = new Date()) {
   const session = await db.adminSession.findFirst({
     where: { tokenHash: hashToken(token), revokedAt: null, expiresAt: { gte: now } },
     include: { adminUser: true },
   });
-  if (!session) return null;
-  await db.adminSession.update({ where: { id: session.id }, data: { lastSeenAt: now } });
+  if (!session || !session.adminUser.isActive) return null;
+  if (now.getTime() - session.lastSeenAt.getTime() > LAST_SEEN_THROTTLE_MS) {
+    await db.adminSession.update({ where: { id: session.id }, data: { lastSeenAt: now } });
+  }
   return { session, admin: session.adminUser };
 }
 
