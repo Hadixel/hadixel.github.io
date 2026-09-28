@@ -1,39 +1,26 @@
+// POST /api/admin/media/upload — forward the operator's file to the gateway.
+//
+// The panel used to decide whether a file was acceptable, mint a key and write the bytes itself. All
+// three of those belong to the process that owns the media library, and two of them were outright wrong
+// here: the key was generated in the panel while the *delete* that removes it lived in the gateway, and
+// the write went to `public/media` resolved against the panel's own `process.cwd()` — a different
+// directory from the gateway's `MEDIA_LOCAL_ROOT` whenever the two were started from different places.
+// An upload could succeed and then be invisible to the storefront, with no error to say so.
+//
+// So this route now does the one thing only it can do — turn a browser's multipart body into bytes —
+// and the gateway judges the type, checks the magic number, mints the key, writes the file and writes
+// the audit line. The size cap stays here as a cheap refusal before the file is buffered at all; the
+// gateway has its own, and this one is an optimisation rather than the rule.
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
-import { mediaKey, saveMediaFile } from "@/lib/media";
+import { GatewayError, panelGateway } from "@/lib/gateway";
 import { sameOrigin } from "@/lib/origin";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const MAX_REQUEST_SIZE = MAX_FILE_SIZE + 1024 * 1024;
-// Do not trust a client filename or MIME alone. SVG/HTML and executable
-// content are intentionally excluded because local fallback media is served
-// from the admin origin.
-const MIME_EXTENSIONS = new Map([
-  ["image/jpeg", "jpg"],
-  ["image/png", "png"],
-  ["image/webp", "webp"],
-  ["image/gif", "gif"],
-  ["image/avif", "avif"],
-  ["video/mp4", "mp4"],
-  ["video/webm", "webm"],
-  ["application/pdf", "pdf"],
-]);
 
-function hasExpectedSignature(bytes: Buffer, extension: string): boolean {
-  if (extension === "jpg") return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (extension === "png") return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-  if (extension === "gif") return bytes.subarray(0, 6).toString("ascii") === "GIF87a" || bytes.subarray(0, 6).toString("ascii") === "GIF89a";
-  if (extension === "webp") return bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
-  if (extension === "avif") return bytes.subarray(4, 12).toString("ascii").includes("ftypavif");
-  if (extension === "pdf") return bytes.subarray(0, 5).toString("ascii") === "%PDF-";
-  if (extension === "mp4") return bytes.subarray(4, 8).toString("ascii") === "ftyp";
-  if (extension === "webm") return bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
-  return false;
-}
-
-/** POST /api/admin/media/upload — multipart file → S3 (or public/media fallback) */
 export async function POST(req: Request) {
   const auth = await requireAdminApi();
   if (!auth.ok) {
@@ -59,20 +46,30 @@ export async function POST(req: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "file missing" }, { status: 400 });
   }
-  const extension = MIME_EXTENSIONS.get(file.type.toLowerCase());
-  if (!extension) {
-    return NextResponse.json({ error: "نوع فایل مجاز نیست" }, { status: 415 });
-  }
   if (file.size <= 0 || file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ error: "invalid_file_size" }, { status: 413 });
   }
 
   try {
-    const bytes = Buffer.from(await file.arrayBuffer());
-    if (!hasExpectedSignature(bytes, extension)) return NextResponse.json({ error: "محتوای فایل با نوع آن مطابقت ندارد" }, { status: 415 });
-    const url = await saveMediaFile(mediaKey(extension), bytes, file.type);
+    // The content type travels as a header and nothing else. An extension is *not* sent: the gateway
+    // derives it from the type, so a client that could name its own extension could ask to store a
+    // `.jpg` as a `.html`. What comes back is the gateway's own key, so the panel has none to disagree
+    // with — the file the operator sees in the library is the file the delete route will remove.
+    const client = await panelGateway();
+    const { url } = await client.post<{ url: string }>(
+      "/media",
+      await file.arrayBuffer(),
+      { headers: { "content-type": file.type } },
+    );
     return NextResponse.json({ url }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    // The gateway's own refusal is passed through rather than flattened. A 415 for "this is not
+    // really a JPEG" and a 400 for "unsupported type" are different faults, and the old route reported
+    // every one of them as `upload_failed` with a 500, which told the operator to retry a file that was
+    // never going to be accepted.
+    if (error instanceof GatewayError && error.statusCode >= 400 && error.statusCode < 500) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
     console.error("media upload failed", error);
     return NextResponse.json({ error: "upload_failed" }, { status: 500 });
   }

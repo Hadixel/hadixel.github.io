@@ -2,8 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { fetchAsset, imageExtensionForContentType } from "@kmodern/scraper";
-import type { Storage } from "@kmodern/adapters";
-import { mediaStorage } from "@/lib/media";
+import { uploadScrapedImage } from "./scraper-image-upload";
 import type { ScraperCatalogItem } from "@/lib/scraper-types";
 
 const COLOR_TOKENS = ["black", "white", "gray", "beige", "silver", "steel"] as const;
@@ -99,9 +98,7 @@ function variantKey(slug: string, color: string): string {
 
 async function materializeEntry(
   entry: ImageEntry,
-  slug: string,
   color: ColorToken,
-  storage: Storage | null,
   pathFor: (extension: string) => { destination: string; publicPath: string },
 ): Promise<string> {
   let body: Buffer | undefined;
@@ -137,11 +134,12 @@ async function materializeEntry(
   const extension = imageExtensionForContentType(contentType)
     ?? imageExtension(entry.local ?? entry.remote ?? "image.jpg");
   const { destination, publicPath } = pathFor(extension);
-  if (storage) {
-    const digest = createHash("sha256").update(body).digest("hex");
-    const key = `scraper/products/${slug}/${color}/${digest}${extension}`;
-    return storage.upload({ key, body, contentType: contentTypeFor(extension) });
-  }
+  // The object store is the gateway's, and so is the content-addressed key: the digest is computed
+  // there from the bytes, so the panel cannot write to a key it chose and the deduplication the hash
+  // exists for is the same code whichever process is uploading. Locally the image still lands in the
+  // panel's public directory, which is what a laptop with no S3 bucket serves.
+  const remote = await uploadScrapedImage(color, body, contentTypeFor(extension));
+  if (remote) return remote;
 
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, body);
@@ -155,7 +153,6 @@ async function materializeEntry(
 export async function prepareScrapedImages(items: ScraperCatalogItem[]): Promise<PreparedScrapedImages> {
   const byVariant = new Map<string, string[]>();
   const publicDir = storePublicDir();
-  const storage = mediaStorage();
   let ready = 0;
   let errors = 0;
 
@@ -176,7 +173,7 @@ export async function prepareScrapedImages(items: ScraperCatalogItem[]): Promise
       for (let index = 0; index < selected.length; index++) {
         const entry = selected[index];
         try {
-          const publicUrl = await materializeEntry(entry, item.slug, color, storage, (extension) => {
+          const publicUrl = await materializeEntry(entry, color, (extension) => {
             const name = `img-${index + 1}${extension}`;
             return {
               destination: join(publicDir, item.slug, `variant-${color}`, name),

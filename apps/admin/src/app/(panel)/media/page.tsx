@@ -1,11 +1,22 @@
 import { faDigits } from "@/lib/date";
-import { listMedia } from "@/lib/media";
-import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui";
+import { readThrough } from "@/lib/reads";
+import { Card, CardHeader } from "@/components/ui";
 import { MediaUpload } from "./media-upload";
 import { MediaLibrary } from "./media-library";
 
+interface MediaItem {
+  url: string;
+  key: string;
+}
+
+export const dynamic = "force-dynamic";
+
 export default async function MediaPage() {
-  const items = await listMedia();
+  // The gateway's walk, not a local one. The panel used to list the media directory itself and filter it
+  // by its own copy of the key rule, so the picker could offer a key the gateway would then refuse to
+  // delete — and on a deployment with a local root in a different directory from the panel's, the panel
+  // listed a tree the storefront never served.
+  const { items } = await readThrough<{ items: MediaItem[] }>("/media");
 
   return (
     <div className="space-y-4">

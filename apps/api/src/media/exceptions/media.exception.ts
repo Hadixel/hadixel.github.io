@@ -28,6 +28,20 @@ export class MediaDeleteException extends GatewayException {
 }
 
 /**
+ * An upload that could not be accepted.
+ *
+ * A 400, distinct from `MediaKeyException` because the two mean different things to an operator: the
+ * key exception is "this kind of file is not a media file" and this is "what you sent is not a file we
+ * can use". Collapsing them would make an oversized upload read as a bad filename, which is the kind
+ * of wrong sentence an operator spends an afternoon on.
+ */
+export class MediaUploadException extends GatewayException {
+  constructor(message = "فایل بارگذاری نشد") {
+    super(HttpStatus.BAD_REQUEST, message);
+  }
+}
+
+/**
  * A local media root the gateway was not told about.
  *
  * Refused rather than guessed. A gateway with no `MEDIA_LOCAL_ROOT` and no S3 configuration has
@@ -39,6 +53,24 @@ export class MediaRootMissingException extends GatewayException {
     super(
       HttpStatus.CONFLICT,
       "مسیر فایل‌های محلی پیکربندی نشده است؛ MEDIA_LOCAL_ROOT را تنظیم کنید",
+    );
+  }
+}
+
+/**
+ * A scraped product image offered to a gateway with no object store.
+ *
+ * A 409, and the distinction from `MediaRootMissingException` is the whole message: the media library
+ * has a local fallback and the scraped images do not, because a content-addressed key only means
+ * something in a bucket. Without S3 configured the panel used to write them into its own
+ * `public/products` tree, so the same product's images lived in one place on a laptop and another in
+ * production, and the deduplication the hash key exists for did not happen at all.
+ */
+export class MediaStorageMissingException extends GatewayException {
+  constructor() {
+    super(
+      HttpStatus.CONFLICT,
+      "تصاویر محصولات به فضای ذخیره‌سازی S3 نیاز دارند؛ S3_ENDPOINT را تنظیم کنید",
     );
   }
 }
