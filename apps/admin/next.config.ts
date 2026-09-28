@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
-import { config as loadDotenv } from "dotenv";
-import path from "node:path";
-
-// Root .env holds DATABASE_URL (packages/db/.env is a symlink to it). Next
-// only auto-loads the app-dir .env, so load the monorepo root explicitly so
-// build-time prerender + runtime can reach Postgres.
-loadDotenv({ path: path.resolve(process.cwd(), "../../.env") });
+// The root `.env` is no longer read here, and that is the point of the gateway rather than tidiness.
+// This config used to load the monorepo root `.env` so that a build-time prerender could reach
+// Postgres, and the comment above it said so plainly. The panel no longer has a database connection
+// to make — it asks the gateway over HTTP with the operator's cookie — so the only address it needs is
+// the gateway's. That is `NEXT_PUBLIC_API_URL`, inlined at build and declared in the `build` task's
+// `env` in turbo.json, so it is part of the cache key. Which is strictly better than a file outside
+// the app deciding what the app was built against: that made the build's result depend on the
+// directory it was run from, and nothing said so.
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@kmodern/db", "@kmodern/schema", "@kmodern/adapters", "@kmodern/scraper", "@kmodern/ui"],
