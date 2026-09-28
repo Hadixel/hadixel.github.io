@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveSettings } from "@/lib/actions/settings";
-import type { ActionState } from "@/lib/actions/auth";
+import { saveSettings } from "@/lib/actions/settings-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Field, Input, Select } from "@/components/ui";
 
 interface FieldDef {
@@ -21,7 +21,7 @@ export function SettingsForm({
   initial: Record<string, string>;
 }) {
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(saveSettings, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveSettings, idle);
   useEffect(() => {
     if (state.ok) router.refresh();
   }, [state, router]);
@@ -84,8 +84,10 @@ export function SettingsForm({
               ))}
             </div>
 
-            {state.error && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
-            {state.ok && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
+            {/* Narrowed on `ok`, which is the point of the union: the old `ActionState` had four
+                optional fields, so a failure with no message type-checked and showed an empty box. */}
+            {!state.ok && <p role="alert" className="rounded-card bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+            {state.ok && state.message !== "" && <p className="rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.message}</p>}
             <div className="flex justify-end">
               <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره تنظیمات"}</Button>
             </div>

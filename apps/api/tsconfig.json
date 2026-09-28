@@ -17,6 +17,7 @@
     "src/inventory",
     "src/orders",
     "src/checkout",
+    "src/settings",
     "src/app.module.ts",
     "src/main.ts",
     "prisma.config.ts",

@@ -1,79 +1,54 @@
-import { db } from "@kmodern/db";
-import { faDigits } from "@/lib/date";
+// The settings page, reading what exists from the gateway.
+//
+// This used to hold its own `SECTION_DEFS` — five sections, their labels, their field types, and one
+// field's five enum members — while the save action held a second table saying what each field
+// wanted. The two could disagree and nothing noticed: the form rendered whatever this file said
+// while the action validated as whatever that one said. A field changed here and forgotten there
+// produced either a form the gateway would refuse, or a value accepted as a string where the
+// storefront reads a number.
+//
+// The table is the gateway's now (`GET /settings/definitions`) and the values come keyed in the same
+// vocabulary, so this page holds no vocabulary at all. Adding a setting is a change in one place.
+
 import { SettingsForm } from "@/components/settings-form";
+import { panelGateway } from "@/lib/gateway";
 
 export const dynamic = "force-dynamic";
 
-const SECTION_DEFS = {
-  store: {
-    label: "فروشگاه",
-    icon: "🏪",
-    description: "مشخصات کلی فروشگاه و SEO پیش‌فرض",
-    fields: [
-      { key: "storeName", label: "نام فروشگاه", type: "text" as const },
-      { key: "storeLogo", label: "آدرس لوگو", type: "text" as const },
-      { key: "storeTagline", label: "شعار فروشگاه", type: "text" as const },
-      { key: "storeContact", label: "راه‌های تماس", type: "text" as const },
-      { key: "blogDefaultByline", label: "امضای پیش‌فرض وبلاگ", type: "text" as const },
-      { key: "seoDefaultTitle", label: "عنوان پیش‌فرض SEO", type: "text" as const },
-      { key: "seoDefaultDescription", label: "توضیح پیش‌فرض SEO", type: "text" as const },
-    ],
-  },
-  shipping: {
-    label: "ارسال",
-    icon: "🚚",
-    description: "رژیم هزینه ارسال درون‌شهری و باربری",
-    fields: [
-      { key: "shippingLocalFeeMode", label: "نحوه هزینه ارسال درون‌شهر", type: "enum" as const, enumValues: ["FREE", "FLAT", "API_QUOTE", "FALLBACK_FLAT", "FREIGHT_COLLECT"] },
-      { key: "shippingLocalFlatFee", label: "کرایه ثابت درون‌شهر (تومان)", type: "number" as const },
-      { key: "shippingPostWeightCap", label: "سقف وزن باربری (کیلوگرم، 0=خاموش)", type: "number" as const },
-      { key: "shippingPostFallbackFee", label: "کرایه بازگشتی باربری (تومان، 0=ناموجود)", type: "number" as const },
-      { key: "shippingMaxCodTotal", label: "سقف مبلغ پرداخت در محل (تومان)", type: "number" as const },
-      { key: "shippingBarberiNote", label: "توضیح باربری", type: "text" as const },
-    ],
-  },
-  payments: {
-    label: "پرداخت",
-    icon: "💳",
-    description: "پرداخت کارت‌به‌کارت (C2C) درگاه انسانی",
-    fields: [
-      { key: "paymentC2cCardNumber", label: "شماره کارت", type: "text" as const },
-      { key: "paymentC2cCardHolder", label: "نام دارنده کارت", type: "text" as const },
-      { key: "paymentC2cBankName", label: "نام بانک", type: "text" as const },
-    ],
-  },
-  inventory: {
-    label: "انبار",
-    icon: "📦",
-    description: "آستانه موجودی کم و رزروهای تسویه",
-    fields: [
-      { key: "inventoryLowStockThreshold", label: "آستانه موجودی کم", type: "number" as const },
-      { key: "checkoutOnlineReserveMinutes", label: "مدت رزرو پرداخت آنلاین (دقیقه)", type: "number" as const },
-      { key: "checkoutC2cReserveHours", label: "مدت رزرو پرداخت در محل (ساعت)", type: "number" as const },
-    ],
-  },
-  notifications: {
-    label: "اعلان‌ها",
-    icon: "🔔",
-    description: "اعلان‌های مدیریتی",
-    fields: [{ key: "adminAlertMobile", label: "موبایل اطلاع‌رسانی مدیریت", type: "text" as const }],
-  },
-};
+/** The shape the gateway's definitions route answers with. Mirrored rather than imported. */
+interface SectionDef {
+  key: string;
+  label: string;
+  icon: string;
+  description: string;
+  fields: { key: string; label: string; type: "text" | "number" | "enum"; enumValues?: string[] }[];
+}
 
 export default async function SettingsPage() {
-  const all = await db().setting.findMany();
-  const valueOf = (key: string): unknown => all.find((s) => s.key === key)?.value;
+  const client = await panelGateway();
 
-  const current = (key: string): string => {
-    const v = valueOf(key);
-    if (typeof v === "number" || typeof v === "string") return String(v);
-    return "";
-  };
+  // The two reads are independent and go together. A failure here throws rather than rendering an
+  // empty form, because an empty settings form looks exactly like a shop with no settings — and an
+  // operator who saved it would blank the ones that are set.
+  const [sections, values] = await Promise.all([
+    client.get<SectionDef[]>("/settings/definitions"),
+    client.get<Record<string, string>>("/settings"),
+  ]);
+
+  const byKey: Record<string, SectionDef> = {};
+  for (const section of sections) byKey[section.key] = section;
+
+  // Every field gets a box, including one with no stored value — a form that omitted the fields it
+  // has never been told about would silently drop them on the next save.
+  const initial: Record<string, string> = {};
+  for (const section of sections) {
+    for (const field of section.fields) initial[field.key] = values[field.key] ?? "";
+  }
 
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-ink">تنظیمات</h1>
-      <SettingsForm sections={SECTION_DEFS} initial={Object.fromEntries(all.map((s) => [s.key, current(s.key)]))} />
+      <SettingsForm sections={byKey} initial={initial} />
     </div>
   );
 }

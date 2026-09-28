@@ -10,6 +10,7 @@ import { InventoryModule } from "./inventory/inventory.module.js";
 import { DiscountsModule } from "./discounts/discounts.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
+import { SettingsModule } from "./settings/settings.module.js";
 
 /**
  * The composition module. It declares `imports` and nothing else.
@@ -41,6 +42,9 @@ import { DataModule } from "./prisma/prisma.module.js";
     // nothing composes an adjustment.
     InventoryModule,
     CheckoutModule,
+    // Settings last among the operator's features: it names no other feature's rows, and everything
+    // that composes a decision from a setting reads it rather than declaring it.
+    SettingsModule,
   ],
 })
 export class AppModule {}

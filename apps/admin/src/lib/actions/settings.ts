@@ -1,114 +1,64 @@
-"use server";
+// Settings, as a thin module over the gateway.
+//
+// This used to hold the panel's own table of settings — five sections, their fields, and each field's
+// type — *and* the rules for what each value may be: not negative, whole numbers for three named
+// keys, at least one for two of those, a member of a five-item enum for one, and a
+// `/^09\d{9}$/` on the alert mobile. It upserted each row itself and wrote its audit line afterwards.
+//
+// Two of those were real defects rather than duplication:
+//
+//   - The audit line was written after the upserts, so a failure on the last field left the earlier
+//     ones committed with no record of who changed them.
+//   - `/^09\d{9}$/` refuses every spelling but the canonical one, so an operator typing
+//     `+989121234567` — the same person — was told the number was invalid. The gateway normalises
+//     with the same function the checkout uses for a shopper's number.
+//
+// What is left here is the translation, and it is one decision: **which fields the form actually
+// sent.** An HTML form posts every input in the section, including the ones the operator left blank,
+// and a blank is not a value — it is the absence of one, and the gateway must not be told to store
+// `""` where a number is read. So a blank field is dropped here rather than sent.
+//
+// The rules themselves — what a value may be, which keys exist, how a field is rendered — are the
+// gateway's, and `GET /settings/definitions` is what the settings page builds its form from. A second
+// copy of the type table is a rule that can disagree with the first about what a field wants, and
+// "unused" is not good enough: the page would still render an input from it.
+//
+// A plain module rather than a `"use server"` one, for the reason `category.ts` gives: the session
+// check goes through `cookies()`, which throws outside a request scope, so it lives in the adapter.
 
-import { db } from "@kmodern/db";
-import { settingKeys } from "@kmodern/schema/setting-keys";
-import { actionContext } from "./ctx";
 import { field } from "./form-helpers";
-import { recordAudit } from "@/lib/audit";
-import { setSetting } from "@/lib/settings";
-import type { ActionState } from "./auth";
+import { fromGateway } from "@/lib/gateway";
+import { failed, type ActionResult } from "./result";
 
-// ---------------------------------------------------------------
-// Settings (011/017) — typed per-section writes
-// ---------------------------------------------------------------
-
-const SECTIONS = {
-  store: {
-    label: "فروشگاه",
-    fields: {
-      storeName: "string",
-      storeLogo: "string",
-      storeTagline: "string",
-      storeContact: "string",
-      blogDefaultByline: "string",
-      seoDefaultTitle: "string",
-      seoDefaultDescription: "string",
-    },
-  },
-  shipping: {
-    label: "ارسال",
-    fields: {
-      shippingLocalFeeMode: "enum",
-      shippingLocalFlatFee: "number",
-      shippingPostWeightCap: "number",
-      shippingPostFallbackFee: "number",
-      shippingMaxCodTotal: "number",
-      shippingBarberiNote: "string",
-    },
-  },
-  payments: {
-    label: "پرداخت",
-    fields: {
-      paymentC2cCardNumber: "string",
-      paymentC2cCardHolder: "string",
-      paymentC2cBankName: "string",
-    },
-  },
-  inventory: {
-    label: "انبار",
-    fields: {
-      inventoryLowStockThreshold: "number",
-      checkoutOnlineReserveMinutes: "number",
-      checkoutC2cReserveHours: "number",
-    },
-  },
-  notifications: {
-    label: "اعلان‌ها",
-    fields: {
-      adminAlertMobile: "string",
-    },
-  },
-} as const;
-
-const ENUM_VALUES: Record<string, string[]> = {
-  shippingLocalFeeMode: ["FREE", "FLAT", "API_QUOTE", "FALLBACK_FLAT", "FREIGHT_COLLECT"],
-};
-
-export async function saveSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const { admin, ip, ua } = await actionContext();
-  const section = field(formData, "section") as keyof typeof SECTIONS;
-  const def = Object.prototype.hasOwnProperty.call(SECTIONS, section) ? SECTIONS[section] : undefined;
-  if (!def) return { error: "بخش نامعتبر است" };
-
-  const changes: Array<{ key: string; value: unknown }> = [];
-  for (const [key, type] of Object.entries(def.fields)) {
-    const raw = formData.get(key);
-    if (raw === null) continue;
-    const s = String(raw).trim();
-    if (type === "number") {
-      if (s === "") continue;
-      const n = Number(s);
-      if (!Number.isFinite(n) || n < 0) return { error: `مقدار «${key}» باید عدد غیرمنفی باشد` };
-      if (["inventoryLowStockThreshold", "checkoutOnlineReserveMinutes", "checkoutC2cReserveHours"].includes(key) && !Number.isInteger(n)) {
-        return { error: `مقدار «${key}» باید عدد صحیح باشد` };
-      }
-      if (["checkoutOnlineReserveMinutes", "checkoutC2cReserveHours"].includes(key) && n < 1) {
-        return { error: `مقدار «${key}» باید بزرگ‌تر از صفر باشد` };
-      }
-      changes.push({ key, value: n });
-    } else if (type === "enum") {
-      if (!ENUM_VALUES[key]?.includes(s)) return { error: `مقدار نامعتبر برای «${key}»` };
-      changes.push({ key, value: s });
-    } else {
-      if (s.length > 1000) return { error: `مقدار «${key}» بیش از حد طولانی است` };
-      if (key === "adminAlertMobile" && s && !/^09\d{9}$/.test(s)) return { error: "شماره هشدار معتبر نیست" };
-      changes.push({ key, value: s });
-    }
-  }
-
-  for (const c of changes) {
-    const key = (settingKeys as Record<string, string>)[c.key];
-    if (!key) return { error: `کلید ناشناخته: ${c.key}` };
-    await setSetting(key as never, c.value);
-  }
-
-  await recordAudit({
-    adminUserId: admin.id,
-    action: "SETTINGS_UPDATED",
-    entityType: "SETTINGS",
-    entityId: section,
-    meta: { keys: changes.map((c) => c.key), ip, ua },
-  });
-  return { ok: true, message: "تنظیمات ذخیره شد" };
+/** What the gateway's `SaveSettingsDto` accepts. Mirrors it rather than importing it. */
+interface SettingsBody {
+  section: string;
+  values: Record<string, string>;
 }
 
+/**
+ * Save the section the operator was editing.
+ *
+ * The whole form is posted, not a diff, because a form cannot express "leave that one alone" — and it
+ * must not try to, because an empty text field and an empty number field mean different things. The
+ * gateway judges each value against the type it declared and drops a blank one, so the panel's only
+ * job is to send what was typed.
+ */
+export async function saveSettingsRequest(formData: FormData): Promise<ActionResult> {
+  const section = field(formData, "section");
+  if (!section) return failed("بخش تنظیمات نامعتبر است");
+
+  const values: Record<string, string> = {};
+  for (const [key, entry] of formData.entries()) {
+    // `section` is the form's own routing field, not a setting, and sending it as one would be a
+    // field the gateway's table has never heard of.
+    if (key === "section") continue;
+    if (typeof entry !== "string") continue;
+    values[key] = entry.trim();
+  }
+
+  return fromGateway(
+    (client) => client.patch("/settings", { section, values } satisfies SettingsBody),
+    "تنظیمات ذخیره شد",
+  );
+}
