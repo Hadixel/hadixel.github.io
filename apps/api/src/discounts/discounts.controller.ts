@@ -23,7 +23,7 @@
 // operators saving the same code at the same moment is still open, and is named here rather than
 // papered over.
 
-import { Body, Controller, Delete, Inject, Param, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
@@ -41,6 +41,54 @@ import {
 
 type Tx = Prisma.TransactionClient;
 
+/** The page size the panel used, and the most a caller may ask for. */
+const PAGE_SIZE = 25;
+const MAX_PAGE_SIZE = 100;
+
+/** One page of discounts, with the counts the panel's header renders. */
+export interface DiscountPage {
+  rows: {
+    id: string;
+    code: string | null;
+    type: string;
+    scope: string;
+    mode: string;
+    value: number;
+    status: string;
+    startsAt: Date;
+    endsAt: Date | null;
+  }[];
+  total: number;
+  active: number;
+  page: number;
+  size: number;
+}
+
+/** One discount in full, as the edit form seeds itself from it. */
+export interface DiscountDetail {
+  id: string;
+  type: string;
+  scope: string;
+  mode: string;
+  code: string | null;
+  value: number;
+  maxAmount: number | null;
+  productIds: string[];
+  categoryIds: string[];
+  collectionIds: string[];
+  startsAt: Date;
+  endsAt: Date | null;
+  minOrderSubtotal: number | null;
+  maxUsesTotal: number | null;
+  maxUsesPerCustomer: number | null;
+  status: string;
+}
+
+/** Bounded, and the bound is the caller's to stay under rather than the database's to refuse. */
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(Math.max(value, low), high);
+}
+
 /** What a saved discount answers with: the id, and the code it landed on. */
 export interface DiscountSaved {
   id: string;
@@ -57,6 +105,71 @@ export class DiscountsController {
     // type couples this controller to how the client happens to be built.
     @Inject(DATA_CLIENT) private readonly db: PrismaClient,
   ) {}
+
+  /**
+   * The discount list, paged, with the two counts the panel's header shows.
+   *
+   * A list is a read with a shape, not a page's own query: the panel wanted the rows, the total and
+   * the active count together, and had three round trips against its own tables to get them. The
+   * counts come back because they are what the header renders, and a count fetched separately is a
+   * count that can disagree with the rows beside it.
+   *
+   * Bounded, because an unbounded list is not a list a person scans and its size is a client's to
+   * choose. `page` is a number here rather than a raw string, so the panel's `pageParam` clamping has
+   * exactly one implementation.
+   */
+  @Get()
+  async list(
+    @Req() req: Request,
+    @Query("page") page?: string,
+    @Query("size") size?: string,
+  ): Promise<DiscountPage> {
+    await requireAdmin(this.auth, req);
+
+    const take = clamp(parseInt(size ?? "", 10) || PAGE_SIZE, 1, MAX_PAGE_SIZE);
+    const number = Math.max(parseInt(page ?? "", 10) || 1, 1);
+
+    const [rows, total, active] = await Promise.all([
+      this.db.discount.findMany({ orderBy: { createdAt: "desc" }, skip: (number - 1) * take, take }),
+      this.db.discount.count(),
+      this.db.discount.count({ where: { status: "ACTIVE" } }),
+    ]);
+
+    return { rows, total, active, page: number, size: take };
+  }
+
+  /**
+   * One discount, for the edit form.
+   *
+   * A 404 rather than an empty object, because the panel answers a missing discount with `notFound()`
+   * and an empty one would render a blank form that saves over whatever the id actually named.
+   */
+  @Get(":id")
+  async one(@Req() req: Request, @Param("id") id: string): Promise<DiscountDetail> {
+    await requireAdmin(this.auth, req);
+
+    const row = await this.db.discount.findUnique({ where: { id } });
+    if (!row) throw new DiscountNotFoundException();
+
+    return {
+      id: row.id,
+      type: row.type,
+      scope: row.scope,
+      mode: row.mode,
+      code: row.code,
+      value: row.value,
+      maxAmount: row.maxAmount,
+      productIds: row.productIds,
+      categoryIds: row.categoryIds,
+      collectionIds: row.collectionIds,
+      startsAt: row.startsAt,
+      endsAt: row.endsAt,
+      minOrderSubtotal: row.minOrderSubtotal,
+      maxUsesTotal: row.maxUsesTotal,
+      maxUsesPerCustomer: row.maxUsesPerCustomer,
+      status: row.status,
+    };
+  }
 
   @Post()
   async create(@Req() req: Request, @Body() body: SaveDiscountDto): Promise<DiscountSaved> {

@@ -1,9 +1,16 @@
+// The discount list, read through the gateway.
+//
+// This page used to import the data tier and run three queries of its own: a page of rows, a total
+// for the pager, and a count of the active ones for the header. The gateway answers all three in one
+// read, and answers them together — a count fetched beside the rows it describes can disagree with
+// them, and two round trips for one table is one too many.
+
 import Link from "next/link";
-import { db } from "@kmodern/db";
 import { formatToman } from "@kmodern/schema/format";
 import { faDigits, formatJalaliLong } from "@/lib/date";
 import { Badge, Button, Card, CardHeader, EmptyState, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { pageParam } from "@/lib/pagination";
+import { readThrough } from "@/lib/reads";
 import { DeleteDiscountButton } from "./delete-discount";
 
 const TYPE_LABELS: Record<string, string> = { PERCENT: "درصدی", FIXED: "مبلغ ثابت", FREE_DELIVERY: "ارسال رایگان" };
@@ -15,17 +22,29 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 const MODE_LABELS: Record<string, string> = { COUPON: "کوپن", AUTOMATIC: "خودکار" };
 
-const PAGE_SIZE = 25;
+/** One page of discounts, as the gateway's `GET /discounts` answers. */
+interface DiscountPage {
+  rows: {
+    id: string;
+    code: string | null;
+    type: string;
+    scope: string;
+    mode: string;
+    value: number;
+    status: string;
+    startsAt: string;
+    endsAt: string | null;
+  }[];
+  total: number;
+  active: number;
+  size: number;
+}
 
 export default async function DiscountsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const params = await searchParams;
   const page = pageParam(params.page);
-  const [discounts, total, active] = await Promise.all([
-    db().discount.findMany({ orderBy: { createdAt: "desc" }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
-    db().discount.count(),
-    db().discount.count({ where: { status: "ACTIVE" } }),
-  ]);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const { rows, total, active } = await readThrough<DiscountPage>(`/discounts?page=${page}`);
+  const totalPages = Math.ceil(total / 25);
 
   return (
     <div className="space-y-4">
@@ -39,7 +58,7 @@ export default async function DiscountsPage({ searchParams }: { searchParams: Pr
             </Button>
           }
         />
-        {discounts.length === 0 ? (
+        {rows.length === 0 ? (
           <EmptyState text="تخفیفی ثبت نشده است" />
         ) : (
           <Table>
@@ -55,7 +74,7 @@ export default async function DiscountsPage({ searchParams }: { searchParams: Pr
               </TR>
             </THead>
             <TBody>
-              {discounts.map((d) => (
+              {rows.map((d) => (
                 <TR key={d.id}>
                   <TD>
                     <Link href={`/discounts/${d.id}`} className="font-medium text-ink hover:text-flame-700">
@@ -69,8 +88,8 @@ export default async function DiscountsPage({ searchParams }: { searchParams: Pr
                     {d.type === "PERCENT" ? `${faDigits(d.value)}٪` : d.type === "FREE_DELIVERY" ? "رایگان" : formatToman(d.value)}
                   </TD>
                   <TD className="whitespace-nowrap text-xs">
-                    {formatJalaliLong(d.startsAt)}
-                    {d.endsAt ? ` تا ${formatJalaliLong(d.endsAt)}` : ""}
+                    {formatJalaliLong(new Date(d.startsAt))}
+                    {d.endsAt ? ` تا ${formatJalaliLong(new Date(d.endsAt))}` : ""}
                   </TD>
                   <TD>
                     <Badge color={d.status === "ACTIVE" ? "emerald" : "slate"}>

@@ -11,9 +11,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoriesController } from "../src/categories/categories.controller.js";
 import { CollectionsController } from "../src/collections/collections.controller.js";
+import { DiscountsController } from "../src/discounts/discounts.controller.js";
 import { ProductsController } from "../src/products/products.controller.js";
 import { db } from "../src/prisma/index.js";
-import { makeCategory, makeProduct, makeVariant, resetDatabase } from "./harness.js";
+import { makeCategory, makeDiscount, makeProduct, resetDatabase } from "./harness.js";
 
 describe("the panel reads the category tree", () => {
   beforeEach(resetDatabase);
@@ -129,5 +130,77 @@ describe("the panel reads product names for a picker", () => {
     await makeProduct({ name: "جارو" });
     const options = await controller().options();
     expect(options.length).toBeLessThanOrEqual(500);
+  });
+});
+
+describe("the panel reads the discount list", () => {
+  beforeEach(resetDatabase);
+  let operatorId: string;
+
+  beforeEach(async () => {
+    const operator = await db().adminUser.create({
+      data: {
+        email: "operator@kmodern.ir",
+        name: "اپراتور",
+        passwordHash: "scrypt$00$00",
+        isActive: true,
+      },
+    });
+    operatorId = operator.id;
+  });
+
+  const controller = () => {
+    const auth = {
+      adminForToken: async (token: string) =>
+        token === "good" ? { admin: { id: operatorId, email: "operator@kmodern.ir" } } : null,
+    } as never;
+    return new DiscountsController(auth, db() as never);
+  };
+
+  const request = () => ({ headers: { cookie: "kmodern_admin=good" } }) as never;
+
+  // The page used to run three queries of its own — the rows, the total for the pager, and the
+  // active count for the header. Answered together, because a count fetched beside the rows it
+  // describes can disagree with them.
+  it("answers the rows and both counts in one read", async () => {
+    await makeDiscount({ productIds: [], scope: "ALL", value: 10 });
+    await makeDiscount({ productIds: [], scope: "ALL", value: 20, status: "DISABLED" });
+
+    const page = await controller().list(request(), undefined, undefined);
+
+    expect(page.total).toBe(2);
+    expect(page.active).toBe(1);
+    expect(page.rows).toHaveLength(2);
+  });
+
+  it("clamps the page and the size, so neither is a client's to overrule the server on", async () => {
+    await makeDiscount({ productIds: [], scope: "ALL", value: 10 });
+
+    // A negative page and an enormous size are both answered rather than refused: a pager that has
+    // drifted should still render, and the bound is the server's to hold.
+    const negative = await controller().list(request(), "-5", undefined);
+    expect(negative.page).toBe(1);
+
+    const huge = await controller().list(request(), "1", "100000");
+    expect(huge.size).toBeLessThanOrEqual(100);
+  });
+
+  it("answers one discount in full, for the edit form to seed itself from", async () => {
+    const existing = await makeDiscount({ productIds: [], scope: "ALL", value: 25, mode: "COUPON" });
+
+    const detail = await controller().one(request(), existing.id);
+
+    expect(detail).toMatchObject({ id: existing.id, value: 25, mode: "COUPON" });
+    expect(detail.code).toBe(existing.code);
+  });
+
+  it("answers a discount that is not there as absent, so the page can say notFound", async () => {
+    await expect(controller().one(request(), "no-such-discount")).rejects.toThrow(/پیدا نشد/);
+  });
+
+  it("needs an operator for both reads", async () => {
+    const anonymous = { headers: { cookie: "kmodern_admin=bad" } } as never;
+    await expect(controller().list(anonymous, undefined, undefined)).rejects.toThrow();
+    await expect(controller().one(anonymous, "anything")).rejects.toThrow();
   });
 });
