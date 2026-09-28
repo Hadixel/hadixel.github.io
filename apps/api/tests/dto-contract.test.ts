@@ -24,6 +24,7 @@ import { VALIDATION_PIPE_OPTIONS, validationExceptionFactory } from "../src/comm
 import { SaveCategoryDto, UpdateCategoryDto } from "../src/categories/dto/category.dto.js";
 import { SaveCollectionDto, UpdateCollectionDto } from "../src/collections/dto/collection.dto.js";
 import { SaveDiscountDto, UpdateDiscountDto } from "../src/discounts/dto/discount.dto.js";
+import { SavePageDto } from "../src/pages/dto/page.dto.js";
 
 /**
  * The gateway's actual validation pipe, built from the options `main.ts` uses.
@@ -324,6 +325,62 @@ describe("a discount body", () => {
     // pipe reports only whether the result was acceptable.
     const instance: unknown = plainToInstance(UpdateDiscountDto, { code: "  SUMMER  " });
     expect(instance).toMatchObject({ code: "summer" });
+  });
+});
+
+describe("a page body", () => {
+  // The one that matters here, and the reason this file exists at all: `action` was `@IsBoolean`
+  // while the form sends `"draft"` or `"publish"`, so every save was refused by the pipe — and the
+  // controller tests could not see it, because they call the method and the pipe is not involved. A
+  // decorator's whole job is to run inside the pipe and nowhere else, which is why the acceptance of a
+  // real form's payload is asserted through the pipe.
+  it("accepts the two values the form's buttons send", async () => {
+    const base = { title: "درباره ما", slug: "about", status: "DRAFT", blocks: [], seo: {} };
+    expect(await refusalOf(SavePageDto, { ...base, action: "draft" })).toBeNull();
+    expect(await refusalOf(SavePageDto, { ...base, action: "publish" })).toBeNull();
+  });
+
+  it("refuses a verb that is neither of them, rather than storing it as a draft", async () => {
+    const refusal = await refusalOf(SavePageDto, {
+      title: "درباره ما",
+      slug: "about",
+      status: "DRAFT",
+      action: "delete-everything",
+      blocks: [],
+      seo: {},
+    });
+    expect(refusal?.message).toMatch(/عملیات ذخیره/);
+  });
+
+  it("refuses a boolean where the verb belongs, which is what the bug looked like", async () => {
+    // Worth keeping: the mistake is not that a boolean is refused, but that a *string* was, and only a
+    // test using the form's own value would have caught it.
+    const refusal = await refusalOf(SavePageDto, {
+      title: "درباره ما",
+      slug: "about",
+      status: "DRAFT",
+      action: true,
+      blocks: [],
+      seo: {},
+    });
+    expect(refusal?.message).toMatch(/عملیات ذخیره/);
+  });
+
+  it("insists on a title with something in it", async () => {
+    const base = { slug: "about", status: "DRAFT", action: "draft", blocks: [], seo: {} };
+    expect((await refusalOf(SavePageDto, base))?.message).toMatch(/عنوان/);
+    expect((await refusalOf(SavePageDto, { ...base, title: "   " }))?.message).toMatch(/عنوان/);
+  });
+
+  it("insists that the blocks are a list, because a page is its blocks", async () => {
+    const base = { title: "x", slug: "about", status: "DRAFT", action: "draft", seo: {} };
+    expect((await refusalOf(SavePageDto, { ...base, blocks: "nope" }))?.message).toMatch(/بلوک/);
+  });
+
+  it("caps the blocks, since the list is replaced wholesale in one transaction", async () => {
+    const base = { title: "x", slug: "about", status: "DRAFT", action: "draft", seo: {} };
+    const blocks = Array.from({ length: 201 }, (_, i) => ({ id: `b${i}`, type: "hero", props: {} }));
+    expect((await refusalOf(SavePageDto, { ...base, blocks }))?.message).toMatch(/بلوک/);
   });
 });
 

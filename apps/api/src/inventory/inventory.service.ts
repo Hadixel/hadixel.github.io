@@ -26,11 +26,12 @@ import { OrderEventDimension, PaymentMethod, ReservationStatus } from "../genera
 import type { Prisma } from "../generated/prisma/client";
 import { db } from "../prisma/client";
 import { settingKeys } from "@kmodern/schema/setting-keys";
+// Extensionless, per the convention in the header above.
 import {
   StockConflictException,
   StockReservedException,
   VariantNotFoundException,
-} from "./exceptions/inventory.exception.js";
+} from "./exceptions/inventory.exception";
 
 type InventoryClient = Pick<Prisma.TransactionClient, "variant" | "stockReservation" | "setting">;
 
