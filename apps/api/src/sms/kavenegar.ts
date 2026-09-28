@@ -12,6 +12,9 @@ export function kavenegarConfigFromEnv(): KavenegarConfig | null {
   return apiKey ? { apiKey } : null;
 }
 
+// The value is read through `typeof` in the TemplateName union below, which the
+// unused-vars rule cannot see.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TEMPLATES = [
   "otp",
   "orderplaced",

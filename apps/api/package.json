@@ -7,7 +7,11 @@
   "exports": {
     "./prisma": "./src/prisma/index.ts",
     "./prisma/client": "./src/prisma/client.ts",
-    "./manufacturers": "./seed/iranian-manufacturers.ts"
+    "./manufacturers": "./seed/iranian-manufacturers.ts",
+    "./storage": "./src/storage/storage.ts",
+    "./payments": "./src/payments/zarinpal.ts",
+    "./sms": "./src/sms/kavenegar.ts",
+    "./shipping": "./src/shipping/postex.ts"
   },
   "scripts": {
     "generate": "prisma generate",
@@ -18,15 +22,19 @@
     "db:seed": "tsx seed/seed.ts",
     "db:images": "tsx seed/images.ts",
     "db:bootstrap": "tsx seed/bootstrap.ts",
+    "db:home-manufacturers": "tsx seed/update-home-manufacturers.ts",
+    "db:blog": "tsx seed/blog-import.ts",
+    "db:home-deals": "tsx seed/update-home-deals.ts",
+    "db:editorial-images": "tsx seed/generate-editorial-images.ts",
+    "db:audit-images": "tsx seed/audit-images.ts",
     "build": "tsc -p tsconfig.build.json && node ../../scripts/gateway-dist-manifest.mjs",
     "start": "node dist/apps/api/src/main.js",
-    "dev": "tsc -p tsconfig.build.json --watch",
+    "dev": "node scripts/dev.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@kmodern/schema": "workspace:*",
-    "@kmodern/adapters": "workspace:*",
     "@nestjs/common": "^11.2.6",
     "@nestjs/core": "^11.2.6",
     "@nestjs/platform-express": "^11.2.6",
@@ -38,7 +46,8 @@
     "helmet": "^8.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "slugify": "^1.6.9"
+    "slugify": "^1.6.9",
+    "@aws-sdk/client-s3": "^3.600.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

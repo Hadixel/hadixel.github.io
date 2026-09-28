@@ -9,7 +9,7 @@
 // configured approximation, then freight-collect. Silently returning zero would look like free
 // delivery, which is a different promise.
 
-import { fetchQuotes, postexConfigFromEnv } from "@kmodern/adapters";
+import { fetchQuotes, postexConfigFromEnv } from "../shipping/postex.js";
 import { isKermanCity } from "@kmodern/schema";
 import { settingKeys } from "@kmodern/schema/setting-keys";
 import type { CheckoutDb as Db } from "./db-types.js";

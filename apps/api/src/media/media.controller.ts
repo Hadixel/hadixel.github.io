@@ -11,7 +11,7 @@
 
 import { Controller, Delete, Get, Inject, Param, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { createStorage, storageConfigFromEnv } from "@kmodern/adapters";
+import { createStorage, storageConfigFromEnv } from "../storage/storage.js";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";

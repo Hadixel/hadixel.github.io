@@ -16,7 +16,7 @@
 // customer is found by however the number was typed.
 
 import { Inject, Injectable } from "@nestjs/common";
-import { kavenegarConfigFromEnv, sendLookup } from "@kmodern/adapters";
+import { kavenegarConfigFromEnv, sendLookup } from "../sms/kavenegar.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { createPrismaClient } from "../prisma/client.js";
 import { canonicalPhone, generateOtp, hashOtp } from "./session.js";

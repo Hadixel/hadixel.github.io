@@ -101,9 +101,9 @@ importers:
 
   apps/api:
     dependencies:
-      '@kmodern/adapters':
-        specifier: workspace:*
-        version: link:../../packages/adapters
+      '@aws-sdk/client-s3':
+        specifier: ^3.600.0
+        version: 3.1103.0
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -220,6 +220,9 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.600.0
         version: 3.1103.0
+      '@kmodern/api':
+        specifier: workspace:*
+        version: link:../../apps/api
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
