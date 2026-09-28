@@ -15,6 +15,7 @@
     "src/collections",
     "src/discounts",
     "src/inventory",
+    "src/media",
     "src/nav",
     "src/orders",
     "src/checkout",

@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { deleteMediaAction } from "@/lib/actions/media";
-import type { ActionState } from "@/lib/actions/auth";
+import { deleteMedia } from "@/lib/actions/media-actions";
+import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, EmptyState, Input } from "@/components/ui";
 
 export function MediaLibrary({ items }: { items: Array<{ url: string; key: string }> }) {
@@ -12,10 +12,12 @@ export function MediaLibrary({ items }: { items: Array<{ url: string; key: strin
   const [deleting, setDeleting] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(deleteMediaAction, {});
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(deleteMedia, idle);
   useEffect(() => {
     if (state.ok) router.refresh();
-    if (state.error) setErr(state.error);
+    // Narrowed on `ok`, which is the point of the union: the old `ActionState` had four optional
+    // fields, so a failure with no message type-checked and set an empty string.
+    if (!state.ok) setErr(state.error);
   }, [state, router]);
 
   const filtered = items.filter((it) => it.key.toLowerCase().includes(q.toLowerCase()));

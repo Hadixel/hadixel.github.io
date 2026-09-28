@@ -1,31 +1,34 @@
-"use server";
+// Media, as a thin module over the gateway.
+//
+// The library's one write. The panel's version deleted the file itself and then wrote its audit line
+// — and the key rule, `isSafeMediaKey`, was an unexported function in the panel's own media helper, so
+// it was enforced by whichever caller remembered it. That rule is a *security* rule: a key that climbs
+// out of the media directory, or that names a type the storefront will not serve, is a request to
+// reach something the library is not. It is the gateway's now, and the panel's copy is gone.
+//
+// What is left is one translation: the key, as the library listed it. Nothing else — there is no second
+// decision here, and inventing one would be the wrong shape for a delete.
 
-import { actionContext } from "./ctx";
 import { field } from "./form-helpers";
-import { recordAudit } from "@/lib/audit";
-import { deleteMediaFile } from "@/lib/media";
+import { fromGateway } from "@/lib/gateway";
+import { failed, type ActionResult } from "./result";
 
-export async function deleteMedia(formData: FormData) {
-  const { admin, ip, ua } = await actionContext();
+/**
+ * Delete one file from the library.
+ *
+ * The one implementation of this path, and the last of the eight the panel had doubled: a bare
+ * `deleteMedia(formData)` and a `deleteMediaAction(_prev, formData)` that existed only to satisfy
+ * `useActionState` and returned whatever the first one did.
+ */
+export async function deleteMediaRequest(formData: FormData): Promise<ActionResult> {
   const key = field(formData, "key");
-  if (!key) return { error: "کلید فایل نامعتبر است" };
-  try {
-    await deleteMediaFile(key);
-  } catch (e) {
-    return { error: `حذف نشد: ${e instanceof Error ? e.message : "خطا"}` };
-  }
-  await recordAudit({
-    adminUserId: admin.id,
-    action: "MEDIA_DELETED",
-    entityType: "MEDIA",
-    entityId: key,
-    meta: { ip, ua },
-  });
-  return { ok: true };
-}
+  if (!key) return failed("کلید فایل نامعتبر است");
 
-export async function deleteMediaAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  return deleteMedia(formData);
+  // The key travels in the path because the transport client's DELETE takes no body, and a key is a
+  // path — `media/2026/01/abc.jpg` is one address. Encoded whole, so its own slashes cannot be read
+  // as path separators on the way out.
+  return fromGateway(
+    (client) => client.delete(`/media/${encodeURIComponent(key)}`),
+    "فایل حذف شد",
+  );
 }
-
-import type { ActionState } from "./auth";

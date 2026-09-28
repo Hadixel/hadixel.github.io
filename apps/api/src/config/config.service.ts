@@ -20,6 +20,16 @@ export interface GatewayConfig {
   readonly databaseUrl: string;
   /** Origins allowed to call the gateway. Never a wildcard — see the CORS setup in main.ts. */
   readonly corsOrigins: readonly string[];
+  /**
+   * Where locally-stored media lives, when no S3-compatible store is configured.
+   *
+   * Configuration rather than a `process.cwd()`-relative path, and the reason is that a media delete
+   * moved from the panel to here would otherwise look in a different tree: the panel's fallback was
+   * `apps/admin/public/media` because the panel runs from `apps/admin`, and the same expression in
+   * the gateway resolves to `apps/api/public/media`, which is a directory that does not exist. A rule
+   * that silently addresses the wrong directory is worse than one that refuses.
+   */
+  readonly mediaLocalRoot: string | null;
   readonly isProduction: boolean;
 }
 
@@ -63,6 +73,10 @@ export class ConfigService {
         .split(",")
         .map((origin) => origin.trim())
         .filter((origin) => origin !== ""),
+      // Absent rather than defaulted: a gateway with no local media root cannot delete a local file,
+      // and saying so is better than resolving a path relative to whichever directory it was started
+      // from. S3-configured deployments never read it.
+      mediaLocalRoot: env["MEDIA_LOCAL_ROOT"]?.trim() || null,
     };
     if (this.value.corsOrigins.length === 0) {
       throw new Error(
@@ -80,6 +94,10 @@ export class ConfigService {
   }
   get corsOrigins(): readonly string[] {
     return this.value.corsOrigins;
+  }
+
+  get mediaLocalRoot(): string | null {
+    return this.value.mediaLocalRoot;
   }
   get isProduction(): boolean {
     return this.value.isProduction;

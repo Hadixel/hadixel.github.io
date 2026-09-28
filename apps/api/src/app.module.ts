@@ -8,6 +8,7 @@ import { ContentModule } from "./content/content.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { InventoryModule } from "./inventory/inventory.module.js";
 import { DiscountsModule } from "./discounts/discounts.module.js";
+import { MediaModule } from "./media/media.module.js";
 import { NavModule } from "./nav/nav.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { DataModule } from "./prisma/prisma.module.js";
@@ -41,6 +42,7 @@ import { SettingsModule } from "./settings/settings.module.js";
     CategoriesModule,
     CollectionsModule,
     DiscountsModule,
+    MediaModule,
     NavModule,
     OrdersModule,
     // Inventory sits below Orders because orders compose its lifecycle, and above nothing because
