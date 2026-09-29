@@ -86,8 +86,10 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
 
   await app.listen(config.port);
-  // eslint-disable-next-line no-console -- the composition root is the one place a line of output
-  // is the point: an operator starting the process needs to know it is up and where.
+  // The composition root is the one place a line of output is the point: an operator starting the
+  // process needs to know it is up and where. `no-console` is not enabled in this repo, so the
+  // directive that used to stand here was disabling a rule that was never on — and a directive for
+  // an inactive rule is how a lint config quietly stops describing the code it lints.
   console.log(`gateway listening on :${config.port} (${config.nodeEnv})`);
 }
 

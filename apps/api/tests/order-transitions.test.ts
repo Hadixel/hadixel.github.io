@@ -8,14 +8,13 @@
 //   decision made after the row is fetched.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { commitStock, reserveStock, restock } from "../src/inventory/inventory.service.js";
+import { reserveStock } from "../src/inventory/inventory.service.js";
 import { allowedTransitions, isAllowedTransition, stockEffectFor, FULFILLMENT_NEXT, PAYMENT_NEXT } from "../src/orders/order-transitions.js";
 import { OrdersService } from "../src/orders/orders.service.js";
 import { $Enums, db } from "../src/prisma/index.js";
 import { makeOrder, makeProduct, makeVariant, readVariant, resetDatabase } from "./harness.js";
 
 const ONLINE = $Enums.PaymentMethod.ONLINE;
-const PaymentStatus = $Enums.PaymentStatus;
 const ReservationStatus = $Enums.ReservationStatus;
 
 function service(): OrdersService {

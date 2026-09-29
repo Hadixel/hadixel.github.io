@@ -232,13 +232,6 @@ describe("an operator lists and uploads", () => {
   const authed = () => ({ headers: { cookie: "kmodern_admin=good" } }) as never;
   const anon = () => ({ headers: {} }) as never;
 
-  function body(bytes: Buffer, contentType: string, query: Record<string, string> = {}) {
-    return async function* stream() {
-      yield bytes;
-    }().constructor === Object
-      ? { [Symbol.asyncIterator]: async function* () { yield bytes; } }
-      : ({} as never);
-  }
 
   it("does not list the library for an unauthenticated request", async () => {
     await expect(controller().list(anon())).rejects.toThrow();

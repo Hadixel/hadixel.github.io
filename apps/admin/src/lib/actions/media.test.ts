@@ -130,10 +130,10 @@ describe("the panel no longer carries its own copy of the media rules", () => {
 
   it("keeps one implementation of the delete path, and one action for a form to bind", () => {
     // The last of the eight the panel had doubled. Two names for one rule, and one of them to forget.
-    const module = sourceOf("./media.ts");
+    const featureModule = sourceOf("./media.ts");
     const adapter = sourceOf("./media-actions.ts");
 
-    expect(module.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
+    expect(featureModule.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
     // Tolerating a wrapped signature, because an adapter that names its parameter types across lines is
     // the same adapter as one that does not, and a regex that only matched the single-line form would
     // pass on an adapter that bound nothing.
@@ -143,7 +143,7 @@ describe("the panel no longer carries its own copy of the media rules", () => {
 
     // Matched on the export rather than the bare word: a comment naming the removed function is
     // documentation, and a test that failed on it would forbid explaining itself.
-    expect(`${module}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
+    expect(`${featureModule}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
   });
 
   it("adds nothing to the adapter but the session check", () => {

@@ -24,7 +24,7 @@ import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../generated/prisma/client.js";
 import { SaveProductDto } from "./dto/product.dto.js";
 import { MAX_PRODUCT_PAGE_SIZE, ProductListQueryDto } from "./dto/product-query.dto.js";
 import type { ProductDetail, ProductListRow, ProductPage } from "./dto/product-read.dto.js";
@@ -39,7 +39,6 @@ import {
   writeSpecValues,
 } from "./products.service.js";
 
-type Tx = Prisma.TransactionClient;
 
 /** What a saved product answers with: the id to navigate to, and the slug it landed on. */
 export interface ProductSaved {

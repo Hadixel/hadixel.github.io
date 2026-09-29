@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -78,9 +79,9 @@ export function AccountArea({
             <>
               {recentOrders.map((order) => <OrderRow key={order.orderNumber} order={order} />)}
               {orderCount > recentOrders.length && (
-                <a href="/orders" className="block rounded-card bg-plaster/70 py-4 text-center text-sm font-bold text-ink transition-colors hover:bg-plaster">
+                <Link href="/orders" className="block rounded-card bg-plaster/70 py-4 text-center text-sm font-bold text-ink transition-colors hover:bg-plaster">
                   مشاهده همه {toFaDigits(orderCount - recentOrders.length)} سفارش قبلی
-                </a>
+                </Link>
               )}
             </>
           )}

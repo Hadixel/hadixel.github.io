@@ -76,7 +76,7 @@ function amountOff(d: DbDiscount, subtotal: number): number {
 }
 
 /** How many times a discount has been used, overall and by one customer. */
-async function useCount(db: Db, discountId: string, customerId?: string): Promise<number> {
+async function redemptionCount(db: Db, discountId: string, customerId?: string): Promise<number> {
   const orders = await db.order.findMany({
     where: customerId ? { customerId } : {},
     select: { appliedDiscounts: true },
@@ -111,11 +111,11 @@ export async function applyDiscounts(
   });
 
   const underLimit = async (d: DbDiscount): Promise<boolean> => {
-    if (d.maxUsesTotal !== null && (await useCount(db, d.id)) >= d.maxUsesTotal) return false;
+    if (d.maxUsesTotal !== null && (await redemptionCount(db, d.id)) >= d.maxUsesTotal) return false;
     if (
       d.maxUsesPerCustomer !== null &&
       ctx.customerId &&
-      (await useCount(db, d.id, ctx.customerId)) >= d.maxUsesPerCustomer
+      (await redemptionCount(db, d.id, ctx.customerId)) >= d.maxUsesPerCustomer
     ) {
       return false;
     }

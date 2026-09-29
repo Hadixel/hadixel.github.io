@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException as NestNotFound, Param, Query } from "@nestjs/common";
+import { Controller, Get, Param, Query } from "@nestjs/common";
 import { NotFoundException } from "../common/exceptions/gateway.exception.js";
 import { ContentService } from "./content.service.js";
 import {

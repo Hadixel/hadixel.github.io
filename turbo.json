@@ -33,6 +33,23 @@
         "../../scripts/gateway-dist-manifest.mjs"
       ],
       "env": ["NODE_ENV"]
+    },
+
+    // The `//#` prefix is what makes these root tasks. Without it turbo looks for a `lint` script in
+    // every workspace, finds none, and reports "no tasks were executed" while appearing to have run —
+    // which is the failure mode of a linter nothing invokes. There is one root eslint config and one
+    // audit script and each reads the whole tree, so each belongs to the root and to nowhere else.
+    //
+    // No `dependsOn`. Both read source rather than build output, and making them wait on every
+    // workspace's build would mean a lint of a one-line change took as long as a full build.
+    "//#lint": {
+      "outputs": []
+    },
+    "//#audit": {
+      "outputs": [],
+      // The audit boots a disposable database, starts a server and reads the git history. None of
+      // that is a function of the source, so a cached "pass" would be a claim about the past.
+      "cache": false
     }
   }
 }

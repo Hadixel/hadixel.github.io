@@ -22,7 +22,7 @@ import { plainToInstance } from "class-transformer";
 import type { ValidationError } from "class-validator";
 import { VALIDATION_PIPE_OPTIONS, validationExceptionFactory } from "../src/common/validation.js";
 import { SaveCategoryDto, UpdateCategoryDto } from "../src/categories/dto/category.dto.js";
-import { SaveCollectionDto, UpdateCollectionDto } from "../src/collections/dto/collection.dto.js";
+import { SaveCollectionDto } from "../src/collections/dto/collection.dto.js";
 import { SaveDiscountDto, UpdateDiscountDto } from "../src/discounts/dto/discount.dto.js";
 import { SavePageDto } from "../src/pages/dto/page.dto.js";
 

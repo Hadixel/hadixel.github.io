@@ -142,7 +142,7 @@ describe("verifying a code", () => {
   });
 
   it("stops accepting a code after too many wrong guesses", async () => {
-    const requested = await otp().request("09121234567");
+    await otp().request("09121234567");
     for (let attempt = 0; attempt < OTP_MAX_ATTEMPTS; attempt += 1) {
       expect(await otp().verify("09121234567", "000000")).toEqual({
         ok: false,

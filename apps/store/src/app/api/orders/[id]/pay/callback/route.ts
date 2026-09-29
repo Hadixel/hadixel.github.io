@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GatewayError } from "@kmodern/transport/client";
 import { gateway } from "@/lib/gateway";
 
 // The payment provider redirecting a shopper back, and the settlement that follows.

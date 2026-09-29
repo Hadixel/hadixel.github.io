@@ -26,13 +26,16 @@ export async function readThrough<T>(path: string): Promise<T> {
   } catch (error) {
     // A build whose address was never configured. Named rather than summarised, because no retry fixes
     // this and the message is the only thing that tells an operator where to look.
-    throw new Error(describe(error));
+    throw new Error(describe(error), { cause: error });
   }
 
   try {
     return await client.get<T>(path);
   } catch (error) {
-    throw new Error(describe(error));
+    // The `cause` is what the sentence above is for: the panel needs a phrase it can show an operator,
+    // and the gateway's own failure is what a developer needs in a stack trace. Dropping it turns every
+    // failure into one line with nothing under it.
+    throw new Error(describe(error), { cause: error });
   }
 }
 

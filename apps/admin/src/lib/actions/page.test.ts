@@ -177,17 +177,17 @@ describe("the panel no longer carries its own copy of the page rules", () => {
   it("keeps one implementation of the delete path, and one action for a form to bind", async () => {
     // There used to be a bare `deletePage(formData)` and a `deletePageAction(_prev, formData)` that
     // existed only to satisfy `useActionState`. Two names for one rule, and one of them to forget.
-    const module = sourceOf("./page.ts");
+    const featureModule = sourceOf("./page.ts");
     const adapter = sourceOf("./page-actions.ts");
 
-    expect(module.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
+    expect(featureModule.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
     expect(
       adapter.match(/export async function delete\w+\(_prev: ActionResult, formData: FormData\)/g) ?? [],
     ).toHaveLength(1);
 
     // Matched on the export rather than the bare word: a comment naming the removed function is
     // documentation, and a test that failed on it would forbid explaining itself.
-    expect(`${module}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
+    expect(`${featureModule}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
   });
 
   it("adds nothing to the adapter but the session check", async () => {

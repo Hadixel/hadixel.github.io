@@ -15,7 +15,7 @@
 // into one string produces a sentence no operator can act on. The panel's actions had the same
 // property — they returned the first message — so this preserves what the operator was used to.
 
-import { ValidationPipe, type ValidationPipeOptions } from "@nestjs/common";
+import { type ValidationPipeOptions } from "@nestjs/common";
 import { type ValidationError } from "class-validator";
 import { BadRequestException } from "./exceptions/gateway.exception.js";
 

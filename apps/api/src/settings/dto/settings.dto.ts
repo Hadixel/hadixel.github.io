@@ -12,7 +12,7 @@
 // *envelope* is a shape at all — a `values` that is an array, a number or `null` must not reach the
 // parser and be read as "no fields" and reported to the operator as a successful save of nothing.
 
-import { IsObject, IsString, Length, Matches } from "class-validator";
+import { IsObject, IsString, Matches } from "class-validator";
 
 /**
  * A section name, spelled the way the definitions table spells them.

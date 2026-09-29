@@ -1,0 +1,18 @@
+{
+  "extends": "../../../packages/config/tsconfig.node.json",
+  "//": [
+    "The data scripts get a project of their own rather than being added to the gateway's.",
+    "",
+    "Two reasons, and the second is the one that matters. Type-aware linting needs every linted file",
+    "to belong to some tsconfig, and the gateway's deliberately does not include these — the scripts",
+    "are run by hand with tsx and are not part of the application. Leaving them outside entirely put",
+    "them on typescript-eslint's `allowDefaultProject` list, which is capped at 8 files and they are 9,",
+    "so the tenth to appear would have failed the whole lint run for the whole repo.",
+    "",
+    "The other reason: adding them to the gateway's project would have put 9 scripts with real type",
+    "errors inside `turbo run typecheck`, which is a different piece of work from this one. They are",
+    "typechecked on their own terms here, and that is where the errors are now visible rather than",
+    "nowhere."
+  ],
+  "include": ["*.ts"]
+}

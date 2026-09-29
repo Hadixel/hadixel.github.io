@@ -104,6 +104,7 @@ export async function getAdminUser(): Promise<AdminContext | null> {
     // again would fail in exactly the same way.
     throw new Error(
       error instanceof GatewayError ? error.message : "درگاه پیکربندی نشده است؛ دوباره تلاش کنید",
+      { cause: error },
     );
   }
 
@@ -119,6 +120,7 @@ export async function getAdminUser(): Promise<AdminContext | null> {
           ? `درگاه در دسترس نیست؛ دوباره تلاش کنید (${error.message})`
           : error.message
         : "خطای ناشناخته؛ دوباره تلاش کنید",
+      { cause: error },
     );
   }
 }

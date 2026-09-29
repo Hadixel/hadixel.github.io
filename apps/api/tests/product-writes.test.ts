@@ -16,7 +16,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { createPrismaClient } from "../src/prisma/client.js";
 import { ProductsController } from "../src/products/products.controller.js";
-import { setVariantStock } from "../src/inventory/inventory.service.js";
 import { db } from "../src/prisma/index.js";
 import { makeCategory, makeOrder, makeProduct, makeVariantOn, resetDatabase } from "./harness.js";
 

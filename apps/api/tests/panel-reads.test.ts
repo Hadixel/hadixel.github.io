@@ -47,7 +47,7 @@ describe("the panel reads the category tree", () => {
   it("answers each row with its parent's name and both counts", async () => {
     const parent = await makeCategory("mobile", "موبایل");
     const child = await makeCategory("phone", "گوشی", parent.id);
-    const product = await makeProduct({ categoryId: child.id });
+    await makeProduct({ categoryId: child.id });
     await db().categorySpecField.create({
       data: { categoryId: child.id, name: "رنگ", type: "string" },
     });

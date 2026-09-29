@@ -180,15 +180,15 @@ describe("the panel no longer carries its own copy of the post rules", () => {
   it("keeps one implementation of the delete path, and one action for a form to bind", () => {
     // There used to be a bare `deletePost(formData)` and a `deletePostAction(_prev, formData)` that
     // existed only to satisfy `useActionState`.
-    const module = sourceOf("./post.ts");
+    const featureModule = sourceOf("./post.ts");
     const adapter = sourceOf("./post-actions.ts");
 
-    expect(module.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
+    expect(featureModule.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
     expect(
       adapter.match(/export async function delete\w+\(_prev: ActionResult, formData: FormData\)/g) ?? [],
     ).toHaveLength(1);
 
-    expect(`${module}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
+    expect(`${featureModule}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
   });
 
   it("keeps the redirect out of any try, because redirect works by throwing", () => {

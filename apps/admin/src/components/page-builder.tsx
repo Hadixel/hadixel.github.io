@@ -9,7 +9,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ComponentType } from "@kmodern/schema";
 import { savePage } from "@/lib/actions/page-actions";
-import { idle, type ActionResult } from "@/lib/actions/result";
+import { type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Select, Textarea } from "@/components/ui";
 import { MediaPickerButton } from "./media-picker-button";
 

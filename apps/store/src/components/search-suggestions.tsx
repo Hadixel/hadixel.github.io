@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { clearRecent, readRecent, rememberRecent } from "@/lib/recent-searches";
 import { submitListing } from "@/lib/search-nav";
@@ -162,7 +163,7 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
             </div>
           )}
 
-          <a href="/products" onClick={onNavigate} className="block overflow-hidden rounded-card bg-ink">
+          <Link href="/products" onClick={onNavigate} className="block overflow-hidden rounded-card bg-ink">
             <div className="relative flex h-24 items-center justify-between px-5">
               <div>
                 <div className="text-sm font-bold text-white">تازه‌های فروشگاه</div>
@@ -170,7 +171,7 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
               </div>
               <span className="rounded-[30px] bg-flame-700 px-4 py-1.5 text-xs font-bold text-white">خرید</span>
             </div>
-          </a>
+          </Link>
         </div>
       )}
     </div>

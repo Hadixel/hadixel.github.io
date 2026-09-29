@@ -308,10 +308,10 @@ describe("the panel no longer carries its own copy of the rules", () => {
     //
     // The assertion is about *how many* functions delete, not about their names: one
     // `delete…Request` that does the work, one `delete…` with the form's signature that does not.
-    const module = sourceOf("./discount.ts");
+    const featureModule = sourceOf("./discount.ts");
     const adapter = sourceOf("./discount-actions.ts");
 
-    expect(module.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
+    expect(featureModule.match(/export async function delete\w+Request\b/g) ?? []).toHaveLength(1);
     expect(
       adapter.match(/export async function delete\w+\(_prev: ActionResult, formData: FormData\)/g) ?? [],
     ).toHaveLength(1);
@@ -320,7 +320,7 @@ describe("the panel no longer carries its own copy of the rules", () => {
     // exported is an invitation to bind the wrong one of a pair. Matched on `export` rather than on
     // the bare word, because a comment saying which name was removed and why is documentation, and a
     // test that failed on that would be a test that forbade explaining itself.
-    expect(`${module}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
+    expect(`${featureModule}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
   });
 
   it("adds nothing to the adapter but the session check", () => {

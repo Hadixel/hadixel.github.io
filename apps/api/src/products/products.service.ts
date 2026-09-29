@@ -28,7 +28,6 @@ import {
 } from "./exceptions/product.exception.js";
 import type { SaveProductDto, VariantInputDto } from "./dto/product.dto.js";
 
-type Tx = Prisma.TransactionClient;
 
 /**
  * The address a product is published at.

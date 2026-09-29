@@ -137,7 +137,7 @@ describe("an operator saves navigation", () => {
   });
 
   it("refuses an automatic item with no category, which renders as an empty dropdown", async () => {
-    const menu = await seedMenu("HEADER");
+    await seedMenu("HEADER");
 
     await expect(
       controller().save(request(), body({ items: [item({ childSource: "CATEGORY" })] }) as never),
@@ -158,7 +158,7 @@ describe("an operator saves navigation", () => {
   });
 
   it("refuses an automatic child source whose category is not there", async () => {
-    const menu = await seedMenu("HEADER");
+    await seedMenu("HEADER");
 
     await expect(
       controller().save(

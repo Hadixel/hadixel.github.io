@@ -8,7 +8,7 @@
 // What is shape lives here: that the location is one of three, that the name is text with something
 // in it, and that the item list is a list.
 
-import { ArrayMaxSize, IsArray, IsEnum, IsNotEmpty, IsObject, IsString, Length, Matches } from "class-validator";
+import { ArrayMaxSize, IsArray, IsEnum, IsNotEmpty, IsString, Length, Matches } from "class-validator";
 
 /** `/\S/`, because `@IsNotEmpty` accepts three spaces and a menu named `"   "` renders as a blank tab. */
 const HAS_CONTENT = /\S/;

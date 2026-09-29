@@ -34,6 +34,24 @@ export default tseslint.config(
 
   {
     files: ["**/*.{ts,tsx,mts}"],
+    rules: {
+      // `_`-prefixed bindings are this codebase's way of saying "deliberately not used" —
+      // `const { startsAt: _startsAt, ...withoutStart } = base` is how a test builds the
+      // shape-without-a-field, and reporting it is noise on an intentional omission. A rest destructure
+      // cannot avoid naming the key at all, so the prefix is the only tool available.
+      //
+      // `caughtErrors: "none"` for the same reason: a `catch (e)` that is deliberately ignored is
+      // common and correct, and forcing every one of them to be renamed `_e` would be a worse signal
+      // than the one being suppressed.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+      ],
+    },
+  },
+
+  {
+    files: ["**/*.{ts,tsx,mts}"],
     plugins: { "react-hooks": reactHooks },
     // The two stable rules only. The plugin's newer React-Compiler-aware rules
     // (set-state-in-effect, static-components, use-memo, ...) are an opinionated codemod
@@ -46,14 +64,18 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          // Files that belong to no tsconfig, so the service has to be told they may stand
-          // alone: the data-tier seed scripts, which are linted here but stay outside the
-          // typecheck project (P2 rewrites them when they move into the gateway).
+          // Files that belong to no tsconfig, so the service has to be told they may stand alone.
           //
-          // typescript-eslint caps allowDefaultProject at 8 files and hard-errors past that.
-          // Eight seed scripts exist today, so this sits at the ceiling: the next one needs
-          // either a tsconfig include or a split.
-          allowDefaultProject: ["apps/api/seed/*.ts"],
+          // One file now. The data-tier seed scripts used to be here as well, and typescript-eslint
+          // caps this list at 8 — they were 9, so lint stopped working for the whole repository. They
+          // have a project of their own now (`apps/api/seed/tsconfig.json`), which is the fix the old
+          // comment predicted: a list like this is a to-do, not a configuration.
+          //
+          // `packages/transport/src/next.ts` is the deliberate one. The package's tsconfig excludes it
+          // on purpose — a framework-free package should not depend on a framework to typecheck a thin
+          // adapter — and each app typechecks it as part of itself, which is where the framework is. So
+          // it belongs to no project, and saying so here is cheaper than pretending otherwise.
+          allowDefaultProject: ["packages/transport/src/next.ts"],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -127,13 +149,9 @@ export default tseslint.config(
     },
   },
 
-  // Outbound adapters: cloud, payment, SMS, shipping. All Node.
-  {
-    files: ["packages/adapters/**/*.{ts,tsx}"],
-    languageOptions: {
-      globals: { ...globals.node },
-    },
-  },
+  // The adapter package had a block here until it was dissolved into the gateway. A `files` pattern
+  // matching nothing is not an error and not a warning — it is a rule that has quietly stopped
+  // applying to anything, which is the one failure mode a lint config has that a compiler does not.
 
   // The scraper: a command-line tool, so Node and nothing else.
   {

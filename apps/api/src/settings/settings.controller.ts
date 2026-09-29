@@ -19,7 +19,7 @@ import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { zarinpalConfigFromEnv } from "../payments/zarinpal.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../generated/prisma/client.js";
 import { SaveSettingsDto } from "./dto/settings.dto.js";
 import {
   PUBLIC_SETTING_FIELDS,
@@ -34,7 +34,6 @@ import {
   SettingsRuleException,
 } from "./exceptions/settings.exception.js";
 
-type Tx = Prisma.TransactionClient;
 
 /** What a save answers with: the fields that changed, for the audit line and the panel's own log. */
 export interface SettingsSaved {

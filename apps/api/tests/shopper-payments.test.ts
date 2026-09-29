@@ -37,10 +37,6 @@ function shopper(auth: unknown) {
 
 async function fixture() {
   const customer = await db().customer.create({ data: { phone: "09351110000", name: "خریدار" } });
-  const auth = {
-    customerForToken: async (token: string) =>
-      token === TOKEN ? { customer: { id: customer.id, phone: customer.phone } } : null,
-  };
   // The harness's own order factory, so the fixture is the shape the rest of the suite uses rather than
   // a hand-rolled one that drifts from the schema the moment a field is added.
   const order = await makeOrder({ customerId: customer.id, total: 1_000_000 });
@@ -84,7 +80,7 @@ describe("starting an online payment", () => {
     // it is in. The window is opened by the same scoped query that has always answered this way, and the
     // start route has to inherit it rather than re-derive the scope.
     const { order } = await fixture();
-    const other = await shopper({ customerForToken: async () => null });
+    const other = shopper({ customerForToken: async () => null });
     await expect(
       other.startPayment({ headers: { cookie: "" } } as never, order.id, {
         callbackUrl: "https://shop.test/cb",

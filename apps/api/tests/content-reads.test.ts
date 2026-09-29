@@ -462,7 +462,7 @@ describe("the panel reads the navigation trees", () => {
     const first = await db().menuItem.create({
       data: { menuId: menu.id, sortOrder: 0, label: "خانه", target: { type: "EXTERNAL", url: "/" } as never },
     });
-    const second = await db().menuItem.create({
+    await db().menuItem.create({
       data: { menuId: menu.id, sortOrder: 1, label: "محصولات", target: { type: "EXTERNAL", url: "/products" } as never },
     });
     // Created *before* the child, and with the higher `sortOrder`, so a read that ignored the order

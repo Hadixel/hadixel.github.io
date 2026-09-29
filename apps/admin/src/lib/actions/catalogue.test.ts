@@ -35,7 +35,6 @@ function form(fields: Record<string, string>) {
   return data;
 }
 
-const idle = { ok: true, message: "" } as const;
 
 describe("saving a category", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -322,10 +321,10 @@ describe("the panel no longer carries its own copy of the rules", () => {
     // about *how many* functions delete, not about their names: one `delete…Request` that does the
     // work, one `delete…` with the form's signature that does not.
     for (const feature of ["category", "collection"]) {
-      const module = sourceOf(`./${feature}.ts`);
+      const featureModule = sourceOf(`./${feature}.ts`);
       const adapter = sourceOf(`./${feature}-actions.ts`);
 
-      const implementations = module.match(/export async function delete\w+Request\b/g) ?? [];
+      const implementations = featureModule.match(/export async function delete\w+Request\b/g) ?? [];
       expect(implementations, `./${feature}.ts must have exactly one delete implementation`).toHaveLength(1);
 
       const bound = adapter.match(/export async function delete\w+\(_prev: ActionResult, formData: FormData\)/g) ?? [];
@@ -335,7 +334,7 @@ describe("the panel no longer carries its own copy of the rules", () => {
       // exported is an invitation to bind the wrong one of a pair. Matched on `export` rather than on
       // the bare word, because a comment saying which name was removed and why is documentation, and a
       // test that failed on that would be a test that forbade explaining itself.
-      expect(`${module}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
+      expect(`${featureModule}${adapter}`).not.toMatch(/export async function delete\w+Action\b/);
     }
   });
 

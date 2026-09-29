@@ -77,7 +77,7 @@ describe("a shopper reads the category tree", () => {
   it("nests a child under the parent it belongs to, and leaves a root's children empty", async () => {
     const parent = await makeCategory("mvbayl", "موبایل");
     const child = await makeCategory("gvshy", "گوشی", parent.id);
-    const other = await makeCategory("jfnh", "جفنگ");
+    await makeCategory("jfnh", "جفنگ");
 
     const tree = await controller().categories();
 

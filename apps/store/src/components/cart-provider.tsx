@@ -55,7 +55,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* storage full/blocked — cart still works in memory */
     }
-  }, [lines]);
+  }, [lines, hydrated]);
 
   const add = useCallback((variantId: string, qty = 1) => {
     setLines((prev) => {

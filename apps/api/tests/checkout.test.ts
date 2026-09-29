@@ -21,7 +21,7 @@ import {
 import { computeTotals, subtotalOf } from "../src/checkout/totals.js";
 import { applyDiscounts } from "../src/checkout/discounts.js";
 import { $Enums, db } from "../src/prisma/index.js";
-import { makeCategory, makeDiscount, makeOrder, makeProduct, makeVariant, resetDatabase } from "./harness.js";
+import { makeDiscount, makeOrder, makeProduct, makeVariant, resetDatabase } from "./harness.js";
 
 function service(): CheckoutService {
   return new CheckoutService(db() as never);

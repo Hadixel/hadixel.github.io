@@ -42,7 +42,6 @@ const MENU_INCLUDE = {
 } satisfies Prisma.MenuInclude;
 
 type MenuRow = Prisma.MenuGetPayload<{ include: typeof MENU_INCLUDE }>;
-type ItemRow = MenuRow["items"][number];
 
 /** A product mention, resolved. What a `productCard` node becomes when its product still exists. */
 interface ProductMention {
