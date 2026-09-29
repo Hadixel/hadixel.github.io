@@ -34,6 +34,9 @@ const DIGIT_MAP: Record<string, string> = {
 
 // Keep U+200C: it is semantic in Persian compounds. The surrounding rules
 // remove it only when it is visibly stranded beside punctuation/whitespace.
+// U+200D (ZWJ) is here to be stripped, not to join anything; the rule's joined-sequence
+// warning does not apply to a class whose purpose is removal.
+// eslint-disable-next-line no-misleading-character-class
 const ZERO_WIDTH = /[\u200B\u200D\uFEFF\u2060]/g;
 const MULTI_SPACE = /[ \t\u00A0]{2,}/g;
 const MULTI_NL = /\n{3,}/g;
@@ -41,12 +44,15 @@ const MULTI_NL = /\n{3,}/g;
 /** Normalize one chunk of Persian text: glyphs, digits, spaces, ZWNJ policy. */
 export function normalizeFa(input: string): string {
   let s = input.replace(ZERO_WIDTH, "");
+  // U+064B-U+0652 are Arabic diacritics, stripped on purpose so scraped copy normalises to
+  // plain Persian. The rule cannot tell a deliberate strip from an accidental join.
+  // eslint-disable-next-line no-misleading-character-class
   s = s.replace(/[\u0643\u0649\u064A\u0629\u064B-\u0652]/g, (c) => ARABIC_TO_PERSIAN[c] ?? c);
   s = s.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (c) => DIGIT_MAP[c] ?? c);
   // ZWNJ handling: keep semantic ones (نمی‌شود), drop stray ones adjacent to
   // punctuation/whitespace where they were accidental paste artifacts.
-  s = s.replace(/\u200C(?=[\s.,؛:!؟()\[\]])/g, "");
-  s = s.replace(/(?<=[\s.,؛:!؟()\[\]])\u200C/g, "");
+  s = s.replace(/\u200C(?=[\s.,؛:!؟()[\]])/g, "");
+  s = s.replace(/(?<=[\s.,؛:!؟()[\]])\u200C/g, "");
   s = s.replace(MULTI_SPACE, " ");
   s = s.replace(/[ \t]+\n/g, "\n");
   s = s.replace(MULTI_NL, "\n\n");
@@ -177,7 +183,7 @@ export function refineSpecs(specs: { label: string; value: string }[]): { label:
   const seen = new Set<string>();
   for (const sp of specs) {
     const label = normalizeFa(sp.label).replace(/\s*[:：]\s*$/, "");
-    let value = normalizeFa(sp.value);
+    const value = normalizeFa(sp.value);
     if (!label || !value) continue;
     if (/^(رنگ|قیمت)$/.test(label)) continue; // color handled as Variant; price injected separately
     if (value === "-" || value === "—" || value.length > 300) continue;

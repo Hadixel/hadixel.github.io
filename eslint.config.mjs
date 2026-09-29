@@ -137,7 +137,7 @@ export default tseslint.config(
 
   // The scraper: a command-line tool, so Node and nothing else.
   {
-    files: ["packages/scraper/**/*.{ts,tsx}"],
+    files: ["apps/scraper/**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.node },
     },

@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import type { LookupAddress } from "node:dns";
 import * as ipaddr from "ipaddr.js";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -30,9 +31,18 @@ const DEFAULTS = {
     "Mozilla/5.0 (compatible; kmodern-scraper/0.1; catalog ingestion)",
 };
 
+/**
+ * ipaddr.js is published as CommonJS. Bundlers (Next.js) and Vitest surface its
+ * exports directly, but plain Node ESM — the scraper CLI and TUI — only exposes
+ * the `default` interop binding. Without this, `ipaddr.parse` is `undefined`,
+ * every address throws, and the SSRF guard below rejects every remote host.
+ */
+const ipaddrRuntime: typeof ipaddr =
+  (ipaddr as { default?: typeof ipaddr }).default ?? ipaddr;
+
 function isPrivateIp(address: string): boolean {
   try {
-    const parsed = ipaddr.parse(address);
+    const parsed = ipaddrRuntime.parse(address);
     if (parsed.kind() === "ipv6") {
       const ipv6 = parsed as ipaddr.IPv6;
       if (ipv6.isIPv4MappedAddress()) return isPrivateIp(ipv6.toIPv4Address().toString());
@@ -44,6 +54,43 @@ function isPrivateIp(address: string): boolean {
   } catch {
     return true;
   }
+}
+
+/**
+ * Resolver failures are transient by nature (`EAI_AGAIN` is a temporary
+ * failure, not NXDOMAIN), so the retry loop treats them as worth retrying with
+ * a longer, resolver-friendly pause. The SSRF check re-runs on every attempt.
+ */
+export class DnsLookupError extends Error {
+  constructor(hostname: string, cause: unknown) {
+    super(`DNS lookup failed for ${hostname}: ${cause instanceof Error ? cause.message : String(cause)}`);
+    this.name = "DnsLookupError";
+  }
+}
+
+const dnsCache = new Map<string, { addresses: LookupAddress[]; expiresAt: number }>();
+const DNS_CACHE_TTL_MS = 60_000;
+const DNS_MAX_CACHE_ENTRIES = 64;
+
+async function resolveHost(hostname: string): Promise<LookupAddress[]> {
+  const cached = dnsCache.get(hostname);
+  if (cached && cached.expiresAt > Date.now()) return cached.addresses;
+
+  let addresses: LookupAddress[];
+  try {
+    addresses = await lookup(hostname, { all: true, verbatim: true });
+  } catch (error) {
+    // A transient failure must not be cached; the next attempt should retry.
+    throw new DnsLookupError(hostname, error);
+  }
+  if (addresses.length) {
+    if (dnsCache.size >= DNS_MAX_CACHE_ENTRIES) {
+      const oldest = dnsCache.keys().next();
+      if (!oldest.done) dnsCache.delete(oldest.value);
+    }
+    dnsCache.set(hostname, { addresses, expiresAt: Date.now() + DNS_CACHE_TTL_MS });
+  }
+  return addresses;
 }
 
 /** Reject URLs that could make the scraper reach local/internal services. */
@@ -63,8 +110,8 @@ export async function assertSafeRemoteUrl(value: string): Promise<URL> {
     throw new Error("Local remote host is not allowed");
   }
   const addresses = isIP(hostname)
-    ? [{ address: hostname }]
-    : await lookup(hostname, { all: true, verbatim: true });
+    ? [{ address: hostname, family: isIP(hostname) }]
+    : await resolveHost(hostname);
   if (!addresses.length || addresses.some(({ address }) => isPrivateIp(address))) {
     throw new Error("Private or unresolvable remote host is not allowed");
   }
@@ -118,6 +165,14 @@ function abortError(): Error {
   return error;
 }
 
+/**
+ * A resolver that answers `EAI_AGAIN` needs seconds, not milliseconds, to
+ * recover, so DNS failures back off far more patiently than a refused socket.
+ */
+function backoffFor(error: unknown, attempt: number): number {
+  return (error instanceof DnsLookupError ? 3_000 : 500) * 2 ** attempt;
+}
+
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   if (signal?.aborted) return Promise.reject(abortError());
 
@@ -149,6 +204,56 @@ async function throttle(
     if (wait > 0) await delay(wait, signal);
   }
   lastHit.set(host, Date.now());
+}
+
+function startsWithAscii(bytes: Uint8Array, signature: string, offset = 0): boolean {
+  for (let i = 0; i < signature.length; i++) {
+    if (bytes[offset + i] !== signature.charCodeAt(i)) return false;
+  }
+  return true;
+}
+
+function ascii(bytes: Uint8Array, offset: number, length: number): string {
+  let out = "";
+  for (let i = offset; i < offset + length; i++) out += String.fromCharCode(bytes[i] ?? 0);
+  return out;
+}
+
+const CONTENT_TYPE_SIGNATURES: readonly { contentType: string; test: (bytes: Uint8Array) => boolean }[] = [
+  { contentType: "image/jpeg", test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  {
+    contentType: "image/png",
+    test: (b) => b[0] === 0x89 && ascii(b, 1, 3) === "PNG" && b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a,
+  },
+  { contentType: "image/gif", test: (b) => startsWithAscii(b, "GIF87a") || startsWithAscii(b, "GIF89a") },
+  { contentType: "image/webp", test: (b) => startsWithAscii(b, "RIFF") && startsWithAscii(b, "WEBP", 8) },
+  { contentType: "image/avif", test: (b) => ascii(b, 4, 4) === "ftyp" && ascii(b, 8, 3) === "avi" },
+  { contentType: "image/bmp", test: (b) => startsWithAscii(b, "BM") },
+  { contentType: "image/x-icon", test: (b) => b[0] === 0x00 && b[1] === 0x00 && b[2] === 0x01 && b[3] === 0x00 },
+  { contentType: "image/tiff", test: (b) => startsWithAscii(b, "II*") || startsWithAscii(b, "MM") },
+  { contentType: "application/pdf", test: (b) => startsWithAscii(b, "%PDF-") },
+  { contentType: "application/zip", test: (b) => startsWithAscii(b, "PK") },
+  { contentType: "application/gzip", test: (b) => b[0] === 0x1f && b[1] === 0x8b },
+];
+
+/**
+ * Identify a payload from its magic bytes.
+ *
+ * Some manufacturer hosts (datees.ir among them) serve images with no
+ * `Content-Type` header at all, so a header-only check rejects valid files.
+ * Sniffing is the fallback; the declared header still wins when it is present
+ * and allowed. Only non-scriptable raster/document formats are recognised, so
+ * an HTML or SVG error page can never be mistaken for a download.
+ */
+export function sniffContentType(bytes: Uint8Array): string | null {
+  for (const { contentType, test } of CONTENT_TYPE_SIGNATURES) {
+    if (test(bytes)) return contentType;
+  }
+  return null;
+}
+
+function typeAllowed(contentType: string, allowed: readonly string[]): boolean {
+  return allowed.some((type) => contentType.startsWith(type));
 }
 
 function cacheKey(url: string): string {
@@ -207,7 +312,7 @@ export async function fetchHtml(
       // exponential-ish backoff; 4xx other than 429 won't fix themselves
       const msg = String(e);
       if (/HTTP 4\d\d/.test(msg) && !msg.includes("429")) break;
-      if (attempt < o.retries! - 1) await delay(1000 * 2 ** attempt, o.signal);
+      if (attempt < o.retries! - 1) await delay(backoffFor(e, attempt), o.signal);
     } finally {
       clearTimeout(timer);
       o.signal?.removeEventListener("abort", onAbort);
@@ -225,6 +330,23 @@ export async function fetchBuffer(
   url: string,
   opts: FetchOptions = {},
 ): Promise<Uint8Array> {
+  return (await fetchAsset(url, opts)).bytes;
+}
+
+export interface FetchedAsset {
+  bytes: Uint8Array;
+  /** The declared `Content-Type`, or the magic-byte type when the host sends none. */
+  contentType: string | null;
+}
+
+/** A rejection that retrying cannot fix, so the backoff loop stops immediately. */
+class PermanentAssetError extends Error {}
+
+/** Fetch a binary asset and report which media type the bytes actually are. */
+export async function fetchAsset(
+  url: string,
+  opts: FetchOptions = {},
+): Promise<FetchedAsset> {
   const o = { ...DEFAULTS, ...opts };
   if (o.signal?.aborted) throw abortError();
   const host = new URL(url).host;
@@ -245,17 +367,27 @@ export async function fetchBuffer(
         signal: ctrl.signal,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
-      const contentType = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase();
-      if (o.allowedContentTypes?.length && (!contentType || !o.allowedContentTypes.some((type) => contentType.startsWith(type)))) {
-        throw new Error(`Unexpected content type for ${url}`);
+      const bytes = new Uint8Array(await readResponseBytes(response, o.maxBytes ?? 10 * 1024 * 1024));
+      const declared = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase() || null;
+      const allowed = o.allowedContentTypes;
+      if (allowed?.length) {
+        if (declared && typeAllowed(declared, allowed)) return { bytes, contentType: declared };
+        // A missing or mislabelled header still has to yield a real image: sniff
+        // the payload so a 200 HTML error page is rejected but a valid file is not.
+        const sniffed = sniffContentType(bytes);
+        if (sniffed && typeAllowed(sniffed, allowed)) return { bytes, contentType: sniffed };
+        throw new PermanentAssetError(
+          `Unexpected content type for ${url} (declared: ${declared ?? "none"}, detected: ${sniffed ?? "unknown"})`,
+        );
       }
-      return new Uint8Array(await readResponseBytes(response, o.maxBytes ?? 10 * 1024 * 1024));
+      return { bytes, contentType: declared ?? sniffContentType(bytes) };
     } catch (error) {
       if (o.signal?.aborted) throw abortError();
       lastErr = error;
+      if (error instanceof PermanentAssetError) break;
       const message = String(error);
       if (/HTTP 4\d\d/.test(message) && !message.includes("429")) break;
-      if (attempt < o.retries! - 1) await delay(1000 * 2 ** attempt, o.signal);
+      if (attempt < o.retries! - 1) await delay(backoffFor(error, attempt), o.signal);
     } finally {
       clearTimeout(timer);
       o.signal?.removeEventListener("abort", onAbort);

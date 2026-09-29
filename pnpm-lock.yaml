@@ -60,7 +60,7 @@ importers:
         version: link:../../packages/schema
       '@kmodern/scraper':
         specifier: workspace:*
-        version: link:../../packages/scraper
+        version: link:../scraper
       '@kmodern/transport':
         specifier: workspace:*
         version: link:../../packages/transport
@@ -157,6 +157,28 @@ importers:
         specifier: ^4.19.0
         version: 4.23.7
 
+  apps/scraper:
+    dependencies:
+      cheerio:
+        specifier: ^1.0.0
+        version: 1.2.0
+      ipaddr.js:
+        specifier: ^2.5.0
+        version: 2.5.0
+      slugify:
+        specifier: ^1.6.9
+        version: 1.6.9
+      xlsx:
+        specifier: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+        version: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
+      tsx:
+        specifier: ^4.19.0
+        version: 4.23.7
+
   apps/store:
     dependencies:
       '@heroui/react':
@@ -239,28 +261,6 @@ importers:
       '@types/sanitize-html':
         specifier: ^2.16.1
         version: 2.16.1
-
-  packages/scraper:
-    dependencies:
-      cheerio:
-        specifier: ^1.0.0
-        version: 1.2.0
-      ipaddr.js:
-        specifier: ^2.5.0
-        version: 2.5.0
-      slugify:
-        specifier: ^1.6.9
-        version: 1.6.9
-      xlsx:
-        specifier: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
-        version: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.13.3
-      tsx:
-        specifier: ^4.19.0
-        version: 4.23.7
 
   packages/transport:
     dependencies:

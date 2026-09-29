@@ -4,15 +4,15 @@
 //   pnpm --filter @kmodern/scraper price-list -- --file ./D0249.xlsx
 //   pnpm --filter @kmodern/scraper price-list -- --file ./prices.xlsx --brand Datees --dry-run
 
-import { applyPriceList, type PriceUnit } from "./price-list";
-import { readFlag } from "./args";
+import { applyPriceList, type PriceUnit } from "../src/price-list";
+import { readFlag } from "../src/args";
 
 const args = process.argv.slice(2);
 const flag = (name: string): string | undefined => readFlag(args, name);
 
 const file = flag("file");
 if (!file || file.startsWith("--")) {
-  console.error("Usage: pnpm --filter @kmodern/scraper price-list -- --file <prices.xlsx> [--out-dir packages/scraper/out] [--brand Datees] [--unit toman|rial] [--dry-run]");
+  console.error("Usage: pnpm --filter @kmodern/scraper price-list -- --file <prices.xlsx> [--out-dir apps/scraper/out] [--brand Datees] [--unit toman|rial] [--dry-run]");
   process.exit(1);
 }
 

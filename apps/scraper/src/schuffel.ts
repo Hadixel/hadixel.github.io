@@ -111,7 +111,7 @@ function colorTokens(...values: string[]): string[] {
 
 function richParts(html: unknown): string[] {
   if (typeof html !== "string" || !html.trim()) return [];
-  const $ = cheerio.load(`<div id=\"scraper-root\">${html}</div>`);
+  const $ = cheerio.load(`<div id="scraper-root">${html}</div>`);
   const parts: string[] = [];
   $("#scraper-root h4, #scraper-root p, #scraper-root li").each((_i, element) => {
     const node = $(element).clone();

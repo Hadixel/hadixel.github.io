@@ -31,9 +31,13 @@ function isHttpUrl(value: string): boolean {
 
 function scraperImagesRoot(): string {
   const cwd = resolve(/* turbopackIgnore: true */ process.cwd());
+  // The scraper's output lives beside the other applications now, and the panel runs from
+  // `apps/admin` while the repo root is the other case — the same two-way branch the old path needed,
+  // with the new home. The tree is resolved rather than configured, which is a real limitation: the
+  // gateway reads the same files by a path it is told, and this is told nothing.
   return cwd.endsWith(`${sep}apps${sep}admin`)
-    ? resolve(cwd, "../../packages/scraper/out/images")
-    : resolve(cwd, "packages/scraper/out/images");
+    ? resolve(cwd, "../../apps/scraper/out/images")
+    : resolve(cwd, "apps/scraper/out/images");
 }
 
 function storePublicDir(): string {

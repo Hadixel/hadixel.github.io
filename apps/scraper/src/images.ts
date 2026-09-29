@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
-import { fetchBuffer, type FetchOptions } from "./http";
+import { fetchAsset, type FetchOptions } from "./http";
 import type { RefinedProduct } from "./types";
 
 export interface ImageDownloadOptions {
@@ -22,6 +22,23 @@ export interface ImageDownloadResult {
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"]);
 
+const EXTENSION_FOR_CONTENT_TYPE: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/gif": ".gif",
+  "image/webp": ".webp",
+  "image/avif": ".avif",
+  "image/bmp": ".bmp",
+  "image/tiff": ".tiff",
+  "image/x-icon": ".ico",
+};
+
+/** File extension for a media type, or `null` when the type has no known extension. */
+export function imageExtensionForContentType(contentType: string | null): string | null {
+  if (!contentType) return null;
+  return EXTENSION_FOR_CONTENT_TYPE[contentType] ?? null;
+}
+
 function imageExtension(url: string): string {
   try {
     const ext = extname(new URL(url).pathname).toLowerCase();
@@ -30,6 +47,11 @@ function imageExtension(url: string): string {
     // Fall through to the safe local-image default.
   }
   return ".jpg";
+}
+
+/** Prefer the media type of the bytes we actually received over the URL's extension. */
+function imageExtensionFor(url: string, contentType: string | null): string {
+  return imageExtensionForContentType(contentType) ?? imageExtension(url);
 }
 
 /** Download product images locally while retaining remote URLs as provenance. */
@@ -56,10 +78,10 @@ export async function downloadProductImages(
         throw error;
       }
       const url = product.imageUrls[index];
-      const destination = join(options.imageDir, product.slug, `img-${index + 1}${imageExtension(url)}`);
+      let destination = join(options.imageDir, product.slug, `img-${index + 1}${imageExtension(url)}`);
       try {
         await mkdir(join(options.imageDir, product.slug), { recursive: true });
-        const bytes = await fetchBuffer(url, {
+        const { bytes, contentType } = await fetchAsset(url, {
           ...(options.fetchOpts ?? {}),
           onError: undefined,
           signal,
@@ -67,6 +89,11 @@ export async function downloadProductImages(
           maxBytes: options.maxBytes ?? 10 * 1024 * 1024,
           allowedContentTypes: ["image/"],
         });
+        destination = join(
+          options.imageDir,
+          product.slug,
+          `img-${index + 1}${imageExtensionFor(url, contentType)}`,
+        );
         await writeFile(destination, bytes);
         localImages.push(destination);
         downloaded += 1;

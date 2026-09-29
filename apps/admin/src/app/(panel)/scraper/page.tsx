@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { SCRAPER_SOURCE_OPTIONS } from "@kmodern/scraper/source-options";
+import { SCRAPER_SOURCE_OPTIONS } from "@kmodern/scraper";
 import { ScraperPanel } from "@/components/scraper-panel";
 import { getAdminUser } from "@/lib/auth";
 

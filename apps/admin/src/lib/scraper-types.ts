@@ -1,7 +1,7 @@
 import type { ScrapeFilters } from "@kmodern/scraper";
 
 export type { ScrapeFilters } from "@kmodern/scraper";
-export type { PriceListReport } from "@kmodern/scraper/price-list";
+export type { PriceListReport } from "@kmodern/scraper";
 
 export type ScraperJobStatus =
   | "idle"

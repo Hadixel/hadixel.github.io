@@ -22,7 +22,7 @@ import { requireAdminApi } from "@/lib/auth";
 import { scraperJobs, scraperOutputDir } from "@/lib/scraper-jobs";
 import { sameOrigin } from "@/lib/origin";
 import { fromGateway } from "@/lib/gateway";
-import type { PriceUnit } from "@kmodern/scraper/price-list";
+import type { PriceUnit } from "@kmodern/scraper";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

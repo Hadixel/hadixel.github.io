@@ -7,8 +7,8 @@ import {
   runPipeline,
   type PipelineEvent,
   type PipelineResult,
-} from "./pipeline";
-import { SOURCES } from "./sources";
+} from "../src/pipeline";
+import { SOURCES } from "../src/sources";
 
 const ESC = "\u001b";
 const ENTER_SCREEN = `${ESC}[?1049h${ESC}[?25l`;
@@ -503,7 +503,7 @@ class ScraperTui {
         [
           "The cache makes repeated runs fast and keeps requests polite.",
           "Blank limit crawls every discovered product.",
-          "Images are stored under packages/scraper/out/images.",
+          "Images are stored under apps/scraper/out/images.",
           "Existing CLI mode remains available for automation.",
         ],
         terminalWidth,

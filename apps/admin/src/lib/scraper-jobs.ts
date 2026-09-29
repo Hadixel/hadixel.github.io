@@ -2,6 +2,9 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import {
+  applyPriceList as applyPriceListFile,
+  type ApplyPriceListOptions,
+  type PriceListReport,
   runPipeline,
   SOURCES,
   extractModelForSource,
@@ -9,11 +12,6 @@ import {
   type PipelineEvent,
   type PipelineResult,
 } from "@kmodern/scraper";
-import {
-  applyPriceList as applyPriceListFile,
-  type ApplyPriceListOptions,
-  type PriceListReport,
-} from "@kmodern/scraper/price-list";
 import type {
   ScraperCatalogItem,
   ScraperJobOptions,

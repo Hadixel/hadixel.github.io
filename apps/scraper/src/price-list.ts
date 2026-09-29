@@ -167,7 +167,7 @@ function cleanText(value: unknown): string {
 
 function headerKey(value: unknown): string {
   return cleanText(value)
-    .replace(/[\s_:：\-]+/g, "")
+    .replace(/[\s_:：-]+/g, "")
     .toLocaleLowerCase("en");
 }
 

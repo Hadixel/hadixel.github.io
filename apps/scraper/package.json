@@ -4,14 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./price-list": "./src/price-list.ts",
-    "./source-options": "./src/source-options.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
-    "scrape": "tsx src/cli.ts",
-    "price-list": "tsx src/price-list-cli.ts",
-    "tui": "tsx src/tui.ts",
+    "scrape": "tsx bin/scrape.ts",
+    "price-list": "tsx bin/price-list.ts",
+    "tui": "tsx bin/tui.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

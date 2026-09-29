@@ -9,9 +9,9 @@
 //   pnpm --filter @kmodern/scraper scrape --category oven,stove --color black,steel
 //   SCRAPE_CACHE=1 pnpm … scrape                              # enable disk cache
 
-import { runPipeline } from "./pipeline";
-import type { ScrapeContentFilter, ScrapeFilters, ScrapePriceFilter, ScrapeSort } from "./types";
-import { readFlag } from "./args";
+import { runPipeline } from "../src/pipeline";
+import type { ScrapeContentFilter, ScrapeFilters, ScrapePriceFilter, ScrapeSort } from "../src/types";
+import { readFlag } from "../src/args";
 
 const args = process.argv.slice(2);
 
