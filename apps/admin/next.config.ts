@@ -9,7 +9,7 @@ import type { NextConfig } from "next";
 // directory it was run from, and nothing said so.
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@kmodern/schema", "@kmodern/adapters", "@kmodern/scraper", "@kmodern/ui"],
+  transpilePackages: ["@kmodern/schema", "@kmodern/scraper", "@kmodern/ui"],
   allowedDevOrigins: [process.env.ADMIN_DEV_ORIGIN ?? "192.168.70.176", "localhost", "127.0.0.1"],
   // Every panel page now serves the same three headers the storefront serves.
   //

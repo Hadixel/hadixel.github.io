@@ -56,3 +56,21 @@ export class OrderRuleViolation extends GatewayException {
     super(HttpStatus.UNPROCESSABLE_ENTITY, message);
   }
 }
+
+/**
+ * An online payment asked for from a gateway that has no payment provider configured.
+ *
+ * A 503 and a distinct exception, because the storefront used to answer this by reading the provider's
+ * credentials out of its *own* environment. Two processes held the merchant's credentials, and either
+ * could have been configured without the other — so a checkout page could offer online payment that the
+ * gateway would then refuse to start, and a shopper who chose it was told to try again. The gateway now
+ * answers the question once, from the configuration it actually has.
+ */
+export class PaymentProviderMissingException extends GatewayException {
+  constructor() {
+    super(
+      HttpStatus.SERVICE_UNAVAILABLE,
+      "درگاه پرداخت آنلاین پیکربندی نشده است",
+    );
+  }
+}

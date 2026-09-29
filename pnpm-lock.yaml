@@ -52,9 +52,6 @@ importers:
 
   apps/admin:
     dependencies:
-      '@kmodern/adapters':
-        specifier: workspace:*
-        version: link:../../packages/adapters
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -187,9 +184,6 @@ importers:
       '@heroui/styles':
         specifier: ^3.2.4
         version: 3.2.4(tailwind-merge@3.4.0)(tailwindcss@4.3.3)
-      '@kmodern/adapters':
-        specifier: workspace:*
-        version: link:../../packages/adapters
       '@kmodern/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -230,19 +224,6 @@ importers:
       tailwindcss:
         specifier: ^4.3.1
         version: 4.3.3
-
-  packages/adapters:
-    dependencies:
-      '@aws-sdk/client-s3':
-        specifier: ^3.600.0
-        version: 3.1103.0
-      '@kmodern/api':
-        specifier: workspace:*
-        version: link:../../apps/api
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.13.3
 
   packages/config: {}
 

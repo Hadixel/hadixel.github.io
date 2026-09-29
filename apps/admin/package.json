@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kmodern/adapters": "workspace:*",
     "@kmodern/schema": "workspace:*",
     "@kmodern/scraper": "workspace:*",
     "@kmodern/transport": "workspace:*",

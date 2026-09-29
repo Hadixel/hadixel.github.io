@@ -1,6 +1,6 @@
 // Prepare product images for local serving + update DB variant.images.
 // 013 key pattern: products/{slug}/variant-{color}/img-{index}.jpg (immutable keys).
-// With S3_* env configured this would upload via @kmodern/adapters; locally it
+// Uploads go through the gateway's media route, which owns object storage; this script
 // copies into apps/store/public/products and rewrites variant.images to /products/...
 // Run: pnpm --filter @kmodern/api db:images
 import "dotenv/config";

@@ -14,7 +14,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { paymentLabel, tomanToRial } from "@kmodern/schema";
 import { PaymentMethod, PaymentStatus } from "../generated/prisma/enums.js";
 import { holdExpiry } from "../inventory/inventory.service.js";
-import { OrdersService } from "../orders/orders.service.js";
+import {
+  OrdersService,
+  type SettlePaymentInput,
+  type SettlementResult,
+} from "../orders/orders.service.js";
 import type { OrderDetail } from "../orders/dto/order.dto.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
@@ -142,5 +146,33 @@ export class ShopperService {
       authority: order.gatewayAuthority,
       expiresAt: order.paymentExpiresAt ? order.paymentExpiresAt.toISOString() : null,
     };
+  }
+
+  /**
+   * The total to verify a payment against, for one of the caller's own orders.
+   *
+   * Scoped to the shopper, so a callback naming someone else's order is absent rather than answered
+   * with its total. The verification happens in this process precisely so the amount is read once, next
+   * to the settlement it authorises — a caller that fetched the total and passed it back would be
+   * holding two numbers, and nothing would stop them differing.
+   */
+  async readOrderForPayment(
+    orderId: string,
+    customerId: string,
+  ): Promise<{ id: string; orderNumber: string; total: number } | null> {
+    return this.db.order.findFirst({
+      where: { id: orderId, customerId },
+      select: { id: true, orderNumber: true, total: true },
+    });
+  }
+
+  /**
+   * Settle one of the caller's own orders, taking the compare-and-set and the stock commit with it.
+   *
+   * Exposed so the controller does not reach through this service into `OrdersService`, which would
+   * make the settlement reachable without the shopper check that scopes it.
+   */
+  async settlePayment(input: SettlePaymentInput): Promise<SettlementResult> {
+    return this.orders.settlePayment(input);
   }
 }

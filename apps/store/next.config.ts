@@ -31,7 +31,7 @@ const storagePattern = storageRemotePattern();
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
-  transpilePackages: ["@kmodern/schema", "@kmodern/adapters", "@kmodern/ui"],
+  transpilePackages: ["@kmodern/schema", "@kmodern/ui"],
   images: {
     remotePatterns: [
       {

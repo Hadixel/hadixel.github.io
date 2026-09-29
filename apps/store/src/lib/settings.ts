@@ -31,6 +31,26 @@ const readPublic = cache(async (): Promise<Record<string, string | number | bool
 });
 
 /**
+ * Every public setting, plus the two capabilities the gateway computes rather than stores.
+ *
+ * Exposed because not everything on this route is a setting. `onlinePaymentEnabled` and
+ * `c2cPaymentConfigured` are answers derived from configuration the gateway alone holds, so they ride
+ * along with the settings that are — one request, one memo, and no way for the storefront to compute a
+ * payment capability out of its own environment and disagree with the process that would have to
+ * honour it.
+ */
+export async function publicSettings(): Promise<PublicSettings> {
+  return readPublic();
+}
+
+export type PublicSettings = Record<string, string | number | boolean> & {
+  /** Whether the shop's online payment provider is configured. Computed by the gateway. */
+  onlinePaymentEnabled?: boolean;
+  /** Whether a card number has been entered for card-to-card. Computed by the gateway. */
+  c2cPaymentConfigured?: boolean;
+};
+
+/**
  * One setting, or `null` when the shop has never stored it.
  *
  * The column key is what the caller knows — it is what `settingKeys` holds — and the gateway answers

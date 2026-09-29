@@ -17,6 +17,16 @@
 
 import { settingKeys, type SettingKey } from "@kmodern/schema/setting-keys";
 
+/**
+ * The low-stock field, named once.
+ *
+ * Exported because three other files need to talk about this particular setting — the seed that
+ * stores its default, and two tests that assert what the gateway does with it. Naming it in each of
+ * them is four copies of one string, and a copy is free to drift: rename the field in the table and
+ * three of them still refer to a setting that no longer exists.
+ */
+export const LOW_STOCK_FIELD = "inventoryLowStockThreshold";
+
 /** How a value is typed in the column and rendered in the form. */
 export type SettingFieldType = "text" | "number" | "enum";
 
@@ -126,7 +136,7 @@ export const SETTING_SECTIONS: readonly SettingSectionDef[] = [
       // Integer and non-negative: it is compared against a stock count, and 2.5 units of "low" is not
       // a threshold anything can act on. The panel enforced this by listing these three key names in
       // an array inside its action, which is the shape of a rule that has no home.
-      { key: "inventoryLowStockThreshold", label: "آستانه موجودی کم", type: "number", integer: true },
+      { key: LOW_STOCK_FIELD, label: "آستانه موجودی کم", type: "number", integer: true },
       {
         key: "checkoutOnlineReserveMinutes",
         label: "مدت رزرو پرداخت آنلاین (دقیقه)",

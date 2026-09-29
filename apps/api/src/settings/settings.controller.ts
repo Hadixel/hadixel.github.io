@@ -17,6 +17,7 @@ import type { Request } from "express";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
+import { zarinpalConfigFromEnv } from "../payments/zarinpal.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { SaveSettingsDto } from "./dto/settings.dto.js";
@@ -151,6 +152,17 @@ export class SettingsController {
       if (field === undefined) continue;
       out[field] = value;
     }
+    // Two capabilities the storefront needs and cannot know, answered from the configuration that only
+    // this process holds. The storefront used to decide both by reading the merchant's payment
+    // provider's credentials out of its *own* environment, which put a merchant credential in a second
+    // process to answer a yes/no question — and meant the storefront and the gateway could disagree
+    // about whether online payment works, one of which would offer a method the other cannot complete.
+    //
+    // Computed rather than stored, because a stored flag is a thing an operator can forget to update
+    // and a checkout page offering a dead payment method is the exact failure this replaces.
+    out.onlinePaymentEnabled = zarinpalConfigFromEnv() !== null;
+    out.c2cPaymentConfigured =
+      typeof out.paymentC2cCardNumber === "string" && out.paymentC2cCardNumber.trim() !== "";
     return out;
   }
 
