@@ -7,7 +7,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { faDigits } from "./ui";
+// Persian digits are `@/lib/date`'s helper; `ui.tsx` carried a second implementation of the same
+// substitution and this imported that one, so the two could render the same number differently.
+import { toFaDigits } from "@kmodern/contracts";
 
 interface NavItem {
   href: string;
@@ -34,7 +36,7 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void 
     >
       <span>{item.label}</span>
       {item.badge ? (
-        <span className="rounded-[30px] bg-flame-700 px-2 py-0.5 text-xs font-bold text-white">{faDigits(item.badge)}</span>
+        <span className="rounded-pill bg-flame-700 px-2 py-0.5 text-xs font-bold text-white">{toFaDigits(item.badge)}</span>
       ) : null}
     </Link>
   );
@@ -119,7 +121,12 @@ export function Sidebar({
             { href: "/products", label: "محصولات" },
             { href: "/categories", label: "دسته‌بندی‌ها" },
             { href: "/collections", label: "مجموعه‌ها" },
-            ...(isOwner ? [{ href: "/scraper", label: "اسکرپر کاتالوگ" }] : []),
+            ...(isOwner
+              ? [
+                  { href: "/scraper", label: "اسکرپر کاتالوگ" },
+                  { href: "/price-watch", label: "نظارت قیمت" },
+                ]
+              : []),
           ]}
         />
         <NavLink item={{ href: "/inventory", label: "موجودی", badge: lowStock }} onNavigate={onClose} />
@@ -198,7 +205,7 @@ export function Topbar({
         <span className="hidden text-sm text-ash sm:inline">{name}</span>
         <span className="hidden max-w-[12rem] truncate text-xs text-ash sm:inline" dir="ltr" title={email}>{email}</span>
         <form action="/logout" method="post">
-          <button type="submit" className="rounded-card border border-fog px-3 py-1.5 text-sm text-ink hover:bg-plaster">
+          <button type="submit" className="form-control-compact text-ink hover:bg-plaster">
             خروج
           </button>
         </form>
@@ -251,7 +258,12 @@ export function AdminShell({
   }, [mobileOpen]);
 
   return (
-    <div className="min-h-screen bg-plaster">
+    // White canvas, plaster cards. `Card` is a plaster plinth and the design system separates by
+    // surface stepping rather than by shadow, which only works if the canvas is the lighter of the
+    // two. This wrapper was plaster — the same colour as every card on the page — so each card was
+    // invisible against the surface it sat on and the panel read as one continuous grey column
+    // however many cards it held. The storefront's canvas is white for the same reason.
+    <div className="min-h-screen bg-canvas">
       <Sidebar
         ordersAwaiting={ordersAwaiting}
         lowStock={lowStock}

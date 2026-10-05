@@ -1,5 +1,5 @@
 import { publicSettings } from "@/lib/settings";
-import CheckoutClient from "./checkout-client";
+import CheckoutClient from "@/checkout/components/checkout-client";
 
 export const dynamic = "force-dynamic";
 

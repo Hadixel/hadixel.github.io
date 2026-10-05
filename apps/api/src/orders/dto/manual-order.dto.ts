@@ -11,7 +11,7 @@
 
 import { Type } from "class-transformer";
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsObject, IsOptional, IsString, Length, Max, MaxLength, Min, ValidateNested } from "class-validator";
-import type { DeliveryFeeMode, PaymentMethod, ShippingMethod } from "../../generated/prisma/enums.js";
+import type { DeliveryFeeMode, PaymentMethod, ShippingMethod } from "../../prisma/index.js";
 
 /** The most lines one manual order may carry. A telephone order, not a warehouse transfer. */
 export const MAX_MANUAL_ORDER_LINES = 100;

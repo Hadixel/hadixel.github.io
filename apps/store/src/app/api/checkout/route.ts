@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { placeOrder, readBody } from "./gateway";
+import { placeOrder, readBody } from "@/checkout/lib/checkout-gateway";
 
 // Placing an order, through the gateway.
 //

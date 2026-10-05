@@ -4,8 +4,8 @@
 //   pnpm --filter @kmodern/api db:home-deals
 //   pnpm --filter @kmodern/api db:home-deals -- --drop-demo
 import "dotenv/config";
-import { componentSchemas, pageBlocksSchema } from "@kmodern/schema";
-import { db } from "../src/prisma/client.js";
+import { componentSchemas, pageBlocksSchema } from "@kmodern/contracts";
+import { db } from "../src/prisma/index.js";
 import { IRANIAN_MANUFACTURERS } from "./iranian-manufacturers.js";
 
 type PageBlock = {

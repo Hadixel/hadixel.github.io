@@ -6,7 +6,7 @@
 // client of the shop's data rather than a second holder of it.
 
 import { readThrough } from "@/lib/reads";
-import { CategoriesManager } from "./categories-manager";
+import { CategoriesManager } from "@/catalogue/components/categories-manager";
 
 /** One category, as the gateway's `GET /categories` answers. */
 interface CategorySummary {

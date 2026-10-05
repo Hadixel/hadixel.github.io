@@ -12,10 +12,10 @@
 // same computation.
 
 import { Inject, Injectable } from "@nestjs/common";
-import { cityBelongsToProvince } from "@kmodern/schema";
+import { cityBelongsToProvince } from "@kmodern/contracts";
 import { reserveStock } from "../inventory/inventory.service.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { createPrismaClient } from "../prisma/client.js";
+import type { createPrismaClient } from "../prisma/index.js";
 import { applyDiscounts } from "./discounts.js";
 import { nextOrderNumber } from "./order-number.js";
 import { assignShippingMethod, type ShippingLine } from "./shipping.js";

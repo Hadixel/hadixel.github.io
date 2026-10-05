@@ -1,5 +1,5 @@
 import { getPublishedProducts, getCategoryTree } from "@/lib/queries";
-import { normalizeListingSort, ProductListing } from "@/components/product-listing";
+import { normalizeListingSort, ProductListing } from "@/catalogue/components/product-listing";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,7 @@ export default async function ProductsPage({
       query={sp.q}
       sort={sort}
       action="/products"
+      mobileViews
       description={sp.q ? "نتایج مرتبط با عبارت جستجوی شما" : "محصولات فروشگاه را بر اساس دسته‌بندی، قیمت یا تازگی بررسی کنید."}
     />
   );

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { db } from "@kmodern/db";
-import { DiscountForm } from "@/components/discount-form";
+import { DiscountForm } from "@/discounts/components/discount-form";
 
 export default async function NewDiscount() {
   return (

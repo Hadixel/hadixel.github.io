@@ -19,7 +19,7 @@ import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { zarinpalConfigFromEnv } from "../payments/zarinpal.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import { SaveSettingsDto } from "./dto/settings.dto.js";
 import {
   PUBLIC_SETTING_FIELDS,

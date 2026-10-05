@@ -12,7 +12,7 @@
 // the audit line. The size cap stays here as a cheap refusal before the file is buffered at all; the
 // gateway has its own, and this one is an optimisation rather than the rule.
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/auth";
+import { requireAdminApi } from "@/auth/lib/auth";
 import { GatewayError, panelGateway } from "@/lib/gateway";
 import { sameOrigin } from "@/lib/origin";
 

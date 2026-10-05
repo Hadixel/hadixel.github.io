@@ -1,5 +1,11 @@
 modelRoles:
-  default: 9router/bai/glm-5.3-flash:max
-  smol: 9router/bai/glm-5.3-flash:auto
-  slow: 9router/bai/glm-5.3-flash:max
-  vision: 9router/bai/glm-5.3-flash:auto
+  default: opencode-zen/longcat-2.5-preview-free
+  smol: opencode-zen/space-bunny-free:auto
+  slow: opencode-zen/space-bunny-free:auto
+  vision: opencode-zen/space-bunny-free:auto
+  judge: typesafe/jev-latest:auto
+  speech: local/kokoro
+  dictation: local/parakeet-tdt-0.6b-v3:auto
+  advisor: 9router/glmz/glm-5.3:max
+  designer: 9router/glmz/glm-5.3-flash:auto
+  plan: 9router/glmz/glm-5.3:max

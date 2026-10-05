@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/contracts";
 
 /*
  * Seam (pre-agreed): Persian price formatting and Persian-digit conversion.

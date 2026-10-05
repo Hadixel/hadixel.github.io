@@ -7,8 +7,7 @@
 
 import { Inject, Injectable } from "@nestjs/common";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma } from "../generated/prisma/client.js";
-import type { createPrismaClient } from "../prisma/client.js";
+import type { Prisma, createPrismaClient } from "../prisma/index.js";
 import { OtpService, type OtpPurpose } from "./otp.service.js";
 import {
   adminForToken,

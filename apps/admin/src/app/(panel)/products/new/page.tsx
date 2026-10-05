@@ -4,7 +4,7 @@
 // spec fields because the form renders an input per field. That question — *what fields does this
 // category declare* — is the category's to answer, so the gateway answers it and the page asks.
 
-import { ProductForm } from "@/components/product-form";
+import { ProductForm } from "@/catalogue/components/product-form";
 import { readThrough } from "@/lib/reads";
 
 /** One category as the gateway's `GET /categories/options` answers. */

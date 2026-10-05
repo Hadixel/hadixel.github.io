@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useCart } from "@/components/cart-provider";
+import { useCart } from "@/cart/components/cart-provider";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { QuantityStepper } from "@/components/quantity-stepper";
+import { QuantityStepper } from "@/cart/components/quantity-stepper";
 import { StatusNotice } from "@/components/status-notice";
-import { formatToman } from "@kmodern/schema/format";
+import { formatToman } from "@kmodern/contracts/format";
 
 interface Line {
   variantId: string;

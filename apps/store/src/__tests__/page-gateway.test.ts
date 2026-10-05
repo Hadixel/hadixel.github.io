@@ -45,7 +45,7 @@ describe("the storefront's page read", () => {
   });
 
   async function lookup(slug: string) {
-    const { lookupPage } = await import("@/lib/gateway-page");
+    const { lookupPage } = await import("@/content/lib/gateway-page");
     return lookupPage(slug);
   }
 

@@ -14,7 +14,7 @@
 // in particular there is no `try { ... } catch {}` around it, which is the shape that used to hide the
 // failure.
 
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma } from "../prisma/index.js";
 
 /**
  * The narrowest client this needs.

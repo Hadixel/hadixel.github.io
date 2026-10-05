@@ -25,6 +25,11 @@ import { SaveCategoryDto, UpdateCategoryDto } from "../src/categories/dto/catego
 import { SaveCollectionDto } from "../src/collections/dto/collection.dto.js";
 import { SaveDiscountDto, UpdateDiscountDto } from "../src/discounts/dto/discount.dto.js";
 import { SavePageDto } from "../src/pages/dto/page.dto.js";
+import {
+  ApplyPriceChangesDto,
+  PriceChangesQueryDto,
+  SavePriceWatchConfigDto,
+} from "../src/price-watch/dto/price-watch.dto.js";
 
 /**
  * The gateway's actual validation pipe, built from the options `main.ts` uses.
@@ -422,5 +427,102 @@ describe("what a refusal says", () => {
     expect(refusal?.message).toMatch(/فیلد ناشناخته/);
     expect(refusal?.message).toMatch(/isAdmin/);
     expect(refusal?.message).not.toMatch(/whitelist/i);
+  });
+});
+
+describe("a price watch config body", () => {
+  const base = { enabled: true, mode: "INTERVAL", intervalMinutes: 360 };
+
+  it("accepts the smallest thing that is an enabled hourly watch", async () => {
+    expect(await refusalOf(SavePriceWatchConfigDto, base)).toBeNull();
+  });
+
+  it("accepts a daily watch that carries its Tehran time", async () => {
+    expect(await refusalOf(SavePriceWatchConfigDto, { ...base, mode: "DAILY", dailyAt: "02:30" })).toBeNull();
+  });
+
+  // The bound is an hour because a check fetches a third party's whole catalogue, and a week because
+  // a competitor's change is not news after that. Both ends are the DTO's, and a caller reaching the
+  // service directly is refused by the service's own copy of the schedule rule.
+  it("insists on an interval between an hour and a week", async () => {
+    for (const minutes of [0, 59, 10081, -60, 1.5, "360", null]) {
+      expect((await refusalOf(SavePriceWatchConfigDto, { ...base, intervalMinutes: minutes }))?.message)
+        .toMatch(/فاصلهٔ زمانی/);
+    }
+  });
+
+  it("insists on a mode it knows, so a renamed enum cannot be stored as a string", async () => {
+    expect((await refusalOf(SavePriceWatchConfigDto, { ...base, mode: "WEEKLY" }))?.message)
+      .toMatch(/زمان‌بندی/);
+  });
+
+  // `enabled` arrives from a form as `"on"` or the string `"false"`, and the ADR records a DTO that
+  // declared this as `@IsBoolean` while the form sent a string — every save refused, and twenty
+  // controller tests passed because the pipe is not involved in a controller test.
+  it("insists on a real boolean for enabled, because a form's checkbox is not one", async () => {
+    for (const enabled of ["true", "on", 1, null, undefined]) {
+      expect((await refusalOf(SavePriceWatchConfigDto, { ...base, enabled }))?.message).toMatch(
+        /فعال بودن/,
+      );
+    }
+  });
+
+  it("insists that a daily time is a wall clock and not a date or an offset", async () => {
+    // A `Date`-shaped value here would name an instant, and an instant is exactly what a daily
+    // schedule is not: the time is a wall clock in Tehran, whose offset is not a constant.
+    for (const dailyAt of ["25:00", "9:30", "09:60", "2026-10-01T09:30:00Z", "+03:30", ""]) {
+      expect((await refusalOf(SavePriceWatchConfigDto, { ...base, mode: "DAILY", dailyAt }))?.message)
+        .toMatch(/ساعت اجرا/);
+    }
+  });
+
+  it("refuses a field the gateway does not declare, and names it", async () => {
+    expect((await refusalOf(SavePriceWatchConfigDto, { ...base, autoApply: true }))?.message)
+      .toMatch(/autoApply/);
+  });
+});
+
+describe("a price change filter", () => {
+  it("accepts each of the three states and refuses anything else", async () => {
+    for (const status of ["PENDING", "APPLIED", "IGNORED"]) {
+      expect(await refusalOf(PriceChangesQueryDto, { status })).toBeNull();
+    }
+    expect((await refusalOf(PriceChangesQueryDto, { status: "DONE" }))?.message)
+      .toMatch(/وضعیت تغییر قیمت/);
+  });
+});
+
+describe("an apply price changes body", () => {
+  // The recorded trap, and the reason this is an `@ArrayMaxSize` case rather than a `@Length` one:
+  // `@Length` reads an array's element count as a string's length and refuses the empty list, which
+  // is this route's *most used* input — "apply everything pending" is expressed by sending no ids.
+  it("accepts an empty list, because that is how the operator applies everything pending", async () => {
+    expect(await refusalOf(ApplyPriceChangesDto, { ids: [] })).toBeNull();
+    expect(await refusalOf(ApplyPriceChangesDto, {})).toBeNull();
+  });
+
+  it("accepts a list of ids", async () => {
+    expect(await refusalOf(ApplyPriceChangesDto, { ids: ["a", "b", "c"] })).toBeNull();
+  });
+
+  it("caps the list, since one request writes one price per entry", async () => {
+    const ids = (n: number) => Array.from({ length: n }, (_, i) => `id-${i}`);
+    expect(await refusalOf(ApplyPriceChangesDto, { ids: ids(500) })).toBeNull();
+    expect((await refusalOf(ApplyPriceChangesDto, { ids: ids(501) }))?.message)
+      .toMatch(/تغییر قیمت/);
+  });
+
+  it("insists the list is a list of strings, so a bare string is not read as a list of characters", async () => {
+    // Read as a set of constraints rather than as the one sentence the factory surfaces. The pipe
+    // reports the first failure, and which one that is depends on the order the decorators were
+    // applied in — so asserting the *sentence* here would be asserting that ordering, and would keep
+    // passing if the type check were dropped as long as some other rule still refused the body.
+    expect(await refusalOf(ApplyPriceChangesDto, { ids: "abc" })).not.toBeNull();
+    expect(await messagesFor(ApplyPriceChangesDto, { ids: "abc" })).toEqual(
+      expect.arrayContaining([expect.stringMatching(/آرایه/)]),
+    );
+    expect(await messagesFor(ApplyPriceChangesDto, { ids: [1, 2] })).toEqual(
+      expect.arrayContaining([expect.stringMatching(/متن/)]),
+    );
   });
 });

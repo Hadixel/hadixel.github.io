@@ -1,0 +1,22 @@
+{
+  "flat-dto": {
+    "command": "find apps/api/src -name \"*.dto.ts\" -not -path \"*/dto/*\" | wc -l",
+    "count": 0
+  },
+  "flat-exception": {
+    "command": "find apps/api/src -name \"*.exception.ts\" -not -path \"*/exceptions/*\" | wc -l",
+    "count": 0
+  },
+  "stray-tool-config": {
+    "command": "find . -mindepth 2 \\( -name \"*lint.config.*\" -o -name \".*lintrc*\" -o -name \".*lintignore\" -o -name \"prettier.config.*\" -o -name \".prettierrc*\" -o -name \".prettierignore\" -o -name \"biome.json*\" -o -name \"dprint.json*\" -o -name \".editorconfig\" \\) | grep -v node_modules | grep -v .claude/worktrees | wc -l",
+    "count": 0
+  },
+  "colour-literal": {
+    "command": "grep -rEoh \"#[0-9a-fA-F]{3,8}\" --include=\"*.ts\" --include=\"*.tsx\" --exclude=\"contrast.test.ts\" apps/admin/src | wc -l",
+    "count": 0
+  },
+  "suppression": {
+    "command": "grep -rn \"boundaries-ignore\" --include=\"*.ts\" --include=\"*.tsx\" apps packages | wc -l",
+    "count": 0
+  }
+}

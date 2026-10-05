@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
+import { formatJalali } from "@kmodern/contracts";
 import { notFound } from "next/navigation";
 import { getPublishedPost } from "@/lib/queries";
-import PostBody from "@/components/post-body";
+import PostBody from "@/content/components/post-body";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <h1 className="text-balance font-display text-3xl font-black leading-tight text-ink sm:text-5xl">{post.title}</h1>
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ash">
           <span>{post.byline ?? "خانه مدرن"}</span>
-          {post.publishAt && <><span aria-hidden>·</span><span>{new Date(post.publishAt).toLocaleDateString("fa-IR")}</span></>}
+          {post.publishAt && <><span aria-hidden>·</span><span>{formatJalali(new Date(post.publishAt))}</span></>}
         </div>
       </header>
       {post.coverImage && (

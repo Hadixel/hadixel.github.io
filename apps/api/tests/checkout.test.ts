@@ -10,8 +10,8 @@
 //   - reserving and immediately committing stock for cash on delivery, so the hold cannot expire.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { cityBelongsToProvince, iranCities, iranProvinces } from "@kmodern/schema";
-import { settingKeys } from "@kmodern/schema/setting-keys";
+import { cityBelongsToProvince, iranCities, iranProvinces } from "@kmodern/contracts";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
 import { CheckoutService } from "../src/checkout/checkout.service.js";
 import {
   DEFAULT_MAX_COD_TOTAL,

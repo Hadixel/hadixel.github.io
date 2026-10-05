@@ -1,6 +1,6 @@
 import { Global, Inject, Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
 import { ConfigService } from "../config/config.service.js";
-import { createPrismaClient } from "./client.js";
+import { createPrismaClient } from "./index.js";
 import { DATA_CLIENT } from "./data-client.token.js";
 
 export { DATA_CLIENT };

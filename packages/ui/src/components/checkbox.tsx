@@ -29,7 +29,7 @@ function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimi
   return (
     <SwitchPrimitive.Root
       className={cn(
-        "peer inline-flex h-5 w-9 shrink-0 items-center rounded-[30px] border-2 border-transparent transition-colors",
+        "peer inline-flex h-5 w-9 shrink-0 items-center rounded-pill border-2 border-transparent transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame-200",
         "data-[state=checked]:bg-flame-700 data-[state=unchecked]:bg-fog",
         className,

@@ -15,14 +15,13 @@
 
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { componentSchemas } from "@kmodern/schema";
-import { PageStatus } from "../generated/prisma/enums";
+import { componentSchemas } from "@kmodern/contracts";
+import { type Prisma, type PrismaClient, PageStatus } from "../prisma/index.js";
 import { PageActionDto } from "./dto/page.dto.js";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { PageListQueryDto, SavePageDto } from "./dto/page.dto.js";
 import { PageNotFoundException, PageSlugTakenException } from "./exceptions/page.exception.js";
 import {

@@ -32,6 +32,28 @@ export interface ActionFail {
 
 export type ActionResult<T = undefined> = ActionOk<T> | ActionFail;
 
+/**
+ * The hook-shaped contract: `(previous, formData) => ActionState`, which is what `useActionState`
+ * binds and what the initial value has to satisfy.
+ *
+ * It is here rather than declared by whichever action happens to be bound to a form, because that was
+ * the shape of the duplication: the sign-in and password-change actions declared it in the auth
+ * module, and a type exported from a `"use server"` module is a thing every other feature has to
+ * import to type a form — an app-wide contract whose home is one feature's server actions. Nothing
+ * outside the auth feature imports the auth module for this any more; they import it from here.
+ *
+ * The four optional fields are kept as they are, because the shape is not this ticket's to change:
+ * a form reading `state.error` needs `error?`, and every caller narrows on it. It is *one*
+ * declaration, which is what §3 rule 5 asks for — the alternative reading, that every action should
+ * return the discriminated union above, is a behaviour change to the sign-in form.
+ */
+export interface ActionState {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  id?: string;
+}
+
 /** The initial state `useActionState` needs, and the answer to "has this run yet?". */
 export const idle: ActionResult = { ok: true, message: "" };
 

@@ -1,3 +1,4 @@
+import { toFaDigits,formatJalaliDateTime } from "@kmodern/contracts";
 // The customers list, read through the gateway.
 //
 // This page used to import the data tier and hold its own query: an OR over name, phone and email,
@@ -13,8 +14,8 @@
 import Link from "next/link";
 import { readThrough } from "@/lib/reads";
 import { pageParam } from "@/lib/pagination";
-import { faDigits, formatJalaliDateTime } from "@/lib/date";
-import { Badge, Card, CardHeader, EmptyState, Input, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Card, CardHeader, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState, Pagination } from "@/components/panel-ui";
 
 /**
  * The rows this table shows.
@@ -65,7 +66,12 @@ export default async function CustomersPage({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="مشتریان" subtitle={`${faDigits(customers.total)} مشتری`} />
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">مشتریان</h2>
+            <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(customers.total)} مشتری`}</p>
+          </div>
+        </CardHeader>
         <div className="border-b border-plaster px-5 py-3">
           <form action="/customers" method="get" className="flex flex-wrap items-end gap-3">
             <div>
@@ -78,38 +84,40 @@ export default async function CustomersPage({
         {customers.rows.length === 0 ? (
           <EmptyState text="مشتری‌ای یافت نشد" />
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>نام</TH>
-                <TH>تلفن</TH>
-                <TH>ایمیل</TH>
-                <TH>سفارش‌ها</TH>
-                <TH>عضویت</TH>
-                <TH></TH>
-              </TR>
-            </THead>
-            <TBody>
-              {customers.rows.map((c) => (
-                <TR key={c.id}>
-                  <TD>
-                    <Link href={`/customers/${c.id}`} className="font-medium text-ink hover:text-flame-700">
-                      {c.name || faDigits("—")}
-                    </Link>
-                  </TD>
-                  <TD dir="ltr" className="text-right">{c.phone}</TD>
-                  <TD>{c.email || faDigits("—")}</TD>
-                  <TD>
-                    <Badge>{faDigits(c.orderCount)}</Badge>
-                  </TD>
-                  <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(c.joinedAt))}</TD>
-                  <TD>
-                    <Link href={`/customers/${c.id}`} className="text-xs text-ash hover:underline">مشاهده</Link>
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+          <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>نام</TableHead>
+                  <TableHead>تلفن</TableHead>
+                  <TableHead>ایمیل</TableHead>
+                  <TableHead>سفارش‌ها</TableHead>
+                  <TableHead>عضویت</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customers.rows.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      <Link href={`/customers/${c.id}`} className="font-medium text-ink hover:text-flame-700">
+                        {c.name || toFaDigits("—")}
+                      </Link>
+                    </TableCell>
+                    <TableCell dir="ltr" className="text-right">{c.phone}</TableCell>
+                    <TableCell>{c.email || toFaDigits("—")}</TableCell>
+                    <TableCell>
+                      <Badge>{toFaDigits(c.orderCount)}</Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(c.joinedAt))}</TableCell>
+                    <TableCell>
+                      <Link href={`/customers/${c.id}`} className="text-xs text-ash hover:underline">مشاهده</Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} basePath={q ? `/customers?q=${encodeURIComponent(q)}` : "/customers"} />

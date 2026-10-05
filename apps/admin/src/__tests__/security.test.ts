@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { linkRefSchema } from "@kmodern/schema";
-import { sanitizeAdminHtml } from "@kmodern/schema/sanitize";
+import { linkRefSchema } from "@kmodern/contracts";
+import { sanitizeAdminHtml } from "@kmodern/contracts/sanitize";
 import { pageParam } from "../lib/pagination";
 import { sameOrigin } from "../lib/origin";
 

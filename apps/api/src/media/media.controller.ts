@@ -18,7 +18,7 @@ import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { ConfigService } from "../config/config.service.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import {
   MediaDeleteException,
   MediaKeyException,

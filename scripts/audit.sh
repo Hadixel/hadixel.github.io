@@ -121,31 +121,188 @@ head_ "Structure"
 n=$(grep -L '"extends"' $TSCONFIGS 2>/dev/null | wc -l)
 [ "$n" -eq 0 ] && ok "every workspace tsconfig extends the shared config ($n without)" || bad "$n workspace tsconfig(s) restate compiler options instead of extending packages/config (§5.3)"
 
+# §5.3's second half, which the check above cannot see: "Each workspace config is `extends` plus
+# only what is genuinely local ... Compiler options are never redefined per workspace - change the
+# base. *Prevents*: strictness drifting per app, which is how one app quietly stops being type-safe."
+#
+# The line above only proves `extends` is present. A file can both extend and restate, and that is
+# not hypothetical: apps/api/tsconfig.json carried the two decorator flags that way while extending
+# the Node flavour, and packages/transport/tsconfig.json restated `lib` while extending a flavour
+# that already declared the identical array. Both are now moved to where §5.3 says a compiler option
+# belongs - the service flavour and the lib flavour - so this gate checks the invariant the extends
+# check describes but does not enforce.
+#
+# The allowlist is §5.3's own list (rootDir, paths) plus the three keys a build output needs and
+# that the section does not name because it is describing the typecheck config: outDir, noEmit and
+# baseUrl. They locate the output; they cannot drift strictness, which is the thing §5.3 is guarding.
+#
+# Three exclusions, each deliberate rather than convenient: `packages/config/tsconfig.*.json` are the
+# flavours themselves and are what the rule points *at*, not subject to it; `*.tsbuildinfo` is build
+# output that happens to be named after a tsconfig; and `apps/api/tsconfig.build.json` is exempted by
+# name under DEVIATION-REGISTER row 8 - its module/moduleResolution/lib/types/decorator overrides are
+# forced by NestJS DI reading design:paramtypes and by Prisma's extensionless imports needing
+# CommonJS, and folding them into a flavour would hand the gateway `module: ESNext` and inject
+# undefined into every constructor on boot.
+n=$(node -e '
+const fs = require("fs"), path = require("path");
+const allow = new Set(["rootDir", "outDir", "noEmit", "baseUrl", "paths"]);
+const exempt = new Set(["tsconfig.build.json"]);
+const files = [];
+for (const g of ["apps", "packages"]) {
+  for (const w of fs.readdirSync(g, { withFileTypes: true }).filter((d) => d.isDirectory())) {
+    if (g === "packages" && w.name === "config") continue;
+    for (const f of fs.readdirSync(path.join(g, w.name))) {
+      if (/^tsconfig(\..+)?\.json$/.test(f)) files.push(path.join(g, w.name, f));
+    }
+  }
+}
+const offenders = [];
+for (const f of files.sort()) {
+  if (exempt.has(path.basename(f))) continue;
+  const raw = fs.readFileSync(f, "utf8").replace(/^\s*\/\/.*$/gm, "");
+  let c;
+  try { c = JSON.parse(raw.replace(/,\s*([\]}])/g, "$1")); }
+  catch (e) { offenders.push(`${f}: does not parse (${e.message})`); continue; }
+  const bad = Object.keys(c.compilerOptions || {}).filter((k) => !allow.has(k));
+  if (bad.length) offenders.push(`${f}: ${bad.join(", ")}`);
+}
+if (offenders.length) console.error(offenders.join("\n"));
+console.log(offenders.length);
+')
+if [ "$n" -eq 0 ]; then
+  ok "no workspace redefines a compiler option (§5.3: change the base, not the workspace)"
+else
+  bad "$n workspace config(s) redefine a compiler option — §5.3 says 'Compiler options are never redefined per workspace - change the base'; move it to packages/config, or exempt it by name in DEVIATION-REGISTER"
+fi
+
 n=$(ls .env.example apps/*/.env.example 2>/dev/null | wc -l)
 [ "$n" -ge 4 ] && ok "an example environment file per surface, the root and all three apps ($n)" \
   || bad "expected an example environment file at the root and in each of the three apps, found $n — every variable and its tier must be documented (§12)"
 
+# §12's tier line, enforced as a boolean rather than counted: `apps/api/.env.example` says of
+# DATABASE_URL "Read at runtime, never at build" and the root says "Must never be available at build
+# time". The incident that motivated both lines was a `loadDotenv()` call in a next.config.ts
+# reaching the database URL into build time; until now nothing stopped it coming back, because the
+# two .env.example files are documentation and documentation does not fail a command.
+#
+# Written as an explicit list of the forms it will not permit, not a "no dotenv in a config" phrasing:
+# `require("dotenv")`, `dotenv/config`, `@next/env` and `loadDotenv(` each name a different API, and
+# one missing from the list is one that silently reintroduces the bug. The gateway's own dotenv
+# imports — `apps/api/prisma.config.ts` and `apps/api/seed/*.ts` — are deliberately out of scope:
+# those run as Node CLIs under the runtime tier, not during a Next.js build.
+n=$(grep -lE 'dotenv|@next/env|loadDotenv\(' apps/*/next.config.* 2>/dev/null | wc -l)
+if [ "$n" -eq 0 ]; then
+  ok "no next.config loads an environment file at build time (§12: DATABASE_URL never at build)"
+else
+  bad "$n next.config file(s) load an environment file — §12 tiers DATABASE_URL to runtime only, and a config that reads .env at build makes it build-time"
+fi
+
+# Blueprint §12 puts the audit scripts' own tests before every other tool, so a broken check is
+# reported before a broken tree is blamed on it. This repo ran no `scripts/*.test.js` at all until
+# the structure gates landed — four suites, 69 assertions, now first in the section that owns them.
+# Gated on the runner's exit code, not on its summary text: a check that greps for the word "pass"
+# in a report it does not own is a check that reports whatever the report says.
+if out=$(node --test scripts/*.test.js 2>&1); then
+  ok "the audit scripts' own tests pass ($(printf '%s' "$out" | grep -c '^✔ ' || true) assertions)"
+else
+  bad "the audit scripts' own tests fail:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
+fi
+
+if out=$(node scripts/audit-client-structure.js 2>&1); then
+  # Each script's own success line already names itself, so the message is the output verbatim.
+  ok "$out"
+else
+  bad "the client structure gate failed:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
+fi
+
+if out=$(node scripts/audit-app-root.js 2>&1); then
+  ok "$out"
+else
+  bad "the app-root gate failed:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
+fi
+
+if out=$(node scripts/audit-structure.js 2>&1); then
+  ok "$out"
+else
+  bad "the gateway structure gate failed:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
+fi
+
 head_ "Data tier"
 # §8 / §15.1: "re-export the generated client through one index. No other file imports a
-# generated/ path." The rule protects against a consumer reaching past the index, so that is what
-# is checked — no file outside the data tier may name a generated path. Inside the data tier the
-# index and the client wrapper both legitimately do, and the count is reported rather than
-# asserted, because a data tier with a lifecycle module cannot have exactly one.
+# generated/ path." P4b made that true, and this section is the half of the check a cruise cannot
+# do: `*.test.ts` and `*.spec.ts` are excluded from the dependency graph (§16.1), so a test naming a
+# generated path is invisible to `.dependency-cruiser.js` and visible to this grep.
+#
+# Both counts below are booleans, not ratchets: §15.1 states them as yes/no, and §15.3 rule 3 says
+# a ratchet covers counts that may legitimately be non-zero. The failure branch is what ticket 19
+# cleared — until the data tier had one index, it printed a labelled KNOWN with an owner and the
+# audit exited 1 on that line alone, which is the honest form of a boolean that is not yet true.
 n=$(grep -rln "generated/prisma" --include="*.ts" --include="*.tsx" apps packages 2>/dev/null \
       | grep -v "^apps/api/src/" | wc -l)
-[ "$n" -eq 0 ] \
-  && ok "nothing outside the data tier reaches into generated/" \
-  || bad "$n file(s) outside the data tier import a generated/ path — go through the index (§8)"
-m=$(grep -rln "generated/prisma" --include="*.ts" apps/api/src 2>/dev/null | grep -v "/generated/" | wc -l)
-printf '  %-22s %s in-package (index + client wrapper + the lifecycle, which the index\n' "generated/ namers" "$m"
-printf '  %-22s   re-exports and so cannot import through it; each says why at the import)\n' ""
+if [ "$n" -eq 0 ]; then
+  ok "nothing outside the data tier reaches into generated/"
+else
+  printf '  KNOWN  %s file(s) outside apps/api/src name a generated/ path — a §15.1 invariant (§8).\n' "$n"
+  printf '        Exactly one file may: apps/api/src/prisma/index.ts. Route yours through it — the\n'
+  printf '        dependency-cruiser rule generated-prisma-outside-data-client-index rejects the rest.\n'
+  failures=$((failures + 1))
+fi
 
-head_ "Ratchet (observed, not yet a gate — seeds for the ratchet file)"
+# And inside the gateway, asserted rather than reported: one file, and it is the index. This used
+# to print a count with a note about the client wrapper and the lifecycle module, because both
+# reached `generated/` too; ticket 19 merged the wrapper into the index and §8 does not ask for a
+# lifecycle alias, so the number is now a rule.
+m=$(grep -rln "generated/prisma" --include="*.ts" apps/api/src 2>/dev/null | grep -v "/generated/" | wc -l)
+if [ "$m" -eq 1 ]; then
+  ok "exactly one file in the gateway names a generated path (src/prisma/index.ts)"
+else
+  bad "$m files in apps/api/src name a generated/ path — §15.1 allows exactly one, and it is src/prisma/index.ts"
+fi
+
+head_ "Ratchet metrics (gated separately: ratchet.json + scripts/audit-ratchet.mjs)"
 printf '  %-22s store %s   admin %s\n' "colour literals" \
   "$(grep -rEoh '#[0-9a-fA-F]{3,8}' --include='*.ts' --include='*.tsx' apps/store/src | wc -l)" \
   "$(grep -rEoh '#[0-9a-fA-F]{3,8}' --include='*.ts' --include='*.tsx' apps/admin/src | wc -l)"
 printf '  %-22s %s\n' "flat dto files" "$(find apps packages -name '*.dto.ts' -not -path '*/node_modules/*' | wc -l)"
 printf '  %-22s %s\n' "flat exception files" "$(find apps packages -name '*.exception.ts' -not -path '*/node_modules/*' | wc -l)"
+
+# Each of the four below is a gate that has already failed at least once while it was being built,
+# which is the only way to tell one from a tick that prints itself. Their output goes to the
+# reader's screen first and the failure is counted on its own line after, so a green run still shows
+# what was examined and a red one names the tool that objected.
+head_ "Architecture (dependency-cruiser)"
+if out=$(node scripts/audit-depcruise.mjs 2>&1); then
+  printf '%s\n' "$out" | sed 's/^/  /'
+  ok "every depcruise rule holds ($(printf '%s' "$out" | tail -1))"
+else
+  printf '%s\n' "$out" >&2
+  bad "dependency-cruiser reported an error (see the lines above)"
+fi
+
+head_ "Workspace boundaries (turbo boundaries)"
+if out=$(npx turbo boundaries 2>&1); then
+  ok "$(printf '%s' "$out" | tail -1)"
+else
+  printf '%s\n' "$out" >&2
+  bad "turbo boundaries reported an edge the declared ranks do not allow"
+fi
+
+head_ "Manifests (manypkg)"
+if out=$(npx manypkg check 2>&1); then
+  ok "workspace manifests are consistent"
+else
+  printf '%s\n' "$out" >&2
+  bad "manypkg check reported a manifest problem"
+fi
+
+head_ "Ratchet"
+if out=$(node scripts/audit-ratchet.mjs 2>&1); then
+  printf '%s\n' "$out" | sed 's/^/  /'
+  ok "no metric above its seed"
+else
+  printf '%s\n' "$out" >&2
+  bad "a ratchet metric rose above its seed (see the lines above)"
+fi
 
 printf '\n'
 if [ "$failures" -eq 0 ]; then

@@ -10,8 +10,8 @@
 // delivery, which is a different promise.
 
 import { fetchQuotes, postexConfigFromEnv } from "../shipping/postex.js";
-import { isKermanCity } from "@kmodern/schema";
-import { settingKeys } from "@kmodern/schema/setting-keys";
+import { isKermanCity } from "@kmodern/contracts";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
 import type { CheckoutDb as Db } from "./db-types.js";
 
 export interface ShippingLine {

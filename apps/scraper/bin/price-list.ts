@@ -4,8 +4,7 @@
 //   pnpm --filter @kmodern/scraper price-list -- --file ./D0249.xlsx
 //   pnpm --filter @kmodern/scraper price-list -- --file ./prices.xlsx --brand Datees --dry-run
 
-import { applyPriceList, type PriceUnit } from "../src/price-list";
-import { readFlag } from "../src/args";
+import { applyPriceList, readFlag, type PriceUnit } from "@kmodern/scraper-core";
 
 const args = process.argv.slice(2);
 const flag = (name: string): string | undefined => readFlag(args, name);

@@ -13,7 +13,8 @@
 // false and every reader that checks it takes the failure branch.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { createPrismaClient } from "../src/prisma/client.js";
+import { LOW_STOCK_FIELD } from "../src/settings/definitions.js";
+import type { createPrismaClient } from "../src/prisma/index.js";
 import { SettingsController } from "../src/settings/settings.controller.js";
 import { db } from "../src/prisma/index.js";
 import { resetDatabase } from "./harness.js";
@@ -133,7 +134,7 @@ describe("an operator saves settings", () => {
     await expect(
       controller().save(request(), {
         section: "inventory",
-        values: { inventoryLowStockThreshold: "2.5" },
+        values: { [LOW_STOCK_FIELD]: "2.5" },
       } as never),
     ).rejects.toThrow(/صحیح/);
 

@@ -19,7 +19,7 @@ const hit = (i: number) => ({
   id: `p${i}`,
   slug: `slug-${i}`,
   name: `محصول ${i}`,
-  brand: "دیتیس",
+  brand: "داتیس",
   model: `m${i}`,
   category: { id: "c1", name: "خانه", slug: "home" },
   price: 1000 * i,
@@ -28,6 +28,7 @@ const hit = (i: number) => ({
   image: null,
   variantCount: 1,
   dots: [],
+  discount: null,
 }) as unknown as Results[number];
 
 describe("GET /api/search", () => {
@@ -42,7 +43,7 @@ describe("GET /api/search", () => {
     expect(query).toHaveBeenCalledWith({ search: "فر", limit: 6 });
     const body = await res.json();
     expect(body.results).toEqual([
-      { slug: "slug-1", name: "محصول 1", price: 1000, maxPrice: 1200, image: null },
+      { slug: "slug-1", name: "محصول 1", price: 1000, maxPrice: 1200, discount: null, image: null },
     ]);
   });
 

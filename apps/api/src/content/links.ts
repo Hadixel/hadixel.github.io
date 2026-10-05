@@ -1,5 +1,5 @@
-import type { LinkRef } from "@kmodern/schema";
-import type { createPrismaClient } from "../prisma/client.js";
+import type { LinkRef } from "@kmodern/contracts";
+import type { createPrismaClient } from "../prisma/index.js";
 import type { ResolvedLink } from "./dto/home.dto.js";
 
 type Db = ReturnType<typeof createPrismaClient>;

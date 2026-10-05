@@ -1,0 +1,24 @@
+{
+  "name": "@kmodern/scraper-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//exports": "`.` is the scraper's own surface. `./price-sources` exists for the gateway, which imports the price source and nothing else: the index also reaches `pipeline.ts`, and that file uses `import.meta`, which the gateway's CommonJS build pass cannot compile. A subpath is what keeps the gateway's dependency on this package to the three modules it actually reads. See apps/api/tsconfig.build.json's `paths`, which points at the same file.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./price-sources": "./src/price-sources.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "ipaddr.js": "^2.5.0",
+    "slugify": "^1.6.9",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

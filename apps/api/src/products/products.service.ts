@@ -15,9 +15,9 @@
 // adjustment uses, so the two writers of a variant's stock cannot drift apart. What this module adds
 // is the reconciliation around it.
 
-import type { Prisma } from "../generated/prisma/client.js";
-import { productSlug, canonicalSlug } from "@kmodern/schema/slug";
-import { seoSchema } from "@kmodern/schema";
+import type { Prisma } from "../prisma/index.js";
+import { productSlug, canonicalSlug } from "@kmodern/contracts/slug";
+import { seoSchema } from "@kmodern/contracts";
 import { setVariantStock } from "../inventory/inventory.service.js";
 import {
   ProductCategoryException,

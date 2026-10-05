@@ -6,7 +6,6 @@
   "description": "The one process that talks to the database. Owns the schema, the generated client, the migrations and the data scripts.",
   "exports": {
     "./prisma": "./src/prisma/index.ts",
-    "./prisma/client": "./src/prisma/client.ts",
     "./storage": "./src/storage/storage.ts",
     "./payments": "./src/payments/zarinpal.ts",
     "./sms": "./src/sms/kavenegar.ts",
@@ -33,7 +32,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kmodern/schema": "workspace:*",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@kmodern/contracts": "workspace:*",
+    "@kmodern/scraper-core": "workspace:*",
     "@nestjs/common": "^11.2.6",
     "@nestjs/core": "^11.2.6",
     "@nestjs/platform-express": "^11.2.6",
@@ -45,8 +46,7 @@
     "helmet": "^8.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "slugify": "^1.6.9",
-    "@aws-sdk/client-s3": "^3.600.0"
+    "slugify": "^1.6.9"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

@@ -1,7 +1,5 @@
 # Product
 
-<!-- impeccable:product-schema 1 -->
-
 ## Platform
 
 web
@@ -30,6 +28,7 @@ The storefront is a web application used on desktop and mobile browsers. The cus
 - The product page must preserve Variant switching, quantity selection, cart addition, availability states, related Products, and the current trust/service messages.
 - Carried brands are Datees (داتیس) and Schuffle. Brand attribution belongs in Product specifications rather than storefront chrome or card stamps.
 - Product names, descriptions, specifications, features, prices, inventory, images, and related-product data must come from the catalog; do not invent commercial claims or substitute unsupported products.
+- A discounted Product shows its discount everywhere a price is shown: listing cards, home rails and content blocks, the product page for the selected Variant, and search suggestions. The gateway's discount label is rendered exactly once and never re-signed, the discounted price leads, and the original price is shown struck beside it.
 
 ## Brand Commitments
 

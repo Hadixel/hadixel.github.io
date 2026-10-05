@@ -26,8 +26,8 @@ writeFileSync(resolve(DIST, "package.json"), `${JSON.stringify({ type: "commonjs
  * tsconfig.build.json sets rootDir to the repository root so the workspace
  * packages enter the program and are emitted beside the app — dist/packages/
  * schema/src/index.js is right there. But the emitted code still says
- * require("@kmodern/schema"), and Node resolves that specifier through the
- * workspace symlink in node_modules to packages/schema, whose "exports" points
+ * require("@kmodern/contracts"), and Node resolves that specifier through the
+ * workspace symlink in node_modules to packages/contracts, whose "exports" points
  * at "./src/index.ts". A Node process cannot require() TypeScript, so the boot
  * died with ERR_MODULE_NOT_FOUND on a file that had been compiled successfully
  * one directory away.
@@ -37,7 +37,7 @@ writeFileSync(resolve(DIST, "package.json"), `${JSON.stringify({ type: "commonjs
  * rather than a copy so the two can never drift, and only for packages that are
  * actually emitted into dist/packages, so a package that has no build of its own
  * is not silently pointed at nothing. */
-const EMITTED_PACKAGES = ["schema"];
+const EMITTED_PACKAGES = ["contracts", "scraper-core"];
 
 for (const name of EMITTED_PACKAGES) {
   const compiled = resolve(DIST, "packages", name, "src/index.js");
@@ -72,7 +72,7 @@ for (const name of EMITTED_PACKAGES) {
   }
   /* The source package's "exports" map is the contract, so the stub mirrors its
      shape rather than inventing one. The emitted code imports subpaths such as
-     @kmodern/schema/setting-keys, and a stub declaring only "." fails with
+     @kmodern/contracts/setting-keys, and a stub declaring only "." fails with
      ERR_PACKAGE_PATH_NOT_EXPORTED on the first subpath it reaches. */
   const exportsMap = {};
   for (const [subpath, target] of Object.entries(sourcePkg.exports ?? { ".": "./src/index.ts" })) {

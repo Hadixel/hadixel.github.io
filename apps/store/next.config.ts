@@ -30,15 +30,24 @@ function storageRemotePattern(): RemotePattern | null {
 const storagePattern = storageRemotePattern();
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["127.0.0.1", "localhost"],
-  transpilePackages: ["@kmodern/schema", "@kmodern/ui"],
+  // Next 16 blocks dev requests from any origin not listed here, and the page then renders as
+  // static HTML with no JavaScript — which looks like dead buttons rather than an error, since
+  // the markup is all there and the navigation is missing only the behaviour. 127.0.0.1 and
+  // localhost are the desktop cases; a phone on the tailnet arrives as a 100.x address, so it
+  // has to be named explicitly or nothing on the page is clickable.
+  // Mirrors the admin's STORE_DEV_ORIGIN/ADMIN_DEV_ORIGIN convention.
+  allowedDevOrigins: (process.env.STORE_DEV_ORIGIN ?? "192.168.70.176")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .concat("localhost", "127.0.0.1"),
+  transpilePackages: ["@kmodern/contracts", "@kmodern/ui"],
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "datees.ir",
         port: "",
-        pathname: "/uploads/**",
       },
       {
         protocol: "https",

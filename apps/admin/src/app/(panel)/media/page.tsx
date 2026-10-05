@@ -1,8 +1,8 @@
-import { faDigits } from "@/lib/date";
+import { toFaDigits } from "@kmodern/contracts";
 import { readThrough } from "@/lib/reads";
-import { Card, CardHeader } from "@/components/ui";
-import { MediaUpload } from "./media-upload";
-import { MediaLibrary } from "./media-library";
+import { Card, CardHeader } from "@kmodern/ui";
+import { MediaUpload } from "@/media/components/media-upload";
+import { MediaLibrary } from "@/media/components/media-library";
 
 interface MediaItem {
   url: string;
@@ -21,11 +21,13 @@ export default async function MediaPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader
-          title="مدیا"
-          subtitle={`${faDigits(items.length)} فایل`}
-          actions={<MediaUpload />}
-        />
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">مدیا</h2>
+            <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(items.length)} فایل`}</p>
+          </div>
+          <div className="shrink-0"><MediaUpload /></div>
+        </CardHeader>
       </Card>
       <MediaLibrary items={items} />
     </div>

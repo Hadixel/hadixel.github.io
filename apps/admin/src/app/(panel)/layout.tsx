@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAdminUser } from "@/lib/auth";
+import { getAdminUser } from "@/auth/lib/auth";
 import { readThrough } from "@/lib/reads";
 import { AdminShell } from "@/components/shell";
 

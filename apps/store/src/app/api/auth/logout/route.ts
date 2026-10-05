@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signOut } from "@/lib/customer-session";
+import { signOut } from "@/account/lib/customer-session";
 
 /**
  * Sign the shopper out.

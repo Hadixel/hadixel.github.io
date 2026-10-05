@@ -4,13 +4,19 @@
 
 **Blocked by:** 05, 07.
 
-**Status:** ready-for-agent
+**Status:** done, with the caveat noted below
 
-- [ ] Adding to the Cart, previewing a delivery quote and completing checkout all work through the gateway
-- [ ] Cash on delivery is offered only when the delivery method is eligible, and only below the configured ceiling
-- [ ] A customer cannot hold two orders awaiting payment — the check is one rule, not an inline query in a handler
-- [ ] Stock is reserved for a cash-on-delivery order when the Order is created, and released after a stated window
-- [ ] The city and province agreement check runs on the path that creates the Order, not only on the path that previews it
-- [ ] The delivery cost comes from the shipping provider through one adapter in the gateway, not from a storefront module
-- [ ] The panel's manual order creation uses the same totals rule and the same currency as the storefront
-- [ ] The cart enrichment endpoint and the checkout endpoints are gateway routes; the storefront keeps no delivery rule of its own
+- [x] Adding to the Cart, previewing a delivery quote and completing checkout all work through the gateway
+- [ ] Cash on delivery is offered only when the delivery method is eligible, and only below the configured ceiling — **unverified as of 2026-10-01.** `grep -n "codAllowed" apps/store/src/checkout/components/checkout-client.tsx` gives `const codAllowed = !totals || totals.shippingMethod === "LOCAL";` — the *offer* is gated on the method by a second expression of the eligibility rule living in the storefront, and nothing in the offer knows the ceiling: `CheckoutQuote` (`apps/api/src/checkout/dto/checkout.dto.ts:104`) is `{ totals, weightKg }` and carries no ceiling or eligibility flag, so the storefront cannot gate on it. The gateway does enforce both halves at creation (`cashOnDeliveryAllowed`, `checkout-rules.ts:32-40`, called at `checkout.service.ts:102-109`), which is a different assertion from the one this box makes.
+- [x] A customer cannot hold two orders awaiting payment — the check is one rule, not an inline query in a handler
+- [ ] Stock is reserved for a cash-on-delivery order when the Order is created, and released after a stated window — **unverified as of 2026-10-01.** The first half holds — `reserveStock(order.id, …, input.paymentMethod, undefined, tx)` at `checkout.service.ts:159-169` inside the order transaction, with COD taking the C2C window (`resolveExpiry`, `inventory.service.ts:58-77`, default 48h, `expiresAt` written at line 106). The second half does not: `grep -rn "releaseStock" apps/api/src` returns only `orders.service.ts:215` and `:275` (fail / cancel while awaiting). Nothing reads `expiresAt` to release, and no sweeper exists (`grep -rn "Cron|@Interval|Schedule" apps/api/src` finds only `price-watch`), so the hold never expires on its own.
+- [x] The city and province agreement check runs on the path that creates the Order, not only on the path that previews it
+- [x] The delivery cost comes from the shipping provider through one adapter in the gateway, not from a storefront module
+- [ ] The panel's manual order creation uses the same totals rule and the same currency as the storefront — **unverified as of 2026-10-01.** The currency matches: `currency: "TOMAN"` at both `orders.service.ts:556` and `checkout.service.ts:134`. The totals rule is not shared: `grep -rn "computeTotals" apps/api/src` finds callers only in `checkout.service.ts`, while the manual path writes its own `const subtotal = lines.reduce(…)` / `total: subtotal + fee` at `orders.service.ts:545-556`. Same arithmetic today, a second implementation free to drift.
+- [ ] The cart enrichment endpoint and the checkout endpoints are gateway routes; the storefront keeps no delivery rule of its own — **unverified as of 2026-10-01.** First clause holds: `CartController.enrich` (`checkout.controller.ts:79-95`) plus `CheckoutController.quote` / `.place` (`:42-59`), with the store's three handlers reduced to forwards (`apps/store/src/app/api/cart/enrich/route.ts` posts to `/cart/enrich`; `api/checkout/route.ts` and `api/checkout/preview/route.ts` call `placeOrder` / `quoteBasket` in `checkout/lib/checkout-gateway.ts`). Second clause does not: `checkout-client.tsx:102` still evaluates `totals.shippingMethod === "LOCAL"` in the storefront to decide whether to show cash on delivery — the eligibility half of `cashOnDeliveryAllowed`, written a second time.
+
+## Comments
+
+The strongest evidence is that the delivery rules exist once and are called from both paths: `checkout.service.ts:57` and `:92` both call `this.assertCityMatchesProvince`, the create path included, which is the exact defect the ticket names; `hasUnpaidOrder` (`checkout-rules.ts:64-70`) is a named rule called from `checkout.service.ts:113` rather than an inline query, and its query carries no cash-on-delivery exemption. Pricing reaches the carrier through one adapter — `assignShippingMethod` in `checkout/shipping.ts` calls `fetchQuotes` from `shipping/postex.ts` — and `grep -rn "isKermanCity|cityBelongsToProvince" apps/store/src apps/admin/src` returns nothing, so no client holds the rule. Adding to the cart is local cookie state by design (`cart-provider.tsx` / `cart-button.tsx` import no gateway and no data tier); what needs a rule — resolving the basket — goes through `/api/cart/enrich` to the gateway's `/cart/enrich`.
+
+The four unticked boxes are claims the tree does not support, and two of them point at real code that should be reported rather than fixed here: the storefront still carries its own COD-eligibility expression (`checkout-client.tsx:102`), and the gateway records a reservation expiry that nothing ever acts on.

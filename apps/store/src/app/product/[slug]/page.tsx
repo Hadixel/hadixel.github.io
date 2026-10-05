@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { getProductBySlug, getPublishedProducts } from "@/lib/queries";
 import { SectionHeader } from "@kmodern/ui";
-import { ProductBuyBox } from "@/components/product-buy-box";
-import { ProductGrid } from "@/components/product-grid";
-import Breadcrumbs from "@/components/breadcrumbs";
+import { toFaDigits } from "@kmodern/contracts/format";
+import { ProductBuyBox } from "@/catalogue/components/product-buy-box";
+import { ProductGrid } from "@/catalogue/components/product-grid";
+import Breadcrumbs from "@/catalogue/components/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const hasTechnicalDetails = product.specValues.length > 0 || product.features.length > 0;
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-6 sm:py-8">
+    <div className="mx-auto max-w-[1280px] px-4 py-6 sm:py-8">
       <Breadcrumbs category={product.category.slug} categoryName={product.category.name} productName={product.name} />
 
       <ProductBuyBox
@@ -40,36 +41,57 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         productName={product.name}
         model={product.model}
         description={product.description}
+        discount={product.discount}
+        detailsSummary={`مشخصات فنی و ویژگی‌ها · ${toFaDigits(product.specValues.length + product.features.length)} مورد`}
         details={
           hasTechnicalDetails ? (
-            <div className="mt-4 space-y-4">
-              {product.specValues.length > 0 && (
-                <section className="overflow-hidden rounded-card bg-plaster/60 p-5 sm:p-7" aria-labelledby="product-specs-title">
-                  <h2 id="product-specs-title" className="font-display text-xl font-black text-ink">مشخصات فنی</h2>
-                  <dl className="mt-5 divide-y divide-fog/70 border-y border-fog/70">
-                    {product.specValues.map((specValue) => (
-                      <div key={specValue.specFieldId} className="grid grid-cols-[minmax(7rem,0.8fr)_minmax(0,1.2fr)] gap-4 py-3.5 text-sm sm:grid-cols-[minmax(10rem,0.7fr)_minmax(0,1.3fr)]">
-                        <dt className="text-ash">{specValue.specField.name}</dt>
-                        <dd className="font-semibold leading-7 text-ink">{String(specValue.value)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              )}
+            <div>
+              <div className="product-details-heading">
+                <div>
+                  <h2 className="font-display text-2xl font-black text-ink">جزئیات محصول</h2>
+                  <p className="mt-2 text-sm leading-7 text-ash">برای انتخاب دقیق‌تر، مشخصات فنی و نکات کلیدی این محصول را بررسی کنید.</p>
+                </div>
+                <div className="product-details-counts" aria-label="خلاصه جزئیات محصول">
+                  {product.specValues.length > 0 && <span><b>{toFaDigits(product.specValues.length)}</b> مورد مشخصات</span>}
+                  {product.features.length > 0 && <span><b>{toFaDigits(product.features.length)}</b> ویژگی</span>}
+                </div>
+              </div>
 
-              {product.features.length > 0 && (
-                <section className="rounded-card bg-plaster/60 p-5 sm:p-7" aria-labelledby="product-features-title">
-                  <h2 id="product-features-title" className="font-display text-xl font-black text-ink">ویژگی‌های شاخص</h2>
-                  <ul className="mt-5 grid gap-3 text-sm leading-7 text-ink sm:grid-cols-2">
-                    {product.features.map((feature, index) => (
-                      <li key={`${feature}-${index}`} className="flex gap-3">
-                        <span className="mt-[13px] h-px w-4 shrink-0 bg-flame-700" aria-hidden />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
+              <div className="product-details-extra">
+                {product.specValues.length > 0 && (
+                  <section className="product-specs product-spec-panel" aria-labelledby="product-specs-title">
+                    <div className="product-section-heading">
+                      <h2 id="product-specs-title" className="font-display text-xl font-black">مشخصات فنی</h2>
+                      <span className="product-section-line" aria-hidden />
+                    </div>
+                    <dl className="product-spec-list">
+                      {product.specValues.map((specValue) => (
+                        <div key={specValue.specFieldId} className="product-spec-row">
+                          <dt>{specValue.specField.name}</dt>
+                          <dd>{toFaDigits(specValue.value)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                )}
+
+                {product.features.length > 0 && (
+                  <section className="product-features product-feature-panel" aria-labelledby="product-features-title">
+                    <div className="product-section-heading">
+                      <h2 id="product-features-title" className="font-display text-xl font-black">ویژگی‌های شاخص</h2>
+                      <span className="product-section-line" aria-hidden />
+                    </div>
+                    <ul className="product-feature-list">
+                      {product.features.map((feature, index) => (
+                        <li key={`${feature}-${index}`} className="product-feature-row">
+                          <span className="product-feature-marker" aria-hidden />
+                          <span>{toFaDigits(feature)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </div>
             </div>
           ) : null
         }

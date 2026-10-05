@@ -1,3 +1,4 @@
+import { toFaDigits } from "@kmodern/contracts";
 // The stock list, read through the gateway.
 //
 // This page used to read the shop's low-stock line out of the settings table itself — with a `3`
@@ -14,9 +15,9 @@
 import Link from "next/link";
 import { readThrough } from "@/lib/reads";
 import { pageParam } from "@/lib/pagination";
-import { faDigits } from "@/lib/date";
-import { Badge, Card, CardHeader, EmptyState, Input, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
-import { AdjustStockRow } from "./adjust-form";
+import { Badge, Card, CardHeader, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState, Pagination } from "@/components/panel-ui";
+import { AdjustStockRow } from "@/inventory/components/adjust-form";
 
 /**
  * The rows this table shows.
@@ -69,10 +70,12 @@ export default async function InventoryPage({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader
-          title="موجودی"
-          subtitle={`${faDigits(stock.lowStockCount)} تنوع کم‌موجودی (آستانه: ${faDigits(stock.threshold)})`}
-        />
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">موجودی</h2>
+            <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(stock.lowStockCount)} تنوع کم‌موجودی (آستانه: ${toFaDigits(stock.threshold)})`}</p>
+          </div>
+        </CardHeader>
         <div className="border-b border-plaster px-5 py-3">
           <form action="/inventory" method="get" className="flex items-end gap-3">
             <div>
@@ -87,34 +90,36 @@ export default async function InventoryPage({
           <EmptyState text="تنوعی یافت نشد" />
         ) : (
           <>
-            <Table>
-              <THead>
-                <TR>
-                  <TH>محصول</TH>
-                  <TH>تنوع</TH>
-                  <TH>SKU</TH>
-                  <TH>موجودی</TH>
-                  <TH>رزرو</TH>
-                  <TH>قابل فروش</TH>
-                  <TH>تعدیل</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {stock.rows.map((v) => (
-                  <TR key={v.id} className={v.isLow ? "/60" : undefined}>
-                    <TD>
-                      <Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.productName}</Link>
-                    </TD>
-                    <TD>{v.colorName || "—"}{v.isLow && <Badge color="amber" className="mr-2">کم</Badge>}</TD>
-                    <TD className="text-xs"><span dir="ltr">{v.sku}</span></TD>
-                    <TD><Badge color={v.stock <= 0 ? "red" : v.isLow ? "amber" : "green"}>{faDigits(v.stock)}</Badge></TD>
-                    <TD>{faDigits(v.reserved)}</TD>
-                    <TD>{faDigits(v.available)}</TD>
-                    <TD><AdjustStockRow variantId={v.id} /></TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
+            <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>محصول</TableHead>
+                    <TableHead>تنوع</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>موجودی</TableHead>
+                    <TableHead>رزرو</TableHead>
+                    <TableHead>قابل فروش</TableHead>
+                    <TableHead>تعدیل</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stock.rows.map((v) => (
+                    <TableRow key={v.id} className={v.isLow ? "/60" : undefined}>
+                      <TableCell>
+                        <Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.productName}</Link>
+                      </TableCell>
+                      <TableCell>{v.colorName || "—"}{v.isLow && <Badge className="mr-2 bg-flame-100 text-flame-800">کم</Badge>}</TableCell>
+                      <TableCell className="text-xs"><span dir="ltr">{v.sku}</span></TableCell>
+                      <TableCell><Badge className={v.stock <= 0 ? "bg-red-100 text-red-800" : v.isLow ? "bg-flame-100 text-flame-800" : "bg-emerald-100 text-emerald-900"}>{toFaDigits(v.stock)}</Badge></TableCell>
+                      <TableCell>{toFaDigits(v.reserved)}</TableCell>
+                      <TableCell>{toFaDigits(v.available)}</TableCell>
+                      <TableCell><AdjustStockRow variantId={v.id} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </>
         )}
       </Card>

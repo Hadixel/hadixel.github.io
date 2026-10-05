@@ -18,11 +18,11 @@ import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/auth";
-import { scraperJobs, scraperOutputDir } from "@/lib/scraper-jobs";
+import { requireAdminApi } from "@/auth/lib/auth";
+import { scraperJobs, scraperOutputDir } from "@/scraper/lib/scraper-jobs";
 import { sameOrigin } from "@/lib/origin";
 import { fromGateway } from "@/lib/gateway";
-import type { PriceUnit } from "@kmodern/scraper";
+import type { PriceUnit } from "@kmodern/scraper-core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

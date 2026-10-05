@@ -9,7 +9,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 import { SettingsController } from "../src/settings/settings.controller.js";
-import { PUBLIC_SETTING_FIELDS, SETTING_SECTIONS } from "../src/settings/definitions.js";
+import { LOW_STOCK_FIELD, PUBLIC_SETTING_FIELDS, SETTING_SECTIONS } from "../src/settings/definitions.js";
 import { AuthService } from "../src/auth/auth.service.js";
 import { OtpService } from "../src/auth/otp.service.js";
 import { db } from "../src/prisma/index.js";
@@ -31,7 +31,7 @@ function controller(): SettingsController {
  * rather than typed into a form. A helper that refused to write that row would make its test vacuous.
  */
 async function store(fieldKey: string, value: unknown) {
-  const { settingKeys } = await import("@kmodern/schema/setting-keys");
+  const { settingKeys } = await import("@kmodern/contracts/setting-keys");
   const columnKey = settingKeys[fieldKey as keyof typeof settingKeys];
   if (columnKey === undefined) throw new Error(`no such setting key: ${fieldKey}`);
   return db().setting.create({ data: { key: columnKey, value: value as never } });
@@ -61,9 +61,9 @@ describe("the public settings read", () => {
     // is actually pinned by.
     await store("checkoutOnlineReserveMinutes", 30);
     await store("checkoutC2cReserveHours", 48);
-    await store("inventoryLowStockThreshold", 3);
+    await store(LOW_STOCK_FIELD, 3);
     const answer = await controller().publicValues();
-    for (const key of ["checkoutOnlineReserveMinutes", "checkoutC2cReserveHours", "inventoryLowStockThreshold"]) {
+    for (const key of ["checkoutOnlineReserveMinutes", "checkoutC2cReserveHours", LOW_STOCK_FIELD]) {
       expect(answer, key).not.toHaveProperty(key);
     }
   });
@@ -118,7 +118,7 @@ describe("the public settings read", () => {
     expect(PUBLIC_SETTING_FIELDS).toContain("storeName");
     expect(PUBLIC_SETTING_FIELDS).toContain("paymentC2cCardNumber");
     expect(PUBLIC_SETTING_FIELDS).not.toContain("smsProviderConfigured");
-    expect(PUBLIC_SETTING_FIELDS).not.toContain("inventoryLowStockThreshold");
+    expect(PUBLIC_SETTING_FIELDS).not.toContain(LOW_STOCK_FIELD);
     expect(PUBLIC_SETTING_FIELDS).not.toContain("checkoutOnlineReserveMinutes");
 
     const marked = SETTING_SECTIONS.flatMap((s) => s.fields)

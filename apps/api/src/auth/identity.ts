@@ -13,9 +13,8 @@
 
 import type { Request } from "express";
 import { UnauthorizedException } from "../common/exceptions/gateway.exception.js";
-import { ADMIN_COOKIE, CUSTOMER_COOKIE } from "../auth/session.js";
+import { ADMIN_COOKIE, CUSTOMER_COOKIE, tokenFromCookie } from "../auth/session.js";
 import { AuthService } from "../auth/auth.service.js";
-import { tokenFromCookie } from "../auth/auth.controller.js";
 
 /** Read a named cookie out of a request. Exported because the controllers all need it. */
 export function cookieToken(req: Request, name: string): string | null {

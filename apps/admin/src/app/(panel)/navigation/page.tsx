@@ -16,7 +16,7 @@
 // read and the render.
 
 import { readThrough } from "@/lib/reads";
-import { NavEditor, type NavSeed } from "@/components/nav-editor";
+import { NavEditor, type NavSeed } from "@/content/components/nav-editor";
 
 /** The three pickers the editor offers ids from, as the read answers them once beside the menus. */
 interface NavPickers {

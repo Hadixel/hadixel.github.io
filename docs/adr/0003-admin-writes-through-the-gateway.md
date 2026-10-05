@@ -3,7 +3,9 @@
 ## Status
 
 In progress (2026-09-27). Records the shape of the change and what is already closed; the remaining
-work is listed under Consequences. Ticket 12 of `docs/BLUEPRINT-ADOPTION-PLAN.md`.
+work is listed under Consequences. Ticket 12 of the adoption plan, kept as
+[`.scratch/blueprint-adoption/issues/12-admin-writes.md`](../../.scratch/blueprint-adoption/issues/12-admin-writes.md)
+— the disposable plan it came from was deleted when its last phase landed, per its own rule.
 
 ## Context
 

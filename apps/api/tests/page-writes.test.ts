@@ -11,7 +11,7 @@
 // are the only place raw HTML enters the database and the storefront renders it.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { createPrismaClient } from "../src/prisma/client.js";
+import type { createPrismaClient } from "../src/prisma/index.js";
 import { PagesController } from "../src/pages/pages.controller.js";
 import { db } from "../src/prisma/index.js";
 import { resetDatabase } from "./harness.js";

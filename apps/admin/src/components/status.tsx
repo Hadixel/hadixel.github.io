@@ -1,7 +1,7 @@
 // Status → Persian label + badge color maps for every enum in the schema,
 // so lists/chips render consistently across the panel.
 
-import { Badge } from "./ui";
+import { Badge } from "@kmodern/ui";
 
 export const STATUS_LABELS: Record<string, string> = {
   // ProductStatus
@@ -74,33 +74,33 @@ export const STATUS_LABELS: Record<string, string> = {
   CUSTOM: "سفارشی",
 };
 
-const COLOR_BY_STATUS: Record<string, "gray" | "green" | "amber" | "red" | "blue" | "violet" | "rose" | "teal"> = {
-  DRAFT: "gray",
-  PUBLISHED: "green",
-  ARCHIVED: "amber",
-  PENDING: "amber",
-  CONFIRMED: "blue",
-  PROCESSING: "violet",
-  SHIPPED: "blue",
-  DELIVERED: "green",
-  CANCELLED: "red",
-  RETURNED: "rose",
-  AWAITING: "amber",
-  PAID: "green",
-  REFUNDED: "violet",
-  FAILED: "red",
-  ACTIVE: "green",
-  DISABLED: "gray",
+const CLASS_BY_STATUS: Record<string, string> = {
+  DRAFT: "bg-plaster text-ink",
+  PUBLISHED: "bg-emerald-100 text-emerald-900",
+  ARCHIVED: "bg-flame-100 text-flame-800",
+  PENDING: "bg-flame-100 text-flame-800",
+  CONFIRMED: "bg-flame-100 text-flame-800",
+  PROCESSING: "bg-plaster text-ink",
+  SHIPPED: "bg-flame-100 text-flame-800",
+  DELIVERED: "bg-emerald-100 text-emerald-900",
+  CANCELLED: "bg-red-100 text-red-800",
+  RETURNED: "bg-flame-100 text-flame-800",
+  AWAITING: "bg-flame-100 text-flame-800",
+  PAID: "bg-emerald-100 text-emerald-900",
+  REFUNDED: "bg-plaster text-ink",
+  FAILED: "bg-red-100 text-red-800",
+  ACTIVE: "bg-emerald-100 text-emerald-900",
+  DISABLED: "bg-plaster text-ink",
   // ReservationStatus
-  COMMITTED: "green",
-  RELEASED: "gray",
-  EXPIRED: "amber",
+  COMMITTED: "bg-emerald-100 text-emerald-900",
+  RELEASED: "bg-plaster text-ink",
+  EXPIRED: "bg-flame-100 text-flame-800",
 };
 
 export function statusColor(status: string) {
-  return COLOR_BY_STATUS[status] ?? "gray";
+  return CLASS_BY_STATUS[status] ?? "bg-plaster text-ink";
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  return <Badge color={statusColor(status)}>{STATUS_LABELS[status] ?? status}</Badge>;
+  return <Badge className={statusColor(status)}>{STATUS_LABELS[status] ?? status}</Badge>;
 }

@@ -22,7 +22,7 @@
 // else to ask.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { createPrismaClient } from "../src/prisma/client.js";
+import type { createPrismaClient } from "../src/prisma/index.js";
 import { DiscountsController } from "../src/discounts/discounts.controller.js";
 import { db } from "../src/prisma/index.js";
 import { makeCategory, makeDiscount, makeOrder, makeProduct, resetDatabase } from "./harness.js";

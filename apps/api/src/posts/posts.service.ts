@@ -5,11 +5,11 @@
 // to remember to look. The node count is checked after the parse rather than before it, because
 // "a thousand paragraphs" is a statement about the document and not about a string's length.
 
-import { postBodySchema, seoSchema } from "@kmodern/schema";
-import { tagSlug } from "@kmodern/schema/slug";
+import { postBodySchema, seoSchema } from "@kmodern/contracts";
+import { tagSlug } from "@kmodern/contracts/slug";
 import { PostRuleException } from "./exceptions/post.exception.js";
 import { MAX_BODY_NODES, MAX_TAG_LENGTH } from "./dto/post.dto.js";
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma } from "../prisma/index.js";
 
 
 /** The document shape `postBodySchema` validates to. Named here because the schema exports the value

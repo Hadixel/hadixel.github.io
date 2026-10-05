@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { formatJalali } from "@kmodern/contracts";
 import { getPublishedPosts } from "@/lib/queries";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -27,7 +28,7 @@ export default async function BlogPage() {
           {!featured.coverImage && <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>}
         </div>
         <div className="flex flex-col justify-center p-7 sm:p-10">
-          <div className="text-xs text-ash">{featured.publishAt ? new Date(featured.publishAt).toLocaleDateString("fa-IR") : "مقاله تازه"}</div>
+          <div className="text-xs text-ash">{featured.publishAt ? formatJalali(new Date(featured.publishAt)) : "مقاله تازه"}</div>
           <h2 className="mt-4 text-balance font-display text-2xl font-black leading-tight text-ink sm:text-3xl">{featured.title}</h2>
           {featured.excerpt && <p className="mt-4 line-clamp-3 text-sm leading-7 text-ash">{featured.excerpt}</p>}
           <span className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-ink">ادامه مطلب <span className="transition-transform group-hover:-translate-x-1 motion-reduce:transform-none" aria-hidden>←</span></span>
@@ -42,7 +43,7 @@ export default async function BlogPage() {
                 {post.coverImage && <Image src={post.coverImage} alt={post.title} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transform-none" />}
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <div className="text-xs text-ash">{post.publishAt ? new Date(post.publishAt).toLocaleDateString("fa-IR") : ""}</div>
+                <div className="text-xs text-ash">{post.publishAt ? formatJalali(new Date(post.publishAt)) : ""}</div>
                 <h2 className="mt-3 line-clamp-2 text-base font-bold leading-7 text-ink">{post.title}</h2>
                 {post.excerpt && <p className="mt-3 line-clamp-2 text-sm leading-7 text-ash">{post.excerpt}</p>}
               </div>

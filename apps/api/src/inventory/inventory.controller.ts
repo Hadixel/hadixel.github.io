@@ -22,7 +22,7 @@ import { writeAudit } from "../common/audit.js";
 import { requireAdmin } from "../auth/identity.js";
 import { AuthService } from "../auth/auth.service.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import { setVariantStock } from "./inventory.service.js";
 import { VariantNotFoundException } from "./exceptions/inventory.exception.js";
 import { AdjustStockDto } from "./dto/inventory.dto.js";

@@ -1,13 +1,15 @@
 {
-  "extends": "../config/tsconfig.node.json",
-  "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ]
-  },
+  "extends": "../config/tsconfig.lib.json",
   "//": [
+    "§5.3 of the blueprint: 'Compiler options are never redefined per workspace - change the base.'",
+    "This config used to extend the Node flavour and then hand-copy `lib` back to",
+    "[\"ES2022\", \"DOM\", \"DOM.Iterable\"], which is a compiler option redefined per workspace.",
+    "The lib flavour already declares exactly that list under the display 'browser + React component",
+    "library', so the correct fix was to point at it rather than to restate it: transport's core is a",
+    "fetch client and its types are `Response` and `BodyInit`, so it needs the DOM lib, and it never",
+    "needed the Node one. The flavour's `jsx: react-jsx` is inert here - this package has no .tsx file,",
+    "and jsx only changes how .tsx is parsed.",
+    "",
     "The core is framework-free, and this package's own typecheck covers only the core.",
     "src/next.ts is excluded on purpose: it is a thin adapter over next/headers, and making the",
     "package depend on a framework to typecheck a few lines of adapter is the wrong direction. Each",

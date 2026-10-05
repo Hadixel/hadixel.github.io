@@ -21,7 +21,7 @@
     "Without it the generated client uses `import.meta.url` to locate its query engine, and that",
     "is a hard SyntaxError in CommonJS \u2014 so the two settings have to move together.",
     "",
-    "`paths` exists only so the typechecker can see through packages/schema's exports map, which",
+    "`paths` exists only so the typechecker can see through packages/contracts's exports map, which",
     "node10 resolution does not understand. It bridges types; it has no runtime effect.",
     "",
     "rootDir is the repository root, not src/, because the workspace packages this app imports",
@@ -49,11 +49,14 @@
     "rootDir": "../..",
     "baseUrl": ".",
     "paths": {
-      "@kmodern/schema": [
-        "../../packages/schema/src/index.ts"
+      "@kmodern/contracts": [
+        "../../packages/contracts/src/index.ts"
       ],
-      "@kmodern/schema/*": [
-        "../../packages/schema/src/*"
+      "@kmodern/contracts/*": [
+        "../../packages/contracts/src/*"
+      ],
+      "@kmodern/scraper-core/price-sources": [
+        "../../packages/scraper-core/src/price-sources.ts"
       ]
     }
   },

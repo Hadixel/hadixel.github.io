@@ -4,7 +4,7 @@
 //
 //   1. `apps/admin/src/app/(panel)/settings/page.tsx` — SECTION_DEFS, with labels and input types.
 //   2. `apps/admin/src/lib/actions/settings.ts` — SECTIONS, with a field→type map and the bounds.
-//   3. `packages/schema/src/setting-keys.ts` — the key names alone.
+//   3. `packages/contracts/src/setting-keys.ts` — the key names alone.
 //
 // (1) and (2) were the dangerous pair: the form rendered a `text` input for whatever (1) said, and
 // (2) validated as whatever (2) said. Changing one without the other produced a form the gateway
@@ -15,7 +15,7 @@
 // So the table is here, it is served over `GET /settings/definitions`, and the panel renders from
 // what it is given. A field added to the shop is added once.
 
-import { settingKeys, type SettingKey } from "@kmodern/schema/setting-keys";
+import { settingKeys, type SettingKey } from "@kmodern/contracts/setting-keys";
 
 /**
  * The low-stock field, named once.

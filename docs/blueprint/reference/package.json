@@ -1,0 +1,46 @@
+{
+  "name": "cac-noor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Jewellery storefront: NestJS API + Next.js storefront (SSR) + Next.js admin panel",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@noor/api",
+    "dev:storefront": "turbo run dev --filter=@noor/storefront",
+    "dev:admin": "turbo run dev --filter=@noor/admin",
+    "build": "turbo run build",
+    "start:api": "npm run start:prod -w @noor/api",
+    "start:storefront": "npm run start -w @noor/storefront",
+    "start:admin": "npm run start -w @noor/admin",
+    "lint": "eslint .",
+    "audit": "bash scripts/audit.sh",
+    "typecheck": "turbo run typecheck",
+    "db:migrate": "npm run db:migrate -w @noor/api",
+    "db:generate": "npm run generate -w @noor/api",
+    "db:studio": "npm run db:studio -w @noor/api",
+    "test": "turbo run test",
+    "clean": "rm -rf apps/*/dist apps/*/.next packages/*/dist .turbo apps/*/.turbo packages/*/.turbo"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@manypkg/cli": "^0.25.1",
+    "dependency-cruiser": "^18.2.0",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "16.2.12",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^17.0.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.10.12",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.20.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "npm@11.4.1"
+}

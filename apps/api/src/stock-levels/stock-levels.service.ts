@@ -11,7 +11,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { DashboardService } from "../dashboard/dashboard.service.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../prisma/index.js";
 
 /** One variant's level, as the inventory table renders it. */
 export interface StockLevelRow {

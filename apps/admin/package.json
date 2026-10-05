@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kmodern/schema": "workspace:*",
-    "@kmodern/scraper": "workspace:*",
+    "@kmodern/contracts": "workspace:*",
+    "@kmodern/scraper-core": "workspace:*",
     "@kmodern/transport": "workspace:*",
     "@kmodern/ui": "workspace:*",
     "dotenv": "^16.4.5",

@@ -1,3 +1,4 @@
+import { toFaDigits,formatJalaliDateTime } from "@kmodern/contracts";
 // The order table, read through the gateway.
 //
 // This page used to import the data tier and run two queries of its own — a page of orders and the
@@ -14,10 +15,10 @@
 // orders and a customer service answer built on that.
 
 import Link from "next/link";
-import { formatToman } from "@kmodern/schema/format";
-import { faDigits, formatJalaliDateTime } from "@/lib/date";
+import { formatToman } from "@kmodern/contracts/format";
 import { readThrough } from "@/lib/reads";
-import { Button, Card, CardHeader, EmptyState, Pagination, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Button, Card, CardHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState, Pagination } from "@/components/panel-ui";
 import { STATUS_LABELS, StatusBadge } from "@/components/status";
 import { enumParam, pageParam } from "@/lib/pagination";
 
@@ -77,24 +78,26 @@ export default async function OrdersPage({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader
-          title="سفارش‌ها"
-          subtitle={total ? `${faDigits(total)} سفارش` : undefined}
-          actions={
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">سفارش‌ها</h2>
+            {total ? <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(total)} سفارش`}</p> : null}
+          </div>
+          <div className="shrink-0">
             <Button asChild>
               <Link href="/orders/new">سفارش جدید</Link>
             </Button>
-          }
-        />
+          </div>
+        </CardHeader>
         <div className="border-b border-plaster px-5 py-3">
           <form action="/orders" method="get" className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs text-ash">جستجوی شماره سفارش</label>
-              <input aria-label="جستجوی شماره سفارش" name="search" defaultValue={search} placeholder="مثلاً 1404-000042" className="w-48 rounded-card border border-fog px-3 py-2 text-sm" />
+              <input aria-label="جستجوی شماره سفارش" name="search" defaultValue={search} placeholder="مثلاً 1404-000042" className="w-48 form-control" />
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">وضعیت اجرا</label>
-              <select aria-label="فیلتر وضعیت اجرا" name="status" defaultValue={fulfillment ?? "ALL"} className="rounded-card border border-fog px-3 py-2 text-sm">
+              <select aria-label="فیلتر وضعیت اجرا" name="status" defaultValue={fulfillment ?? "ALL"} className="form-control">
                 {FULFILLMENT_STATUSES.map((s) => (
                   <option key={s} value={s}>{s === "ALL" ? "همه" : STATUS_LABELS[s] ?? s}</option>
                 ))}
@@ -102,14 +105,14 @@ export default async function OrdersPage({
             </div>
             <div>
               <label className="mb-1 block text-xs text-ash">وضعیت پرداخت</label>
-              <select aria-label="فیلتر وضعیت پرداخت" name="payment" defaultValue={payment ?? "ALL"} className="rounded-card border border-fog px-3 py-2 text-sm">
+              <select aria-label="فیلتر وضعیت پرداخت" name="payment" defaultValue={payment ?? "ALL"} className="form-control">
                 {PAYMENT_STATUSES.map((s) => (
                   <option key={s} value={s}>{s === "ALL" ? "همه" : STATUS_LABELS[s] ?? s}</option>
                 ))}
               </select>
             </div>
             <div className="flex gap-2">
-              <Button type="submit" variant="secondary">اعمال فیلتر</Button>
+              <Button type="submit" variant="outline">اعمال فیلتر</Button>
               {hasFilters && (
                 <Link href="/orders" className="inline-flex items-center rounded-card px-3 py-2 text-sm text-ash hover:bg-plaster">
                   حذف فیلترها
@@ -122,35 +125,37 @@ export default async function OrdersPage({
         {orders.length === 0 ? (
           <EmptyState text="سفارشی یافت نشد" />
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>شماره</TH>
-                <TH>مشتری</TH>
-                <TH>مبلغ</TH>
-                <TH>روش پرداخت</TH>
-                <TH>پرداخت</TH>
-                <TH>اجرا</TH>
-                <TH>تاریخ</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {orders.map((o) => (
-                <TR key={o.id}>
-                  <TD>
-                    <Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link>
-                  </TD>
-                  <TD>{o.customer.name || o.customer.phone}</TD>
-                  <TD>{formatToman(o.total)}</TD>
-                  <TD className="text-xs">{o.paymentMethod}</TD>
-                  <TD><StatusBadge status={o.paymentStatus} /></TD>
-                  <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                  {/* The date crossed as a string; the renderer's own parser takes a Date. */}
-                  <TD className="text-xs text-ash">{formatJalaliDateTime(new Date(o.placedAt))}</TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+          <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>شماره</TableHead>
+                  <TableHead>مشتری</TableHead>
+                  <TableHead>مبلغ</TableHead>
+                  <TableHead>روش پرداخت</TableHead>
+                  <TableHead>پرداخت</TableHead>
+                  <TableHead>اجرا</TableHead>
+                  <TableHead>تاریخ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((o) => (
+                  <TableRow key={o.id}>
+                    <TableCell>
+                      <Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link>
+                    </TableCell>
+                    <TableCell>{o.customer.name || o.customer.phone}</TableCell>
+                    <TableCell>{formatToman(o.total)}</TableCell>
+                    <TableCell className="text-xs">{o.paymentMethod}</TableCell>
+                    <TableCell><StatusBadge status={o.paymentStatus} /></TableCell>
+                    <TableCell><StatusBadge status={o.fulfillmentStatus} /></TableCell>
+                    {/* The date crossed as a string; the renderer's own parser takes a Date. */}
+                    <TableCell className="text-xs text-ash">{formatJalaliDateTime(new Date(o.placedAt))}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
 

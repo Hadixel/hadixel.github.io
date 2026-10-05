@@ -1,4 +1,4 @@
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/contracts";
 import { cn } from "../cn";
 
 /*

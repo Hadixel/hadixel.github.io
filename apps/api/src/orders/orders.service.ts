@@ -18,15 +18,20 @@ import {
   paymentLabel,
   paymentMethodLabel,
   tomanToRial,
-} from "@kmodern/schema";
+} from "@kmodern/contracts";
 import { Inject, Injectable } from "@nestjs/common";
-import { PaymentStatus, type PaymentMethod, type ShippingMethod, type DeliveryFeeMode } from "../generated/prisma/enums.js";
+import {
+  DeliveryFeeMode,
+  PaymentStatus,
+  type PaymentMethod,
+  type ShippingMethod,
+  type createPrismaClient,
+} from "../prisma/index.js";
 import { commitStock, releaseStock, reserveStock, restock } from "../inventory/inventory.service.js";
 import { nextOrderNumber } from "../checkout/order-number.js";
 import { OrderRuleViolation } from "./exceptions/order.exception.js";
 import { writeAudit } from "../common/audit.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { createPrismaClient } from "../prisma/client.js";
 import {
   allowedTransitions,
   isAllowedTransition,

@@ -24,6 +24,6 @@ _Status: implementation in progress. No blocking questions._
 - No blocking questions were found during implementation.
 - The storefront was verified through a fresh local server at desktop and 390px mobile widths, including home, product listing, PDP, cart, checkout, account, orders, blog, and not-found states.
 - The PDP now places the gallery in the start-side column, with description/specifications beneath it on desktop; mobile keeps the purchase module before long details and retains a sticky purchase bar.
-- The homepage uses the existing catalog image as a contained Burner Ignition stage. No new external image dependency was introduced.
+- **The hero was replaced again (2026-10-01):** a type + authored-geometry hero (`.home-hero`) — no raster imagery at all. A dark ink panel carries the Persian headline, the two CTAs and the brand strip, backed by a blue radial glow and three ember rings drawn as inline SVG strokes that draw themselves in on load. Zero image bytes, no `<Image>`, no cut-outs; on phones the panel shortens to ~75svh so the page below it starts sooner. Verified desktop + 390px in Chrome.
 - `next.config.ts` now allows `localhost` and `127.0.0.1` as development origins so local asset/hydration checks are reliable.
 - The newsletter confirmation remains explicitly local-only until a newsletter API is connected.

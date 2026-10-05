@@ -1,8 +1,9 @@
+import { toFaDigits,formatJalaliDateTime } from "@kmodern/contracts";
 import Link from "next/link";
 import { readThrough } from "@/lib/reads";
-import { formatToman } from "@kmodern/schema/format";
-import { faDigits, formatJalaliDateTime } from "@/lib/date";
-import { Badge, Card, CardBody, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { formatToman } from "@kmodern/contracts/format";
+import { Badge, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState } from "@/components/panel-ui";
 import { StatusBadge } from "@/components/status";
 
 /**
@@ -65,87 +66,104 @@ export default async function DashboardPage() {
       {/* drafts breakdown + recent */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="پیش‌نویس‌ها" subtitle="محصولات، صفحات و نوشته‌ها" />
-          <CardBody className="flex gap-6">
+          <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-ink">پیش‌نویس‌ها</h2>
+              <p className="mt-0.5 text-sm text-ash">محصولات، صفحات و نوشته‌ها</p>
+            </div>
+          </CardHeader>
+          <CardContent className="flex gap-6">
             <Link href="/products?status=DRAFT" className="rounded-card bg-plaster px-4 py-3 text-sm hover:bg-plaster">
-              <span className="block text-lg font-bold text-ink">{faDigits(drafts.products)}</span>
+              <span className="block text-lg font-bold text-ink">{toFaDigits(drafts.products)}</span>
               <span className="text-ash">محصول</span>
             </Link>
             <Link href="/pages?status=DRAFT" className="rounded-card bg-plaster px-4 py-3 text-sm hover:bg-plaster">
-              <span className="block text-lg font-bold text-ink">{faDigits(drafts.pages)}</span>
+              <span className="block text-lg font-bold text-ink">{toFaDigits(drafts.pages)}</span>
               <span className="text-ash">صفحه</span>
             </Link>
             <Link href="/blog?status=DRAFT" className="rounded-card bg-plaster px-4 py-3 text-sm hover:bg-plaster">
-              <span className="block text-lg font-bold text-ink">{faDigits(drafts.posts)}</span>
+              <span className="block text-lg font-bold text-ink">{toFaDigits(drafts.posts)}</span>
               <span className="text-ash">نوشته</span>
             </Link>
-          </CardBody>
+          </CardContent>
         </Card>
 
         <Card>
-          <CardHeader title="سفارش‌های اخیر" />
-          <CardBody className="p-0">
+          <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+            <h2 className="text-base font-semibold text-ink">سفارش‌های اخیر</h2>
+          </CardHeader>
+          <CardContent className="p-0">
             {recentOrders.length === 0 ? (
               <EmptyState text="هنوز سفارشی ثبت نشده است" />
             ) : (
-              <Table>
-                <THead>
-                  <TR>
-                    <TH>شماره</TH>
-                    <TH>مشتری</TH>
-                    <TH>مبلغ</TH>
-                    <TH>وضعیت</TH>
-                    <TH>تاریخ</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {recentOrders.map((o) => (
-                    <TR key={o.id}>
-                      <TD><Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link></TD>
-                      <TD>{o.customerName || o.customerPhone}</TD>
-                      <TD>{formatToman(o.total)}</TD>
-                      <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                      <TD className="text-xs text-ash">{formatJalaliDateTime(new Date(o.placedAt))}</TD>
-                    </TR>
-                  ))}
-                </TBody>
-              </Table>
+              <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>شماره</TableHead>
+                      <TableHead>مشتری</TableHead>
+                      <TableHead>مبلغ</TableHead>
+                      <TableHead>وضعیت</TableHead>
+                      <TableHead>تاریخ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentOrders.map((o) => (
+                      <TableRow key={o.id}>
+                        <TableCell><Link href={`/orders/${o.id}`} className="text-ink hover:text-flame-700">{o.orderNumber}</Link></TableCell>
+                        <TableCell>{o.customerName || o.customerPhone}</TableCell>
+                        <TableCell>{formatToman(o.total)}</TableCell>
+                        <TableCell><StatusBadge status={o.fulfillmentStatus} /></TableCell>
+                        <TableCell className="text-xs text-ash">{formatJalaliDateTime(new Date(o.placedAt))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
-          </CardBody>
+          </CardContent>
         </Card>
       </div>
 
       {/* low stock */}
       <Card>
-        <CardHeader title="کم‌موجودی" subtitle="تنوع‌هایی که موجودی آن‌ها در آستانهٔ کم‌بود قرار دارد" actions={<Link href="/inventory" className="text-sm text-ink hover:text-flame-700">مدیریت موجودی</Link>} />
-        <CardBody className="p-0">
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">کم‌موجودی</h2>
+            <p className="mt-0.5 text-sm text-ash">تنوع‌هایی که موجودی آن‌ها در آستانهٔ کم‌بود قرار دارد</p>
+          </div>
+          <div className="shrink-0"><Link href="/inventory" className="text-sm text-ink hover:text-flame-700">مدیریت موجودی</Link></div>
+        </CardHeader>
+        <CardContent className="p-0">
           {lowStock.length === 0 ? (
             <EmptyState text="همهٔ تنوع‌ها موجودی کافی دارند" />
           ) : (
-            <Table>
-              <THead>
-                <TR>
-                  <TH>محصول</TH>
-                  <TH>تنوع</TH>
-                  <TH>SKU</TH>
-                  <TH>موجودی</TH>
-                  <TH>رزرو</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {lowStock.map((v) => (
-                  <TR key={v.id}>
-                    <TD><Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.productName}</Link></TD>
-                    <TD>{v.colorName || "—"}</TD>
-                    <TD className="text-xs"><span dir="ltr">{v.sku}</span></TD>
-                    <TD><Badge color={v.stock <= 0 ? "red" : "amber"}>{faDigits(v.stock)}</Badge></TD>
-                    <TD>{faDigits(v.reserved)}</TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
+            <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>محصول</TableHead>
+                    <TableHead>تنوع</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>موجودی</TableHead>
+                    <TableHead>رزرو</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lowStock.map((v) => (
+                    <TableRow key={v.id}>
+                      <TableCell><Link href={`/products/${v.productId}`} className="text-ink hover:text-flame-700">{v.productName}</Link></TableCell>
+                      <TableCell>{v.colorName || "—"}</TableCell>
+                      <TableCell className="text-xs"><span dir="ltr">{v.sku}</span></TableCell>
+                      <TableCell><Badge className={v.stock <= 0 ? "bg-red-100 text-red-800" : "bg-flame-100 text-flame-800"}>{toFaDigits(v.stock)}</Badge></TableCell>
+                      <TableCell>{toFaDigits(v.reserved)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </CardBody>
+        </CardContent>
       </Card>
     </div>
   );
@@ -155,7 +173,7 @@ function StatCard({ title, value, href, className }: { title: string; value: num
   return (
     <Link href={href} className={`rounded-card border border-plaster p-5 transition-colors hover:bg-plaster/40 ${className ?? "bg-white"}`}>
       <p className="text-sm text-ash">{title}</p>
-      <p className="mt-2 text-3xl font-bold text-ink">{faDigits(value)}</p>
+      <p className="mt-2 text-3xl font-bold text-ink">{toFaDigits(value)}</p>
     </Link>
   );
 }

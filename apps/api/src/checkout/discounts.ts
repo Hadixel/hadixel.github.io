@@ -16,7 +16,7 @@
 // automatic discount that ignored its cap would be a discount a merchant cannot exhaust, which is the
 // whole point of setting a cap.
 
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma } from "../prisma/index.js";
 import type { CheckoutDb as Db } from "./db-types.js";
 type DbDiscount = Prisma.DiscountGetPayload<Record<string, never>>;
 

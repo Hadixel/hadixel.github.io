@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DiscountForm } from "@/components/discount-form";
+import { DiscountForm } from "@/discounts/components/discount-form";
 import { toDateTimeLocal } from "@/lib/date";
 import { readThrough } from "@/lib/reads";
 

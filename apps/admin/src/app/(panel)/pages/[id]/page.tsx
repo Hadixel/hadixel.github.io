@@ -17,7 +17,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readThrough } from "@/lib/reads";
-import { PageBuilder } from "@/components/page-builder";
+import { PageBuilder } from "@/content/components/page-builder";
 
 /** One page in full, as `GET /pages/:id` answers. Blocks are the draft list, projected already. */
 interface PageDetail {

@@ -8,7 +8,7 @@ import { mkdirSync, copyFileSync, existsSync, writeFileSync } from "node:fs";
 import { dirname, join, extname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
-import { db } from "../src/prisma/client.js";
+import { db } from "../src/prisma/index.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "../../..");

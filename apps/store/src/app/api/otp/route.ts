@@ -6,7 +6,7 @@ import {
   setPassword,
   signInWithPassword,
   verifyAndSignIn,
-} from "@/lib/customer-session";
+} from "@/account/lib/customer-session";
 
 // The shopper's sign-in, as one route because the modal asks for several things and each of them is a
 // question the gateway answers. The storefront's job is to hand the question over and to set the cookie

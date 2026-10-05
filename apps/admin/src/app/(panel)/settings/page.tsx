@@ -10,19 +10,11 @@
 // The table is the gateway's now (`GET /settings/definitions`) and the values come keyed in the same
 // vocabulary, so this page holds no vocabulary at all. Adding a setting is a change in one place.
 
-import { SettingsForm } from "@/components/settings-form";
+import { SettingsForm } from "@/settings/components/settings-form";
+import { type SettingSectionDef } from "@/settings/lib/settings";
 import { panelGateway } from "@/lib/gateway";
 
 export const dynamic = "force-dynamic";
-
-/** The shape the gateway's definitions route answers with. Mirrored rather than imported. */
-interface SectionDef {
-  key: string;
-  label: string;
-  icon: string;
-  description: string;
-  fields: { key: string; label: string; type: "text" | "number" | "enum"; enumValues?: string[] }[];
-}
 
 export default async function SettingsPage() {
   const client = await panelGateway();
@@ -31,11 +23,11 @@ export default async function SettingsPage() {
   // empty form, because an empty settings form looks exactly like a shop with no settings — and an
   // operator who saved it would blank the ones that are set.
   const [sections, values] = await Promise.all([
-    client.get<SectionDef[]>("/settings/definitions"),
+    client.get<SettingSectionDef[]>("/settings/definitions"),
     client.get<Record<string, string>>("/settings"),
   ]);
 
-  const byKey: Record<string, SectionDef> = {};
+  const byKey: Record<string, SettingSectionDef> = {};
   for (const section of sections) byKey[section.key] = section;
 
   // Every field gets a box, including one with no stored value — a form that omitted the fields it

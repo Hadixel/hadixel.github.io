@@ -1,14 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { currentCustomer } from "@/lib/auth";
+import { currentCustomerForChrome } from "@/account/lib/customer-session";
 import { getNavMenu } from "@/lib/nav";
 import { getSettingOrDefault } from "@/lib/settings";
-import { settingKeys } from "@kmodern/schema/setting-keys";
-import AccountButton from "./account-button";
-import { CartButton } from "./cart-button";
-import MobileMenu from "./mobile-menu";
-import MobileSearchButton from "./mobile-search-button";
-import SearchBar from "./search-bar";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
+import AccountButton from "@/account/components/account-button";
+import { CartButton } from "@/cart/components/cart-button";
+import MobileMenu from "@/components/mobile-menu";
+import MobileSearchButton from "@/search/components/mobile-search-button";
+import SearchBar from "@/search/components/search-bar";
 
 /*
  * Main navigation — Digikala-style anatomy, RTL: menu trigger (mobile) and
@@ -20,7 +20,7 @@ export async function SiteHeader() {
   const [mobile, storeName, me] = await Promise.all([
     getNavMenu("MOBILE"),
     getSettingOrDefault<string>(settingKeys.storeName, "خانه مدرن"),
-    currentCustomer(),
+    currentCustomerForChrome(),
   ]);
 
   return (
@@ -28,7 +28,7 @@ export async function SiteHeader() {
       {/* Announcement bar — ink, centered 13px copy, 36px */}
       <div className="bg-ink text-white">
         <div className="mx-auto flex h-8 max-w-[1440px] items-center justify-center gap-2 px-4 text-[12px] sm:text-[13px]">
-          <span className="size-1.5 rounded-[30px] bg-flame-600" aria-hidden />
+          <span className="size-1.5 rounded-pill bg-flame-600" aria-hidden />
           <span>ارسال سراسری</span>
           <span className="text-white/35" aria-hidden>·</span>
           <span className="text-white/75">ضمانت اصالت کالا</span>
@@ -45,8 +45,10 @@ export async function SiteHeader() {
             <MobileMenu tree={mobile?.tree ?? []} />
           </div>
 
-          <Link href="/" aria-label={storeName} className="shrink-0">
-            <Image src="/icons/logo.png" alt={storeName} width={40} height={40} preload className="size-10" />
+          {/* 48px mark in a 64px row — square source (512x512), so the
+              rendered box stays undistorted */}
+          <Link href="/" aria-label={storeName} className="flex shrink-0 items-center">
+            <Image src="/icons/logo.png" alt={storeName} width={48} height={48} preload className="size-12" />
           </Link>
 
           <SearchBar />
@@ -71,6 +73,10 @@ async function CategoryNav() {
   if (topTree.length === 0) return null;
   return (
     <div className="mx-auto hidden h-11 max-w-[1440px] items-center gap-x-6 overflow-visible border-t border-plaster/70 px-4 text-sm lg:flex">
+      {/* Start of the line in RTL is the right edge — "all products" leads */}
+      <Link href="/products" className="whitespace-nowrap font-bold text-ink transition-colors hover:text-flame-700">
+        همه محصولات
+      </Link>
       {topTree.map((item) => {
         if (item.children.length === 0) {
           return (
@@ -107,7 +113,7 @@ async function CategoryNav() {
                         {(pr.heading || pr.subtext) && (
                           <div className="px-2.5 py-2">
                             {pr.heading && <div className="text-xs font-bold text-ink">{pr.heading}</div>}
-                            {pr.subtext && <div className="mt-0.5 text-[11px] leading-4 text-ash">{pr.subtext}</div>}
+                            {pr.subtext && <div className="mt-0.5 text-micro leading-4 text-ash">{pr.subtext}</div>}
                           </div>
                         )}
                       </Link>
@@ -119,9 +125,6 @@ async function CategoryNav() {
           </div>
         );
       })}
-      <Link href="/products" className="whitespace-nowrap font-medium text-flame-700">
-        همه محصولات
-      </Link>
     </div>
   );
 }

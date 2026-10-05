@@ -1,6 +1,7 @@
+import { toFaDigits,formatJalaliDateTime } from "@kmodern/contracts";
 import { readThrough } from "@/lib/reads";
-import { faDigits, formatJalaliDateTime } from "@/lib/date";
-import { Badge, Card, CardHeader, EmptyState, Input, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Card, CardHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState, Select } from "@/components/panel-ui";
 import { pageParam } from "@/lib/pagination";
 
 const PAGE_SIZE = 50;
@@ -81,7 +82,12 @@ export default async function AuditPage({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="گزارش رویدادها" subtitle={`${faDigits(total)} رویداد`} />
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">گزارش رویدادها</h2>
+            <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(total)} رویداد`}</p>
+          </div>
+        </CardHeader>
         <div className="border-b border-plaster px-5 py-3">
           <form action="/audit" method="get" className="flex flex-wrap items-end gap-3">
             <div>
@@ -110,32 +116,34 @@ export default async function AuditPage({
           <EmptyState text="رویدادی یافت نشد" />
         ) : (
           <>
-            <Table>
-              <THead>
-                <TR>
-                  <TH>زمان</TH>
-                  <TH>رویداد</TH>
-                  <TH>مدیر</TH>
-                  <TH>موجودیت</TH>
-                  <TH>IP</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {logs.map((l) => (
-                  <TR key={l.id}>
-                    <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(l.at))}</TD>
-                    <TD><Badge>{ACTION_LABELS[l.action] ?? l.action}</Badge></TD>
-                    <TD>{l.adminUser ? (l.adminUser.name || l.adminUser.email) : faDigits("—")}</TD>
-                    <TD className="text-xs text-ash" dir="ltr">
-                      {l.entityType ? `${l.entityType}${l.entityId ? ` / ${l.entityId.slice(0, 8)}` : ""}` : "—"}
-                    </TD>
-                    <TD dir="ltr" className="text-xs text-ash">{l.ip ?? "—"}</TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
+            <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>زمان</TableHead>
+                    <TableHead>رویداد</TableHead>
+                    <TableHead>مدیر</TableHead>
+                    <TableHead>موجودیت</TableHead>
+                    <TableHead>IP</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((l) => (
+                    <TableRow key={l.id}>
+                      <TableCell className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(l.at))}</TableCell>
+                      <TableCell><Badge>{ACTION_LABELS[l.action] ?? l.action}</Badge></TableCell>
+                      <TableCell>{l.adminUser ? (l.adminUser.name || l.adminUser.email) : toFaDigits("—")}</TableCell>
+                      <TableCell className="text-xs text-ash" dir="ltr">
+                        {l.entityType ? `${l.entityType}${l.entityId ? ` / ${l.entityId.slice(0, 8)}` : ""}` : "—"}
+                      </TableCell>
+                      <TableCell dir="ltr" className="text-xs text-ash">{l.ip ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             <div className="flex items-center justify-between border-t border-plaster px-5 py-3 text-sm">
-              <span className="text-ash">صفحه {faDigits(page)} از {faDigits(totalPages)}</span>
+              <span className="text-ash">صفحه {toFaDigits(page)} از {toFaDigits(totalPages)}</span>
               <div className="flex gap-2">
                 {page > 1 && (
                   <a href={`/audit?page=${page - 1}${action ? `&action=${action}` : ""}${adminId ? `&admin=${adminId}` : ""}`} className="rounded-card bg-plaster px-3 py-1.5 hover:bg-fog/60">قبلی</a>

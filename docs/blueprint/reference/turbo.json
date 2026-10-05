@@ -1,0 +1,71 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "tasks": {
+    "generate": {
+      "inputs": ["prisma/schema.prisma", "prisma/migrations/**"],
+      "outputs": ["src/generated/prisma/**"]
+    },
+    "build": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build", "generate"],
+      "cache": false,
+      "persistent": true,
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": []
+    },
+    "//#lint": {
+      "outputs": []
+    },
+    "//#audit": {
+      "dependsOn": ["@noor/api#generate", "@noor/contracts#build"],
+      "outputs": []
+    }
+  },
+  "boundaries": {
+    "tags": {
+      "gateway": {
+        "dependencies": {
+          "allow": ["kernel", "config"]
+        },
+        "dependents": {
+          "deny": ["gateway", "client", "kernel", "config"]
+        }
+      },
+      "client": {
+        "dependencies": {
+          "allow": ["kernel", "config"]
+        },
+        "dependents": {
+          "deny": ["gateway", "client", "kernel", "config"]
+        }
+      },
+      "kernel": {
+        "dependencies": {
+          "allow": ["config"],
+          "deny": ["gateway", "client"]
+        },
+        "dependents": {
+          "allow": ["gateway", "client"]
+        }
+      },
+      "config": {
+        "dependencies": {
+          "deny": ["gateway", "client", "kernel"]
+        },
+        "dependents": {
+          "allow": ["gateway", "client", "kernel"]
+        }
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ import type { Request } from "express";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import { DashboardService } from "./dashboard.service.js";
 
 @Controller("dashboard")

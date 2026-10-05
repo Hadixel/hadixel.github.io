@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { gateway } from "@/lib/gateway";
 import { GatewayError } from "@kmodern/transport/client";
-import { settingKeys, type SettingKey } from "@kmodern/schema/setting-keys";
+import { settingKeys, type SettingKey } from "@kmodern/contracts/setting-keys";
 
 // Typed settings accessor for the storefront (011/017).
 //

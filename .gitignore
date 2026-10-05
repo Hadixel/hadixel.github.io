@@ -33,8 +33,15 @@ dist-ssr
 out
 .turbo
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Scraper cache
 .scrape-cache
+
+# AI-generated scene plates. These are inputs to scripts/build-scene-cover.mjs, reproducible
+# from scripts/scene-prompts.mjs through a generator, and several megabytes each.
+.scenes
 
 # Generated Prisma client (apps/api/src/generated)
 apps/api/src/generated

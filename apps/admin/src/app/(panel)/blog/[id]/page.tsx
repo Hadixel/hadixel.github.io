@@ -20,7 +20,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readThrough } from "@/lib/reads";
 import { toDateTimeLocal } from "@/lib/date";
-import { BlogEditor } from "@/components/blog-editor";
+import { BlogEditor } from "@/content/components/blog-editor";
 
 /**
  * One post in full, as `GET /posts/:id` answers.

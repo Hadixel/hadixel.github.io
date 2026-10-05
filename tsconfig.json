@@ -1,0 +1,17 @@
+{
+  // Solution-style, not a project. It exists so an editor opened at the repo root sees the whole
+  // workspace, and so `turbo run typecheck` has one name to talk about. It is deliberately not a
+  // workspace tsconfig: the audit's "every workspace tsconfig extends packages/config" check globs
+  // apps/*/tsconfig.json and packages/*/tsconfig.json, and this file is in neither.
+  "files": [],
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/store" },
+    { "path": "./apps/admin" },
+    { "path": "./apps/scraper" },
+    { "path": "./packages/contracts" },
+    { "path": "./packages/transport" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/scraper-core" }
+  ]
+}

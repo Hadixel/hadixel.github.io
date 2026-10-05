@@ -1,0 +1,144 @@
+# §16.2 — one pipeline, in the order the blueprint names:
+#
+#     install → typecheck → lint → test → audit → build
+#
+# Every job below blocks. §16.2 is explicit that this is only safe because §17.2 puts the violation
+# fixes ahead of the gates, and that landing a gate red — or landing every rule at `warn` with a
+# promotion step written down for later — teaches everyone to ignore it. So: the audit job runs the
+# same `scripts/audit.sh` the local tree runs, and it is expected to be red on exactly one line
+# today, the labelled `generated/` KNOWN in §15.1 (DEVIATION-REGISTER row 2), until P4b clears it.
+#
+# Two decisions this file deliberately does not make, both of which §16.2 says belong in an ADR:
+#
+#   * Which branches run it. GitLab's default is left alone — merge requests and the default branch —
+#     and that is a default, not a decision. The ADR that names the branches (and therefore what an
+#     MR does *not* verify) does not exist in this repo yet.
+#   * The service image is pinned to `postgres:16`, the major the repo's own disposable cluster and
+#     migration checks are built on (`PGBIN=/usr/lib/postgresql/16/bin` in scripts/test-db.sh and
+#     scripts/check-migrations.sh). §16.2 asks for the *production* major, and this repo documents no
+#     production version anywhere; if it differs, this line changes with it.
+#
+# Version pins here mirror the root manifest: node is the `engines` floor's major, and pnpm comes
+# from `packageManager` through corepack rather than from a second pin that could drift from it.
+
+stages:
+  - install
+  - typecheck
+  - lint
+  - test
+  - audit
+  - build
+
+variables:
+  # Prisma writes its client into apps/api/src/generated, which is gitignored, so every job that
+  # reads, types or lints gateway source regenerates it in before_script. A job that skipped it would
+  # fail on a file that exists on the developer's machine and nowhere else.
+  POSTGRES_MAJOR: "16"
+  # pnpm comes from the root `packageManager` field through corepack rather than from a second pin
+  # that could drift from it; corepack asks before its first download, and a prompt in CI is a hang.
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+
+default:
+  image: node:24.15.0-bookworm
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
+  before_script:
+    - corepack enable
+    - pnpm config set store-dir .pnpm-store
+    # --frozen-lockfile is the gate on the lockfile itself: a manifest edited without its lockfile
+    # fails here rather than being quietly repaired in the pipeline (§6).
+    - pnpm install --frozen-lockfile
+    - pnpm db:generate
+
+# 1. install — the lockfile is in sync and the store is warm for the jobs that follow.
+install:
+  stage: install
+  script:
+    - pnpm install --frozen-lockfile
+
+# 2. typecheck — every workspace, through turbo.
+typecheck:
+  stage: typecheck
+  script:
+    - pnpm typecheck
+
+# 3. lint — one root eslint config (§5.3: no lint config anywhere else), typed against the tree.
+lint:
+  stage: lint
+  script:
+    - pnpm lint
+
+# 4. test — the suite that needs a real database gets its own job and its own container (§16.2).
+#
+# The service listens on 5433 rather than the default port, because apps/api/tests/setup.ts refuses
+# to run against 5432: that is the development database's port and the refusal is the check that
+# keeps a destructive suite off it (§8). The database name it will accept is `kmodern_test`, exactly.
+test:
+  stage: test
+  services:
+    - name: postgres:$POSTGRES_MAJOR
+      alias: postgres
+      # The stock entrypoint passes this as the server's arguments, so the container serves the
+      # non-default port the suite requires without a second container or a proxy.
+      command: ["postgres", "-p", "5433"]
+  variables:
+    POSTGRES_USER: kmodern
+    POSTGRES_DB: kmodern_test
+    POSTGRES_HOST_AUTH_METHOD: trust
+    TEST_DATABASE_URL: "postgresql://kmodern@postgres:5433/kmodern_test"
+  script:
+    # The schema does not exist in a throwaway container, so replay the migrations onto it before the
+    # suite truncates and refills it. DATABASE_URL is set for this command only: the suite rewrites
+    # that variable itself, and a migrate that could fall through to the development URL is exactly
+    # what §8 forbids.
+    - |
+      ok=0
+      for attempt in $(seq 1 30); do
+        if DATABASE_URL="$TEST_DATABASE_URL" pnpm --filter @kmodern/api exec prisma migrate deploy; then
+          ok=1; break
+        fi
+        sleep 2   # the service container is up when its port answers, not when the job starts
+      done
+      test "$ok" -eq 1
+    - pnpm test
+
+# 5. audit — the mechanical invariants (§15.1), one command (§16.1).
+#
+# This is the job that needs postgres *binaries*, not a postgres service: the drift check stands up
+# its own cluster on 5433 with initdb and replays every migration onto it. Two consequences, both
+# from the scripts rather than from preference:
+#
+#   * The binaries are installed here, at the major in POSTGRES_MAJOR, because the repository's
+#     scripts name /usr/lib/postgresql/<major>/bin and fail loudly when it is absent — a check that
+#     cannot run is not a pass.
+#   * initdb refuses to run as root, and the GitLab Docker executor runs job scripts as root, so the
+#     audit is handed to the container's unprivileged `node` user after the workspace is made
+#     writable by it. The alternative — running initdb as root — is not one postgres offers.
+audit:
+  stage: audit
+  script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends ca-certificates gnupg
+    - |
+      curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+        | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+      echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list
+      apt-get update
+      apt-get install -y --no-install-recommends postgresql-$POSTGRES_MAJOR
+    - chown -R node:node "$CI_PROJECT_DIR"
+    - |
+      su node -c \
+        "HOME=/home/node PGBIN=/usr/lib/postgresql/$POSTGRES_MAJOR/bin pnpm run audit"
+  # §16.2: the audit job blocks from the day it lands. It is not `allow_failure: true`, and the
+  # known violation it reports is a failure the pipeline is meant to show, not one to be waived.
+
+# 6. build — last, so a build that passes is a build of everything the gates above accepted.
+build:
+  stage: build
+  script:
+    - pnpm build

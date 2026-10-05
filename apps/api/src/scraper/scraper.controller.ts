@@ -20,7 +20,7 @@ import type { Request } from "express";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import { ImportCatalogDto } from "./dto/import-catalog.dto.js";
 import { RecordScraperActionDto } from "./dto/scraper-action.dto.js";
 import { importScrapedCatalog, recordScraperAction, type ScraperActor } from "./scraper.service.js";

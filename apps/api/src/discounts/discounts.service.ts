@@ -18,7 +18,7 @@
 // a row needs no conversion at all. A parallel local vocabulary would be a second spelling of four
 // words, free to drift from the column.
 
-import { DiscountMode, DiscountScope, DiscountType } from "../generated/prisma/enums";
+import { DiscountMode, DiscountScope, DiscountType } from "../prisma/index.js";
 import { DiscountRuleException, DiscountTargetMissingException } from "./exceptions/discount.exception.js";
 import { DiscountStatusDto, type SaveDiscountDto, type UpdateDiscountDto } from "./dto/discount.dto.js";
 import { canonicalDiscountCode } from "./canonical-code.js";

@@ -35,6 +35,7 @@ const product = {
   image: null,
   variantCount: 1,
   dots: [],
+  discount: null,
 };
 
 const deal = {
@@ -79,7 +80,7 @@ describe("the storefront's home read", () => {
 
   async function load() {
     // Imported lazily so each test picks up the base URL set above.
-    const { loadHome } = await import("@/lib/home");
+    const { loadHome } = await import("@/home/lib/home");
     return loadHome();
   }
 

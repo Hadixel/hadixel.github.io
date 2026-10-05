@@ -1,7 +1,8 @@
 "use server";
 
 import { headers } from "next/headers";
-import { requireAdmin, type AdminContext } from "@/lib/auth";
+import { requireAdmin } from "@/auth/lib/auth";
+import type { AdminContext } from "@/types";
 
 // Shared per-action context: current admin (redirects to /login if absent)
 // + client IP / user agent for audit entries (010).

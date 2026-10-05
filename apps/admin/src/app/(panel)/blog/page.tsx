@@ -1,3 +1,4 @@
+import { toFaDigits,formatJalaliDateTime } from "@kmodern/contracts";
 // The blog list, read through the gateway.
 //
 // This page used to import the data tier and hold its own query: a `where` assembled beside a table, an
@@ -14,10 +15,10 @@
 import Link from "next/link";
 import { readThrough } from "@/lib/reads";
 import { enumParam, pageParam } from "@/lib/pagination";
-import { faDigits, formatJalaliDateTime } from "@/lib/date";
-import { Badge, Button, Card, CardHeader, EmptyState, Input, Pagination, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState, Pagination, Select } from "@/components/panel-ui";
 import { StatusBadge } from "@/components/status";
-import { DeletePostButton } from "./delete-post";
+import { DeletePostButton } from "@/content/components/delete-post";
 
 /**
  * The rows this table shows.
@@ -84,15 +85,17 @@ export default async function BlogPage({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader
-          title="وبلاگ"
-          subtitle={posts.total ? `${faDigits(posts.total)} نوشته` : undefined}
-          actions={
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">وبلاگ</h2>
+            {posts.total ? <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(posts.total)} نوشته`}</p> : null}
+          </div>
+          <div className="shrink-0">
             <Button asChild>
               <Link href="/blog/new">نوشته جدید</Link>
             </Button>
-          }
-        />
+          </div>
+        </CardHeader>
         <div className="border-b border-plaster px-5 py-3">
           <form action="/blog" method="get" className="flex flex-wrap items-end gap-3">
             <div>
@@ -108,53 +111,55 @@ export default async function BlogPage({
                 <option value="ARCHIVED">بایگانی</option>
               </Select>
             </div>
-            <Button type="submit" variant="secondary">اعمال</Button>
+            <Button type="submit" variant="outline">اعمال</Button>
           </form>
         </div>
 
         {posts.rows.length === 0 ? (
           <EmptyState text="نوشته‌ای یافت نشد" />
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>عنوان</TH>
-                <TH>وضعیت</TH>
-                <TH>برچسب‌ها</TH>
-                <TH>انتشار</TH>
-                <TH></TH>
-              </TR>
-            </THead>
-            <TBody>
-              {posts.rows.map((p) => (
-                <TR key={p.id}>
-                  <TD>
-                    <Link href={`/blog/${p.id}`} className="font-medium text-ink hover:text-flame-700">
-                      {p.featured && <Badge color="amber" className="ml-1">ویژه</Badge>}
-                      {p.title}
-                    </Link>
-                  </TD>
-                  <TD><StatusBadge status={p.status} /></TD>
-                  <TD>
-                    <div className="flex flex-wrap gap-1">
-                      {p.tags.map((name) => <Badge key={name}>{name}</Badge>)}
-                    </div>
-                  </TD>
-                  <TD className="whitespace-nowrap text-xs">
-                    {p.publishAt ? formatJalaliDateTime(new Date(p.publishAt)) : faDigits("—")}
-                  </TD>
-                  <TD>
-                    <div className="flex gap-2">
-                      <Button asChild size="sm" variant="secondary">
-                        <Link href={`/blog/${p.id}`}>ویرایش</Link>
-                      </Button>
-                      <DeletePostButton id={p.id} title={p.title} />
-                    </div>
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+          <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>عنوان</TableHead>
+                  <TableHead>وضعیت</TableHead>
+                  <TableHead>برچسب‌ها</TableHead>
+                  <TableHead>انتشار</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {posts.rows.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <Link href={`/blog/${p.id}`} className="font-medium text-ink hover:text-flame-700">
+                        {p.featured && <Badge className="ml-1 bg-flame-100 text-flame-800">ویژه</Badge>}
+                        {p.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell><StatusBadge status={p.status} /></TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {p.tags.map((name) => <Badge key={name}>{name}</Badge>)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">
+                      {p.publishAt ? formatJalaliDateTime(new Date(p.publishAt)) : toFaDigits("—")}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/blog/${p.id}`}>ویرایش</Link>
+                        </Button>
+                        <DeletePostButton id={p.id} title={p.title} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
       <Pagination page={page} totalPages={totalPages} basePath={`/blog${baseQs.size > 0 ? `?${baseQs.toString()}` : ""}`} />

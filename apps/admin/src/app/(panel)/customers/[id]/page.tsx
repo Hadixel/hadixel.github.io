@@ -1,3 +1,4 @@
+import { toFaDigits,formatJalaliDateTime } from "@kmodern/contracts";
 // One customer, read through the gateway.
 //
 // The page used to run three queries of its own: the customer with their addresses and their newest
@@ -13,10 +14,10 @@
 
 import Link from "next/link";
 import { readThrough } from "@/lib/reads";
-import { faDigits, formatJalaliDateTime } from "@/lib/date";
-import { Badge, Card, CardBody, CardHeader, EmptyState, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Badge, Card, CardContent, CardHeader, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState } from "@/components/panel-ui";
 import { StatusBadge } from "@/components/status";
-import { formatToman } from "@kmodern/schema/format";
+import { formatToman } from "@kmodern/contracts/format";
 
 /** One customer, as `GET /customers/:id` answers. Dates are ISO; money and counts are numbers. */
 interface CustomerDetail {
@@ -63,21 +64,28 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader title="مشخصات" />
-          <CardBody>
+          <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+            <h2 className="text-base font-semibold text-ink">مشخصات</h2>
+          </CardHeader>
+          <CardContent>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-ash">تلفن</dt><dd dir="ltr">{customer.phone}</dd></div>
-              <div className="flex justify-between"><dt className="text-ash">ایمیل</dt><dd>{customer.email || faDigits("—")}</dd></div>
+              <div className="flex justify-between"><dt className="text-ash">ایمیل</dt><dd>{customer.email || toFaDigits("—")}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">عضویت</dt><dd>{formatJalaliDateTime(new Date(customer.joinedAt))}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">بازاریابی پیامکی</dt><dd>{customer.smsMarketingConsent ? "فعال" : "غیرفعال"}</dd></div>
               <div className="flex justify-between"><dt className="text-ash">مجموع خرید</dt><dd className="font-semibold">{formatToman(customer.totalSpend)}</dd></div>
             </dl>
-          </CardBody>
+          </CardContent>
         </Card>
 
         <Card className="md:col-span-2">
-          <CardHeader title="آدرس‌ها" subtitle={`${faDigits(customer.addresses.length)} آدرس`} />
-          <CardBody>
+          <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-ink">آدرس‌ها</h2>
+              <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(customer.addresses.length)} آدرس`}</p>
+            </div>
+          </CardHeader>
+          <CardContent>
             {customer.addresses.length === 0 ? (
               <EmptyState text="آدرسی ثبت نشده است" />
             ) : (
@@ -87,7 +95,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{a.recipientName}</span>
                       <span dir="ltr" className="text-xs text-ash">{a.recipientPhone}</span>
-                      {a.isDefault && <Badge color="sky">پیش‌فرض</Badge>}
+                      {a.isDefault && <Badge className="bg-flame-100 text-flame-800">پیش‌فرض</Badge>}
                     </div>
                     <p className="mt-1 text-ink">{a.province}، {a.city} — {a.addressLine}</p>
                     <p dir="ltr" className="mt-0.5 text-xs text-ash">کد پستی: {a.postalCode}</p>
@@ -95,42 +103,46 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
                 ))}
               </div>
             )}
-          </CardBody>
+          </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader
-          title="سفارش‌ها"
-          subtitle={`${faDigits(customer.orderCount)} سفارش${customer.recentOrders.length < customer.orderCount ? ` (نمایش ${faDigits(customer.recentOrders.length)} سفارش آخر)` : ""}`}
-        />
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">سفارش‌ها</h2>
+            <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(customer.orderCount)} سفارش${customer.recentOrders.length < customer.orderCount ? ` (نمایش ${toFaDigits(customer.recentOrders.length)} سفارش آخر)` : ""}`}</p>
+          </div>
+        </CardHeader>
         {customer.recentOrders.length === 0 ? (
           <EmptyState text="سفارشی ثبت نشده است" />
         ) : (
-          <Table>
-          <THead>
-            <TR>
-              <TH>شماره</TH>
-              <TH>تاریخ</TH>
-              <TH>وضعیت ارسال</TH>
-              <TH>وضعیت پرداخت</TH>
-              <TH>مبلغ</TH>
-              <TH></TH>
-            </TR>
-          </THead>
-          <TBody>
-            {customer.recentOrders.map((o) => (
-              <TR key={o.id}>
-                <TD dir="ltr" className="font-medium">{o.orderNumber}</TD>
-                <TD className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(o.placedAt))}</TD>
-                <TD><StatusBadge status={o.fulfillmentStatus} /></TD>
-                <TD><StatusBadge status={o.paymentStatus} /></TD>
-                <TD className="font-medium">{formatToman(o.total)}</TD>
-                <TD><Link href={`/orders/${o.id}`} className="text-xs text-ash hover:underline">مشاهده</Link></TD>
-              </TR>
-            ))}
-          </TBody>
-          </Table>
+          <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>شماره</TableHead>
+                  <TableHead>تاریخ</TableHead>
+                  <TableHead>وضعیت ارسال</TableHead>
+                  <TableHead>وضعیت پرداخت</TableHead>
+                  <TableHead>مبلغ</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customer.recentOrders.map((o) => (
+                  <TableRow key={o.id}>
+                    <TableCell dir="ltr" className="font-medium">{o.orderNumber}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">{formatJalaliDateTime(new Date(o.placedAt))}</TableCell>
+                    <TableCell><StatusBadge status={o.fulfillmentStatus} /></TableCell>
+                    <TableCell><StatusBadge status={o.paymentStatus} /></TableCell>
+                    <TableCell className="font-medium">{formatToman(o.total)}</TableCell>
+                    <TableCell><Link href={`/orders/${o.id}`} className="text-xs text-ash hover:underline">مشاهده</Link></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
     </div>

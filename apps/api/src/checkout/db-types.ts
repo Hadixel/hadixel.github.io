@@ -9,7 +9,7 @@
 // A transaction client is the full client minus the lifecycle methods, so naming the delegates rather
 // than the client is what lets both be passed to the same function.
 
-import type { createPrismaClient } from "../prisma/client.js";
+import type { createPrismaClient } from "../prisma/index.js";
 
 type Db = ReturnType<typeof createPrismaClient>;
 

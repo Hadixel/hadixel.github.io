@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+
 // The root `.env` is no longer read here, and that is the point of the gateway rather than tidiness.
 // This config used to load the monorepo root `.env` so that a build-time prerender could reach
 // Postgres, and the comment above it said so plainly. The panel no longer has a database connection
@@ -7,9 +8,8 @@ import type { NextConfig } from "next";
 // `env` in turbo.json, so it is part of the cache key. Which is strictly better than a file outside
 // the app deciding what the app was built against: that made the build's result depend on the
 // directory it was run from, and nothing said so.
-
 const nextConfig: NextConfig = {
-  transpilePackages: ["@kmodern/schema", "@kmodern/scraper", "@kmodern/ui"],
+  transpilePackages: ["@kmodern/contracts", "@kmodern/scraper-core", "@kmodern/ui"],
   allowedDevOrigins: [process.env.ADMIN_DEV_ORIGIN ?? "192.168.70.176", "localhost", "127.0.0.1"],
   // Every panel page now serves the same three headers the storefront serves.
   //

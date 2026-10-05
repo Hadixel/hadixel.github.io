@@ -11,8 +11,8 @@
 // duplication the gateway exists to end, and it would be reintroduced by whoever wrote it second.
 
 import { Inject, Injectable } from "@nestjs/common";
-import { paymentLabel, tomanToRial } from "@kmodern/schema";
-import { PaymentMethod, PaymentStatus } from "../generated/prisma/enums.js";
+import { paymentLabel, tomanToRial } from "@kmodern/contracts";
+import { type PrismaClient, PaymentMethod, PaymentStatus } from "../prisma/index.js";
 import { holdExpiry } from "../inventory/inventory.service.js";
 import {
   OrdersService,
@@ -21,7 +21,6 @@ import {
 } from "../orders/orders.service.js";
 import type { OrderDetail } from "../orders/dto/order.dto.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
 
 /**
  * A payment window, opened.

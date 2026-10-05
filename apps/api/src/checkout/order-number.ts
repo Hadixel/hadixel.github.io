@@ -8,7 +8,7 @@
 // two implementations of a counter are two chances to hand a customer an order number that already
 // exists.
 
-import { jalaliYear } from "@kmodern/schema";
+import { jalaliYear } from "@kmodern/contracts";
 import type { CheckoutDb as Db } from "./db-types.js";
 
 export async function nextOrderNumber(db: Db, now: Date = new Date()): Promise<string> {

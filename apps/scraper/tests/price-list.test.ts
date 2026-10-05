@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as XLSXModule from "xlsx";
 import { describe, expect, it } from "vitest";
-import { applyPriceList, applyPriceListReportToProducts } from "../src/price-list";
+import { applyPriceList, applyPriceListReportToProducts } from "@kmodern/scraper-core";
 
 const XLSX = (XLSXModule as typeof XLSXModule & { default?: typeof XLSXModule }).default ?? XLSXModule;
 

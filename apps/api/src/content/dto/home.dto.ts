@@ -64,6 +64,7 @@ export interface HomeProduct {
   category: { id: string; name: string; slug: string };
   price: number;
   maxPrice: number;
+  discount: { label: string; discountedPrice: number; endsAt: string | null } | null;
   available: boolean;
   image: string | null;
   variantCount: number;

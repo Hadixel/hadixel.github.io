@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublishedProducts, getCategoryTree } from "@/lib/queries";
-import { lookupCollection } from "@/lib/gateway-catalogue";
-import { normalizeListingSort, ProductListing } from "@/components/product-listing";
+import { lookupCollection } from "@/catalogue/lib/gateway-catalogue";
+import { normalizeListingSort, ProductListing } from "@/catalogue/components/product-listing";
 
 export const dynamic = "force-dynamic";
 

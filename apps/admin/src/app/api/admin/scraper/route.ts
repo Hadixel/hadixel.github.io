@@ -18,9 +18,9 @@
 // top-level cross-site POST, which is the shape a cross-site form submission has.
 
 import { NextResponse } from "next/server";
-import type { ScrapeFilters } from "@kmodern/scraper";
-import { requireAdminApi } from "@/lib/auth";
-import { scraperJobs } from "@/lib/scraper-jobs";
+import type { ScrapeFilters } from "@kmodern/scraper-core";
+import { requireAdminApi } from "@/auth/lib/auth";
+import { scraperJobs } from "@/scraper/lib/scraper-jobs";
 import { sameOrigin } from "@/lib/origin";
 import { fromGateway } from "@/lib/gateway";
 
@@ -95,6 +95,15 @@ export async function GET(request: Request) {
   if (params.get("view") === "catalog") {
     const snapshot = await scraperJobs.getCatalogSnapshot({ publicView: true });
     return NextResponse.json(snapshot, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  // The in-flight product list. It lives on the job, not in the status snapshot below, so the poll
+  // the panel makes every 1.5s stays the size it was; only a caller asking for the live view pays for
+  // the rows, and `jobId` tells it whose run they belong to.
+  if (params.get("view") === "live") {
+    return NextResponse.json(scraperJobs.getLive(), {
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   return NextResponse.json(scraperJobs.get(), {

@@ -1,4 +1,4 @@
-import { componentSchemas, pageBlocksSchema } from "@kmodern/schema";
+import { componentSchemas, pageBlocksSchema } from "@kmodern/contracts";
 // Bootstrap: default Settings (011/016/017 defaults) + first AdminUser
 // (010: bootstrap credential forces password change on first login — never a
 // runtime default password).
@@ -6,8 +6,9 @@ import { componentSchemas, pageBlocksSchema } from "@kmodern/schema";
 //   ADMIN_EMAIL=owner@kmodern.ir ADMIN_PASSWORD=<strong> pnpm db:bootstrap
 import "dotenv/config";
 import { randomBytes, scryptSync } from "node:crypto";
-import { db } from "../src/prisma/client.js";
-import { settingKeys } from "@kmodern/schema";
+import { db } from "../src/prisma/index.js";
+import { LOW_STOCK_FIELD, columnKeyFor } from "../src/settings/definitions.js";
+import { settingKeys } from "@kmodern/contracts";
 
 const DEFAULTS: Record<string, unknown> = {
   [settingKeys.storeName]: "خانه مدرن",
@@ -26,7 +27,7 @@ const DEFAULTS: Record<string, unknown> = {
   [settingKeys.paymentC2cCardNumber]: "",
   [settingKeys.paymentC2cCardHolder]: "",
   [settingKeys.paymentC2cBankName]: "",
-  [settingKeys.inventoryLowStockThreshold]: 3,
+  [columnKeyFor(LOW_STOCK_FIELD)]: 3,
   [settingKeys.checkoutOnlineReserveMinutes]: 30,
   [settingKeys.checkoutC2cReserveHours]: 48,
   [settingKeys.smsProviderConfigured]: false,
@@ -226,6 +227,7 @@ async function main() {
               link: { type: "EXTERNAL", url: "/products", newTab: false },
             },
             // Editorial, not a product shot: the hero is the store, not one item.
+            // Dark full-bleed kitchen — the «شعله» hero lights it up on scroll.
             image: {
               src: "/editorial/hero-kitchen.jpg",
               alt: "آشپزخانه مدرن با هود، اجاق گاز و فر توکار",
@@ -336,7 +338,7 @@ async function main() {
               },
               {
                 quote:
-                  "سینک استیل کیفیت خیلی خوبی داره و نصاب هم راحت نصبش کرد. ممنون از تیم کمدرن.",
+                  "سینک استیل کیفیت خیلی خوبی داره و نصاب هم راحت نصبش کرد. ممنون از تیم خانه مدرن.",
                 author: "علی رضایی",
                 role: "تهران",
               },

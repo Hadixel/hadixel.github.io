@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { assertSafeRemoteUrl } from "../src/http";
+import { assertSafeRemoteUrl } from "@kmodern/scraper-core";
 
 describe("scraper remote URL guard", () => {
   it("rejects loopback, link-local, private, and metadata addresses", async () => {
@@ -38,11 +38,20 @@ describe("scraper remote URL guard", () => {
   // path — a real .ts file loaded as ESM, where `ipaddr.js` only exposes a
   // `default` binding — is the only place this regression can be observed.
   it("still allows public hosts when loaded as ESM by the CLI runtime", async () => {
-    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-    const tsx = join(packageRoot, "..", "..", "node_modules", ".bin", "tsx");
-    if (!existsSync(tsx)) return;
+    // Two roots, on purpose. The probe file lands in the package that owns the module, because what
+    // is under test is that `ipaddr.js` still binds under real ESM from inside a `type: module`
+    // package. The binary is this app's own, because the app is the thing whose runtime loads it.
+    const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+    const packageRoot = join(appRoot, "..", "..", "packages", "scraper-core");
+    const tsx = join(appRoot, "node_modules", ".bin", "tsx");
+    // Throwing, not returning. A silent skip is how this test spent a year green without running:
+    // the path was wrong, the guard swallowed it, and a regression in ESM interop would have
+    // reached the CLI unnoticed. A test that cannot run has to say so.
+    if (!existsSync(tsx)) {
+      throw new Error(`tsx not found at ${tsx} — the ESM interop probe cannot run`);
+    }
 
-    // Must be a file inside this "type": "module" package, not `--eval`, which
+    // Must be a file inside that "type": "module" package, not `--eval`, which
     // tsx evaluates as CommonJS and would hide the interop difference.
     const probe = join(packageRoot, `esm-interop-probe-${process.pid}.ts`);
     writeFileSync(probe, [

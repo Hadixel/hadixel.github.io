@@ -1,0 +1,27 @@
+{
+  "name": "@kmodern/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The kernel: zod contracts, the canonical formatters (money, dates, Persian digits) and the Iranian locale data that every workspace validates against. Named for what it holds (§5.4) — `schema` described only the mechanism.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./format": "./src/format.ts",
+    "./setting-keys": "./src/setting-keys.ts",
+    "./sanitize": "./src/sanitize.ts",
+    "./slug": "./src/slug.ts",
+    "./manufacturers": "./src/manufacturers.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "sanitize-html": "^2.17.7",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/sanitize-html": "^2.16.1"
+  }
+}

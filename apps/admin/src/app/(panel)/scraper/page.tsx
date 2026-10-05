@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { SCRAPER_SOURCE_OPTIONS } from "@kmodern/scraper";
-import { ScraperPanel } from "@/components/scraper-panel";
-import { getAdminUser } from "@/lib/auth";
+import { SCRAPER_SOURCE_OPTIONS } from "@kmodern/scraper-core";
+import { ScraperPanel } from "@/scraper/components/scraper-panel";
+import { getAdminUser } from "@/auth/lib/auth";
 
 export const dynamic = "force-dynamic";
 

@@ -3,12 +3,7 @@
 // Run with: pnpm --filter @kmodern/scraper tui
 
 import { emitKeypressEvents, type Key } from "node:readline";
-import {
-  runPipeline,
-  type PipelineEvent,
-  type PipelineResult,
-} from "../src/pipeline";
-import { SOURCES } from "../src/sources";
+import { runPipeline, SOURCES, type PipelineEvent, type PipelineResult } from "@kmodern/scraper-core";
 
 const ESC = "\u001b";
 const ENTER_SCREEN = `${ESC}[?1049h${ESC}[?25l`;

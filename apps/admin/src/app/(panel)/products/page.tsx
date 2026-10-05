@@ -1,3 +1,4 @@
+import { toFaDigits,formatJalali } from "@kmodern/contracts";
 // The product table, read through the gateway.
 //
 // This page used to import the data tier and run three queries of its own: a page of products, a
@@ -15,8 +16,8 @@
 
 import Link from "next/link";
 import { readThrough } from "@/lib/reads";
-import { faDigits } from "@/lib/date";
-import { Button, Card, CardHeader, EmptyState, Input, Pagination, Select, Table, TBody, TD, TH, THead, TR } from "@/components/ui";
+import { Button, Card, CardHeader, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kmodern/ui";
+import { EmptyState, Pagination, Select } from "@/components/panel-ui";
 import { StatusBadge } from "@/components/status";
 import { enumParam, pageParam } from "@/lib/pagination";
 
@@ -90,15 +91,17 @@ export default async function ProductsPage({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader
-          title="محصولات"
-          subtitle={total ? `${faDigits(total)} محصول` : undefined}
-          actions={
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">محصولات</h2>
+            {total ? <p className="mt-0.5 text-sm text-ash">{`${toFaDigits(total)} محصول`}</p> : null}
+          </div>
+          <div className="shrink-0">
             <Button asChild>
               <Link href="/products/new">محصول جدید</Link>
             </Button>
-          }
-        />
+          </div>
+        </CardHeader>
         <div className="border-b border-plaster px-5 py-3">
           <form action="/products" method="get" className="flex flex-wrap items-end gap-3">
             <div>
@@ -123,7 +126,7 @@ export default async function ProductsPage({
                 ))}
               </Select>
             </div>
-            <Button type="submit" variant="secondary">اعمال</Button>
+            <Button type="submit" variant="outline">اعمال</Button>
             {hasFilters && (
               <Link href="/products" className="px-3 py-2 text-sm text-ash hover:underline">حذف فیلترها</Link>
             )}
@@ -133,34 +136,40 @@ export default async function ProductsPage({
         {products.length === 0 ? (
           <EmptyState text="محصولی یافت نشد" />
         ) : (
-          <Table>
-            <THead>
-              <TR>
-                <TH>نام</TH>
-                <TH>دسته</TH>
-                <TH>مدل</TH>
-                <TH>تنوع‌ها</TH>
-                <TH>وضعیت</TH>
-                <TH>به‌روزرسانی</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {products.map((p) => (
-                <TR key={p.id}>
-                  <TD>
-                    <Link href={`/products/${p.id}`} className="font-medium text-ink hover:text-flame-700">{p.name}</Link>
-                    <div className="text-xs text-ash"><span dir="ltr">{p.slug}</span></div>
-                  </TD>
-                  <TD>{p.category.name}</TD>
-                  <TD className="text-xs">{p.model}</TD>
-                  <TD>{faDigits(p.variantCount)}</TD>
-                  <TD><StatusBadge status={p.status} /></TD>
-                  {/* The date crossed as a string; the renderer's own parser takes a Date. */}
-                  <TD className="text-xs text-ash">{faDigits(new Date(p.updatedAt).toLocaleDateString("fa-IR"))}</TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+          <div role="region" aria-label="جدول داده‌ها" tabIndex={0} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-flame-300">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>نام</TableHead>
+                  <TableHead>دسته</TableHead>
+                  <TableHead>مدل</TableHead>
+                  <TableHead>تنوع‌ها</TableHead>
+                  <TableHead>وضعیت</TableHead>
+                  <TableHead>به‌روزرسانی</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <Link href={`/products/${p.id}`} className="font-medium text-ink hover:text-flame-700">{p.name}</Link>
+                      <div className="text-xs text-ash"><span dir="ltr">{p.slug}</span></div>
+                    </TableCell>
+                    <TableCell>{p.category.name}</TableCell>
+                    <TableCell className="text-xs">{p.model}</TableCell>
+                    <TableCell>{toFaDigits(p.variantCount)}</TableCell>
+                    <TableCell><StatusBadge status={p.status} /></TableCell>
+                    {/* The date crossed as a string; the renderer's own parser takes a Date. It went through
+                        `toLocaleDateString("fa-IR")` here while every other table formatted through
+                        `@/lib/date`, so this column's Jalali conversion was the platform's ICU table rather
+                        than the one the panel uses — and it depended on the server's default time zone,
+                        which the helper pins to Tehran. */}
+                    <TableCell className="text-xs text-ash">{formatJalali(new Date(p.updatedAt))}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
 

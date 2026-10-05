@@ -638,3 +638,120 @@ model Redirect {
 
   @@index([from])
 }
+
+// ------------------------------------------------------------
+// Price watch (026) — a recurring comparison of the Datees Shop
+// catalogue against our own variants.
+// ------------------------------------------------------------
+
+/// How often the watch runs.
+enum PriceWatchMode {
+  INTERVAL // every `intervalMinutes`, counted from the last finished run
+  DAILY // once a day, at `dailyAt` Tehran wall-clock
+}
+
+enum PriceWatchRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+/// Who asked for the run. A schedule and an operator pressing the button are the same check
+/// recorded differently, because "it ran at three and found nothing" and "an operator checked and
+/// found nothing" answer different questions when someone asks why a change is in the list.
+enum PriceWatchTrigger {
+  SCHEDULE
+  MANUAL
+}
+
+enum PriceChangeStatus {
+  PENDING // recorded, not applied — the only state a detected difference may hold
+  APPLIED
+  IGNORED
+}
+
+/// The watch's configuration, and there is one of it.
+///
+/// A single row under a fixed id rather than a `Setting` key: `Setting` is a free-form key/value
+/// store that every other feature is free to invent keys in, and a schedule is typed columns. A
+/// `mode` read out of a JSON blob has no bounds the database enforces, so "every hour" and "every
+/// hundred hours" are equally storable and only the code that reads it knows which it meant.
+///
+/// The id is a constant, not `cuid()`, and that is the load-bearing part: the row is created by
+/// `upsert` on that constant, so two gateway processes starting at once cannot produce two
+/// configurations. A `cuid()` default would make "there is only one" a fact the schema cannot
+/// express, enforced only by whichever caller checked first.
+model PriceWatch {
+  id              String          @id // the singleton constant, see PRICE_WATCH_ID
+  enabled         Boolean         @default(false)
+  mode            PriceWatchMode  @default(INTERVAL)
+  intervalMinutes Int             @default(360)
+  /// Tehran wall-clock `HH:mm`, meaningful only in DAILY mode. Tehran's offset has changed twice
+  /// and is scheduled to change again, so it is never a stored offset and never a stored instant.
+  dailyAt         String?
+  lastRunAt       DateTime?
+  nextRunAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+/// One check, and what it found.
+///
+/// A run is a row before it is a result: a check that fetches a live third-party catalogue takes
+/// seconds, and "the watch is enabled but nothing has run since Tuesday" is a question the panel
+/// has to be able to answer. `error` is why a FAILED run failed, because a failed check that left
+/// no trace is indistinguishable from a watch that is switched off.
+model PriceWatchRun {
+  id         String            @id @default(cuid())
+  status     PriceWatchRunStatus
+  trigger    PriceWatchTrigger
+  /// How many price entries the source returned — the size of the fetched index.
+  quotes     Int               @default(0)
+  /// How many of our products the index matched.
+  matched    Int               @default(0)
+  /// How many variants differed. Equal to the number of `PriceChange` rows this run wrote.
+  changes    Int               @default(0)
+  error      String?
+  startedAt  DateTime          @default(now())
+  finishedAt DateTime?
+
+  priceChanges PriceChange[]
+
+  @@index([startedAt])
+}
+
+/// One variant whose price differs from the source's, recorded for an operator to judge.
+///
+/// The watch never changes a price: a detected difference is a `PENDING` row, and `Variant.price`
+/// moves only when an operator applies one. That is the whole point of the feature — a crawler
+/// rewriting the shop's prices unattended would let a bad scrape response reprice a live shop.
+/// So the row is the finding, and the apply is a separate, audited decision.
+///
+/// `sku`, `productName` and `colorName` are denormalised on purpose. The review list is a queue an
+/// operator works through, and a row whose text cost three joins to display is a queue that
+/// renders slowly and reads "gateway unavailable" instead. The names are copied at detection; a
+/// later rename shows the name the finding was made under, which is what a reviewer wants to see.
+model PriceChange {
+  id          String            @id @default(cuid())
+  runId       String
+  variantId   String
+  productId   String
+  sku         String
+  productName String
+  colorName   String
+  fromPrice   Float // TOMAN, as `Variant.price` had it
+  toPrice     Float // TOMAN, as the source has it now
+  sourceUrl   String
+  status      PriceChangeStatus @default(PENDING)
+  detectedAt  DateTime          @default(now())
+  appliedAt   DateTime?
+  appliedById String?
+  run         PriceWatchRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  /// One finding per variant per run. A variant matched twice in one run — a duplicate entry in
+  /// the source's own payload, say — would otherwise be two rows claiming the same variant needs
+  /// review, and applying both would write the price twice.
+  @@unique([runId, variantId])
+  /// The index the panel's queue reads: pending first, newest first.
+  @@index([status, detectedAt])
+}

@@ -11,7 +11,7 @@
 // that was down looked exactly like a shop with no images, and an operator clearing a "missing" file
 // was acting on a misconfiguration.
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/auth";
+import { requireAdminApi } from "@/auth/lib/auth";
 import { readThrough } from "@/lib/reads";
 
 export const runtime = "nodejs";

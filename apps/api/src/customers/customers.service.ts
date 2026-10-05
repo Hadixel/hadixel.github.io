@@ -7,7 +7,7 @@
 
 import { Inject, Injectable } from "@nestjs/common";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../prisma/index.js";
 
 /**
  * How many of a customer's orders the detail page shows.

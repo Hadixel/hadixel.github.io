@@ -22,7 +22,7 @@ import {
 } from "./dto/payment-window.dto.js";
 import { requestPayment, verifyPayment, zarinpalConfigFromEnv } from "../payments/zarinpal.js";
 import { PaymentProviderMissingException } from "../orders/exceptions/order.exception.js";
-import { tomanToRial } from "@kmodern/schema";
+import { tomanToRial } from "@kmodern/contracts";
 import {
   ShopperService,
   type PaymentWindow,

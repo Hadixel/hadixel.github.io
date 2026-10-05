@@ -18,10 +18,10 @@
 //      that stored raw script and sanitised at render time is a page whose stored value is a hazard to
 //      anything else that reads it.
 
-import { blockSchema, componentSchemas, type ComponentType } from "@kmodern/schema";
-import { MAX_SAFE_HTML_LENGTH, sanitizeAdminHtml } from "@kmodern/schema/sanitize";
-import { seoSchema } from "@kmodern/schema";
-import type { Prisma } from "../generated/prisma/client.js";
+import { blockSchema, componentSchemas, type ComponentType } from "@kmodern/contracts";
+import { MAX_SAFE_HTML_LENGTH, sanitizeAdminHtml } from "@kmodern/contracts/sanitize";
+import { seoSchema } from "@kmodern/contracts";
+import type { Prisma } from "../prisma/index.js";
 import { PageRuleException } from "./exceptions/page.exception.js";
 
 /**

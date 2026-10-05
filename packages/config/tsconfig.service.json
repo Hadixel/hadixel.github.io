@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Kmodern service (NestJS application: DI, guards, filters, interceptors)",
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "//": [
+    "The fourth flavour, and §5.3 asks for it rather than tolerates it: 'tsconfig.base.json plus one",
+    "tsconfig.<flavour>.json per app type'. A NestJS service is an app type this repo has - it is not a",
+    "Node library, because it is the one workspace where a decorator is legal.",
+    "",
+    "These two flags lived in apps/api/tsconfig.json, which is a compiler option redefined per",
+    "workspace while the other four workspaces sharing the Node flavour silently do not have them.",
+    "§5.3's instruction is 'change the base', so they moved here instead: apps/api now extends a",
+    "flavour like every other workspace does, and nothing else inherits them - the flags were checked",
+    "before moving, and only apps/api has any decorator at all (90 files; apps/scraper,",
+    "packages/contracts, packages/scraper-core, packages/transport and packages/ui each have zero),",
+    "so putting them in tsconfig.node.json would have turned on legacy decorator semantics for code",
+    "that never asked for them.",
+    "",
+    "`emitDecoratorMetadata` is the one that is not a style choice: NestJS dependency injection reads",
+    "`design:paramtypes`, which only these flags produce. Without them the object graph builds and",
+    "then injects undefined into every constructor - a failure that boots."
+  ]
+}

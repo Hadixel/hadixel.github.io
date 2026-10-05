@@ -66,9 +66,20 @@
   font-display: swap;
 }
 @theme {
+  /* Flame blue. The light tints complete the scale: badges, selection and
+     swatch rings reference flame-50/100/200 throughout the app, and without
+     them those utilities compile to nothing and the surfaces render flat. */
+  --color-flame-50: #eff6ff;
+  --color-flame-100: #dbeafe;
+  --color-flame-200: #bfdbfe;
+  --color-flame-300: #93c5fd;
+  --color-flame-400: #60a5fa;
+  --color-flame-500: #3b82f6;
   --color-flame-600: #2563eb;
   --color-flame-700: #1d4ed8;
   --color-flame-800: #1e40af;
+  --color-flame-900: #1e3a8a;
+  --color-flame-950: #172554;
 
   /* Monochrome system */
   --color-canvas: #ffffff;
@@ -95,6 +106,13 @@
   /* Radii — 10px everywhere, 30px pills only for badges */
   --radius-card: 10px;
 
+  /* Pills — 30px: badges, toggles, dots, progress tracks. Never a container. */
+  --radius-pill: 30px;
+
+  /* Type scale — micro is the only step below xs: technical sublabels and
+     file keys that sit under the smallest label the type system defines. */
+  --text-micro: 11px;
+
   /* Base */
   --color-background: #ffffff;
   --color-foreground: #111111;
@@ -111,6 +129,158 @@
   ::selection {
     background: var(--color-flame-100);
   }
+}
+
+/* ---------- HeroUI semantic bridge (ADR-0002) ---------- */
+/* Maps the Showcase tokens onto HeroUI's semantic variables. Consumers import
+   this file after @heroui/styles (the storefront does; the panel has no
+   HeroUI dependency, so these selectors simply never match there) and the
+   shared preset stays authoritative for fonts/base body styles. Variable
+   roles per @heroui/styles default theme. */
+
+@layer theme {
+  :root,
+  .light,
+  [data-theme="light"] {
+    /* Base — white canvas, ink text */
+    --background: #ffffff;
+    --foreground: #111111;
+
+    /* Surfaces — plaster steps; secondary/tertiary are the raised variants
+       for elevated surfaces stepping above plaster */
+    --surface: #ecedee;
+    --surface-secondary: #f2f3f4;
+    --surface-tertiary: #f7f7f8;
+    --surface-foreground: #111111;
+
+    /* Overlays — modals/popovers/menus float on white canvas */
+    --overlay: #ffffff;
+    --overlay-foreground: #111111;
+
+    /* Flame blue — the single chromatic accent */
+    --accent: #1d4ed8;
+    --accent-foreground: #ffffff;
+
+    /* Secondary text (ash) and secondary-control surfaces (plaster) */
+    --muted: #676b74;
+    --default: #ecedee;
+    --default-foreground: #111111;
+
+    /* Form fields — plaster field surface, ink text, ash placeholder */
+    --field-background: #ecedee;
+    --field-foreground: #111111;
+    --field-placeholder: #676b74;
+
+    /* Lines — fog borders, hairline plaster separators */
+    --border: #d7d7d7;
+    --separator: #ecedee;
+    --focus: #1d4ed8;
+    --link: #111111;
+
+    /* Radius discipline — 10px controls/cards; pin field radius off the
+       library's ×1.5 default so inputs stay 10px too (pills stay 30px via
+       the component override below) */
+    --radius: 10px;
+    --field-radius: 10px;
+  }
+}
+
+@layer components {
+  /* 10px container discipline: the library hardcodes pill radius
+     (rounded-3xl / min(32px, --radius-3xl) = 30px at --radius:10px) on
+     controls and panels; ADR-0002 keeps 10px for containers and leaves
+     badge pills at 30px (badge's default rounded-3xl already resolves
+     to 30px). */
+  .button,
+  .popover,
+  .dropdown__popover,
+  .modal__dialog,
+  .close-button {
+    border-radius: 10px;
+  }
+
+  /* RTL drawer motion: placement="left" rests the panel on the physical
+     right (start edge in RTL) via justify-start, but the library's
+     enter/exit translate is physical (-100% = toward screen left), so the
+     slide sweeps across the viewport. Mirror it: the panel must slide
+     out from behind the start edge (+100% = from the right). */
+  [dir="rtl"] .drawer__content--left[data-entering="true"] .drawer__dialog,
+  [dir="rtl"] .drawer__content--left[data-exiting="true"] .drawer__dialog {
+    translate: 100% 0;
+  }
+}
+
+/* Shared elevation recipe (ADR-0002): resting surface shadow, hover lift
+   to the overlay shadow. Used by every product card surface. */
+@layer components {
+  .card-lift {
+    box-shadow: var(--surface-shadow);
+    transition: box-shadow 200ms var(--ease-out, ease-out), transform 200ms var(--ease-smooth, ease-out);
+  }
+  .card-lift:hover {
+    box-shadow: var(--overlay-shadow);
+    transform: translateY(-2px);
+  }
+  /* Tap feedback on every card surface: press flattens the lift and squeezes
+     the card — phones get the pressed state desktop gets from hover. */
+  .card-lift:active {
+    transform: translateY(0) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:active {
+    transform: none;
+  }
+}
+
+/* ---------- Composed recipes ---------- */
+/* Shared class recipes measured out of the clients' call sites (P5). Each
+   one is a @utility so it composes with — and can be overridden by — the
+   plain utility layer; tone variants are separate classes because no caller
+   sets a custom property for them. */
+
+@utility notice-error {
+  /* Inline action-result notices: role="alert" lines under a form */
+  @apply rounded-card bg-red-50 px-3 py-2 text-sm text-red-700;
+}
+
+@utility notice-error-strong {
+  /* Same notice where the copy is long enough to need the darker red */
+  @apply rounded-card bg-red-50 px-3 py-2 text-sm text-red-800;
+}
+
+@utility notice-success {
+  @apply rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-700;
+}
+
+@utility notice-success-strong {
+  @apply rounded-card bg-emerald-50 px-3 py-2 text-sm text-emerald-800;
+}
+
+@utility notice-warning {
+  /* Run notes (price fetch, publish warnings): denser copy, smaller type */
+  @apply rounded-card bg-amber-50 px-3 py-2 text-xs text-amber-800;
+}
+
+@utility form-control {
+  /* Unstyled native input/select: the panel's own controls, not a Button */
+  @apply rounded-card border border-fog px-3 py-2 text-sm;
+}
+
+@utility form-control-compact {
+  /* Same control as an inline button — tighter block, plaster on hover */
+  @apply rounded-card border border-fog px-3 py-1.5 text-sm hover:bg-plaster;
+}
+
+@utility form-control-link {
+  /* A download/select surface: same chrome plus the flame focus ring */
+  @apply rounded-card border border-fog px-3 py-2 text-sm text-ink transition-colors hover:bg-plaster focus:outline-none focus:ring-2 focus:ring-flame-300;
+}
+
+@utility form-grid {
+  /* Two-column field grid: stacked on phones, side-by-side from md */
+  @apply grid grid-cols-1 gap-4 md:grid-cols-2;
 }
 
 /* ---------- Showcase utilities ---------- */
@@ -137,4 +307,126 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-badge-pop { animation: none; }
+}
+
+/* ---------- ShinyText accent (accents/shiny-text.tsx) ---------- */
+/* Metallic sheen sweep via background-clip:text — one node, no text splitting,
+   so Persian letter-joining is untouched. Reduced motion: static base color. */
+@utility shiny-text {
+  background-image: linear-gradient(
+    var(--shiny-spread, 120deg),
+    var(--shiny-color) 0%,
+    var(--shiny-color) 35%,
+    var(--shiny-shine, #ffffff) 50%,
+    var(--shiny-color) 65%,
+    var(--shiny-color) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shiny-sweep var(--shiny-duration, 2.4s) linear infinite;
+}
+@keyframes shiny-sweep {
+  0% { background-position: 150% center; }
+  100% { background-position: -50% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shiny-text {
+    animation: none;
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: inherit;
+  }
+}
+
+/* ---------- SpotlightCard accent (accents/spotlight-card.tsx) ---------- */
+.spotlight-overlay {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+[data-lit] .spotlight-overlay {
+  opacity: 1;
+}
+@media (hover: none) {
+  /* Phones never track a pointer by default: a static top glow stands in. */
+  .spotlight-overlay {
+    opacity: 0.45;
+    background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.4), transparent 70%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-overlay {
+    transition: none;
+  }
+}
+
+/* ---------- StarBorder accent (accents/star-border.tsx) ---------- */
+.star-blob {
+  position: absolute;
+  width: 300%;
+  height: 50%;
+  opacity: 0.7;
+  filter: blur(1px);
+}
+.star-blob--bottom {
+  bottom: -11px;
+  right: -250%;
+  animation: star-move-bottom 6s linear infinite;
+}
+.star-blob--top {
+  top: -10px;
+  left: -250%;
+  animation: star-move-top 6s linear infinite;
+}
+@keyframes star-move-bottom {
+  0% { transform: translateX(-15%); }
+  100% { transform: translateX(50%); }
+}
+@keyframes star-move-top {
+  0% { transform: translateX(50%); }
+  100% { transform: translateX(-15%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star-blob {
+    animation: none !important;
+    opacity: 0.25;
+  }
+}
+
+/* ---------- Category-tile accents (block-renderer categoryTiles) ---------- */
+/* Glow and photo parallax share one pointer sample: the custom properties are
+   set on the SpotlightCard root and inherit down. The inset-[-6%] over-bleed on
+   the photo layer absorbs this travel so no card edge is ever exposed. */
+.tile-parallax {
+  transform: translate(calc((var(--sxn, 0.5) - 0.5) * -16px), calc((var(--syn, 0.5) - 0.5) * -10px));
+  transition: transform 300ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-parallax {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* One-shot sheen on reveal (not hover-gated): gated by AnimatedContent's
+   data-revealed, so it plays on first paint above the fold and exactly when
+   the entrance fires below it. */
+.tile-sheen {
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.4) 50%, transparent 65%);
+  background-size: 250% 100%;
+  background-position: 150% 0;
+}
+[data-revealed] .tile-sheen {
+  animation: tile-sweep 1.1s ease-out 1 both;
+}
+@keyframes tile-sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-sheen {
+    animation: none !important;
+  }
 }

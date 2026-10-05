@@ -10,7 +10,7 @@
 // be deleted, which it could not from the panel.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { createPrismaClient } from "../src/prisma/client.js";
+import type { createPrismaClient } from "../src/prisma/index.js";
 import { PostsController } from "../src/posts/posts.controller.js";
 import { db } from "../src/prisma/index.js";
 import { resetDatabase } from "./harness.js";

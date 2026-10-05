@@ -1,33 +1,23 @@
 "use client";
 
-import { CSSProperties, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, ReactNode, useRef, useState, useEffect } from "react";
 
 /* ReactBits-style primitives, dependency-free: CSS + IntersectionObserver.
    Content is server-rendered VISIBLE; animation applies only after mount to
    elements below the fold. All honor prefers-reduced-motion (no motion). */
 
-const reduced = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/* ---------- BlurText: words resolve from blur, staggered ---------- */
-export function BlurText({
-  text,
-  className,
-  delay = 60,
-  direction = "top",
-}: {
-  text: string;
-  className?: string;
-  delay?: number;
-  direction?: "top" | "bottom";
-}) {
-  const words = useMemo(() => text.split(" "), [text]);
-  const ref = useRef<HTMLSpanElement>(null);
+/* Shared "entrance on scroll" observer: SSR renders the final state; on mount,
+   elements below the fold start hidden and resolve once they intersect. The
+   above-the-fold guard means content near the top never replays its entrance.
+   Once revealed it stays revealed (observer disconnects). Two call sites
+   (product-grid, deal-grid, block-renderer) need lockstep reveal behavior. */
+function useEntrance<T extends HTMLElement>(threshold: number) {
+  const ref = useRef<T>(null);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || reduced()) return;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const r = el.getBoundingClientRect();
     if (r.top < window.innerHeight * 0.9) return; // above the fold: no animation
     setHidden(true);
@@ -38,32 +28,13 @@ export function BlurText({
           io.disconnect();
         }
       },
-      { threshold: 0.25 },
+      { threshold },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [threshold]);
 
-  return (
-    <span ref={ref} className={className} aria-label={text} role="text">
-      {words.map((w, i) => (
-        <span
-          key={`${w}-${i}`}
-          aria-hidden
-          className="inline-block"
-          style={{
-            filter: hidden ? "blur(10px)" : "blur(0)",
-            opacity: hidden ? 0 : 1,
-            transform: hidden ? `translateY(${direction === "top" ? "10px" : "-10px"})` : "none",
-            transition: `filter 0.5s cubic-bezier(0.16,1,0.3,1) ${i * delay}ms, opacity 0.5s cubic-bezier(0.16,1,0.3,1) ${i * delay}ms, transform 0.5s cubic-bezier(0.16,1,0.3,1) ${i * delay}ms`,
-          }}
-        >
-          {w}
-          {i < words.length - 1 ? "\u00A0" : ""}
-        </span>
-      ))}
-    </span>
-  );
+  return { ref, hidden };
 }
 
 /* ---------- AnimatedContent: entrance wrapper on scroll ---------- */
@@ -86,27 +57,7 @@ export function AnimatedContent({
   duration?: number;
   style?: CSSProperties;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [hidden, setHidden] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || reduced()) return;
-    const r = el.getBoundingClientRect();
-    if (r.top < window.innerHeight * 0.9) return;
-    setHidden(true);
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setHidden(false);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  const { ref, hidden } = useEntrance<HTMLDivElement>(0.15);
 
   const offset = hidden
     ? `${direction === "vertical" ? `0, ${distance}px` : `${reverse ? distance : -distance}px, 0`}`
@@ -116,11 +67,17 @@ export function AnimatedContent({
     <div
       ref={ref}
       className={`h-full ${className ?? ""}`}
+      data-revealed={!hidden || undefined}
       style={{
         ...style,
         opacity: hidden ? 0 : 1,
         transform: hidden ? `translate(${offset})` : "none",
-        transition: `opacity ${duration}s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform ${duration}s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+        // A permanent transition keeps the element composited after the
+        // entrance, which is what makes copy inside it hard to select on
+        // touch devices. Only transition while the entrance is pending.
+        transition: hidden
+          ? `opacity ${duration}s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform ${duration}s cubic-bezier(0.16,1,0.3,1) ${delay}ms`
+          : undefined,
       }}
     >
       {children}
@@ -135,6 +92,7 @@ export function LogoLoop({
   ariaLabel,
   speed = 60,
   reverse = false,
+  gap = "gap-12",
 }: {
   items: ReactNode[];
   className?: string;
@@ -142,12 +100,19 @@ export function LogoLoop({
   /** px per second */
   speed?: number;
   reverse?: boolean;
+  /**
+   * Tailwind gap class between items. It belongs to the caller because the
+   * right gap tracks the item's rendered size: a text marquee reads fine at
+   * 48px, but logo art at 24–36px tall needs roughly its own height between
+   * marks or the strip reads as a scatter rather than a rail.
+   */
+  gap?: string;
 }) {
   // No trailing padding on the group: the duplicated half is what makes the
   // -50% translate seamless, and any padding here widens only the gap at the
   // wrap point, which is the visible hiccup at the end of every cycle.
   const renderGroup = (hidden: boolean) => (
-    <div className="flex shrink-0 items-center gap-12" aria-hidden={hidden || undefined}>
+    <div className={`flex shrink-0 items-center ${gap}`} aria-hidden={hidden || undefined}>
       {items.map((it, i) => (
         <span key={i} className="flex shrink-0 items-center">
           {it}
@@ -184,40 +149,3 @@ export function LogoLoop({
     </div>
   );
 }
-
-/* ---------- GlareHover: light sweep on hover (pure CSS) ---------- */
-export function GlareHover({
-  children,
-  className,
-  glareColor = "rgba(255,255,255,0.55)",
-  width = "100%",
-  height = "100%",
-  borderRadius = "10px",
-}: {
-  children: ReactNode;
-  className?: string;
-  glareColor?: string;
-  width?: string;
-  height?: string;
-  borderRadius?: string;
-}) {
-  return (
-    <div className={`gh relative overflow-hidden ${className ?? ""}`} style={{ width, height, borderRadius }}>
-      {children}
-      <span
-        aria-hidden
-        className="gh__glare pointer-events-none absolute inset-0"
-        style={{
-          background: `linear-gradient(105deg, transparent 40%, ${glareColor} 50%, transparent 60%)`,
-          transform: "translateX(-120%)",
-        }}
-      />
-      <style>{`
-        .gh:hover .gh__glare { animation: gh-sweep 0.9s cubic-bezier(0.16,1,0.3,1) forwards; }
-        @keyframes gh-sweep { to { transform: translateX(120%); } }
-        @media (prefers-reduced-motion: reduce) { .gh:hover .gh__glare { animation: none; opacity: 0; } }
-      `}</style>
-    </div>
-  );
-}
-

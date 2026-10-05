@@ -21,7 +21,7 @@ import {
   hashPassword,
   canonicalPhone,
 } from "../src/auth/session.js";
-import { tokenFromCookie } from "../src/auth/auth.controller.js";
+import { tokenFromCookie } from "../src/auth/session.js";
 import { $Enums, db } from "../src/prisma/index.js";
 import { resetDatabase } from "./harness.js";
 

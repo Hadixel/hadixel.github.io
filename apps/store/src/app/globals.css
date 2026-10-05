@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "@heroui/styles/css";
-@import "./showcase-theme.css";
 @import "@kmodern/ui/tailwind.css";
 
 /* Scan the shared UI package for class usage (workspace symlink is outside auto-detection) */
@@ -17,6 +16,10 @@
 
   body {
     overflow-x: clip;
+    /* Storefront copy must stay selectable. Only form controls opt out —
+       HeroUI's own select-none on buttons is the only allowed exception. */
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   :focus-visible {
@@ -49,72 +52,128 @@
   }
 }
 
-@property --home-hero-progress {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-/* ---------- Burner Ignition homepage hero ---------- */
-.home-hero-track {
-  --home-hero-progress: 0;
-  position: relative;
-  height: auto;
-  background: var(--color-plaster);
-}
+/* ---------- «شعله» v3 — type + authored flame geometry ---------- */
+/* The hero carries no imagery: a dark ink panel, the headline, and geometry
+   this stylesheet owns — a blue radial glow, three ember rings drawn as SVG
+   strokes, and a horizon line the light sits on. The rings draw themselves in
+   once on load, and only when the shopper accepts motion; the default state
+   is the finished frame. JS fades the scroll cue only. */
 
 .home-hero {
   position: relative;
-  min-height: calc(100svh - 6rem);
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 22% 50%, rgb(255 255 255 / 0.72), transparent 34%),
-    var(--color-plaster);
-}
-
-.home-hero-grid {
   display: grid;
-  width: min(100%, 1440px);
-  min-height: calc(100svh - 6rem);
-  margin-inline: auto;
-  padding: clamp(5.5rem, 9vh, 8rem) clamp(1rem, 3vw, 2rem) clamp(4.5rem, 8vh, 6.5rem);
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(1.25rem, 4vw, 3.5rem);
+  min-height: calc(100svh - 4rem);
+  overflow: hidden;
+  margin-inline: clamp(0.5rem, 1vw, 1.25rem);
+  /* The logo strip below is a full-bleed ink band, the same colour as this
+     panel: with no gap the panel's rounded bottom edge disappears into it
+     and the hero reads as one bleeding slab. */
+  margin-bottom: clamp(0.5rem, 1vw, 1.25rem);
+  border-radius: clamp(14px, 2vw, 24px);
+  background:
+    radial-gradient(90% 70% at 30% 0%, #1c1c1f, transparent 60%),
+    var(--color-ink);
+  color: white;
 }
 
-.home-hero-copy {
+/* Depth cue comes from the radial ink sheen, the glow, and the horizon line
+   — no grid overlay: a two-axis grid field reads as generated wallpaper
+   unless a real blueprint sits under it. */
+
+/* The geometry layer. Plain absolute positioning — no perspective, no layers,
+   nothing to preserve: rings and light are flat strokes on the panel. */
+.home-hero-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Flame-blue volumetric light behind the headline — the single chromatic
+   moment of the panel. */
+.home-hero-glow {
+  position: absolute;
+  inset: -12%;
+  background: radial-gradient(40% 34% at 30% 46%, rgb(29 78 216 / 0.45), transparent 70%);
+  filter: blur(2px);
+}
+
+/* Ember ring system: a full outer ring, a top-half arc, a dashed inner ring. */
+.home-hero-rings {
+  position: absolute;
+  top: 50%;
+  left: 30%;
+  width: min(760px, 52vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  opacity: 0.55;
+}
+
+.home-hero-ring-outer,
+.home-hero-ring-mid,
+.home-hero-ring-inner {
+  stroke-width: 1;
+}
+.home-hero-ring-mid {
+  --hero-dash: 622;
+  stroke-width: 1.5;
+}
+.home-hero-ring-inner {
+  stroke-dasharray: 2 10;
+  opacity: 0.55;
+}
+
+/* Horizon line under the rings — anchors the light in space */
+.home-hero-horizon {
+  position: absolute;
+  inset-inline: 8%;
+  bottom: 24%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.2), transparent);
+}
+
+.home-hero-inner {
   position: relative;
   z-index: 2;
-  max-width: 36rem;
+  display: flex;
+  width: min(100%, 1440px);
+  flex-direction: column;
+  justify-content: flex-end;
+  margin-inline: auto;
+  padding: clamp(5rem, 12vh, 8rem) clamp(1.25rem, 4vw, 3.5rem) clamp(4rem, 9vh, 6rem);
 }
 
+
 .home-hero-title {
-  color: var(--color-ink);
+  max-width: 18ch;
+  color: white;
   font-family: var(--font-display);
-  font-size: clamp(3.25rem, 7vw, 6rem);
+  font-size: clamp(3rem, 8.5vw, 7rem);
   font-weight: 900;
-  line-height: 1.08;
+  line-height: 1.04;
   text-wrap: balance;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.55);
 }
 
 .home-hero-word {
   display: inline-block;
-  opacity: 1;
-  transform: none;
+  animation: home-hero-word-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--word-i, 0) * 90ms);
 }
 
-.home-hero-subtitle,
-.home-hero-actions {
-  opacity: 1;
-  transform: none;
+@keyframes home-hero-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em) translateZ(60px);
+    filter: blur(8px);
+  }
 }
 
 .home-hero-subtitle {
-  max-width: 31rem;
-  margin-top: 1.25rem;
-  color: var(--color-ash);
-  font-size: clamp(0.95rem, 1.3vw, 1.08rem);
+  max-width: 34rem;
+  margin-top: 1.5rem;
+  color: rgb(255 255 255 / 0.72);
+  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
   line-height: 2;
 }
 
@@ -123,241 +182,338 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
-  margin-top: 2rem;
-}
-
-.home-hero-primary,
-.home-hero-secondary {
-  display: inline-flex;
-  min-height: 2.875rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-card);
-  padding-inline: 1.75rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  margin-top: 2.25rem;
 }
 
 .home-hero-primary {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-card);
   background: var(--color-flame-700);
+  padding-inline: 1.9rem;
   color: white;
+  font-size: 0.98rem;
+  font-weight: 700;
+  transition: background-color 160ms ease, transform 160ms ease;
 }
 
 .home-hero-primary:hover {
   background: var(--color-flame-600);
 }
 
+.home-hero-primary:hover .home-hero-primary-arrow {
+  transform: translateX(-3px);
+}
+
+.home-hero-primary-arrow {
+  transition: transform 160ms ease;
+}
+
 .home-hero-secondary {
-  color: var(--color-ink);
-  text-decoration: underline;
-  text-decoration-color: var(--color-fog);
-  text-underline-offset: 0.35rem;
-  text-decoration-thickness: 1.5px;
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: var(--radius-card);
+  padding-inline: 1.6rem;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 
 .home-hero-secondary:hover {
-  text-decoration-color: var(--color-flame-700);
+  border-color: rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.07);
 }
 
-.home-hero-stage {
-  position: relative;
-  justify-self: center;
-  width: min(46vw, 34rem);
-  aspect-ratio: 1;
+/* Tap feedback: a press on either hero CTA scales it, not just a hover. */
+.home-hero-primary:active,
+.home-hero-secondary:active {
+  transform: scale(0.97);
 }
 
-.home-hero-glow {
-  position: absolute;
-  inset: 4%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 56%, rgb(29 78 216 / 0.2), transparent 66%);
-  opacity: 1;
-}
-
-.home-hero-ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.home-hero-track-line,
-.home-hero-dial {
-  fill: none;
-  stroke: var(--color-fog);
-  stroke-width: 2;
-}
-
-.home-hero-dial {
-  stroke-dasharray: 2 10;
-  stroke-linecap: round;
-}
-
-.home-hero-arc {
-  fill: none;
-  stroke: var(--color-flame-700);
-  stroke-width: 7;
-  stroke-linecap: round;
-  stroke-dasharray: 100px;
-  stroke-dashoffset: 0;
-}
-
-.home-hero-spark {
-  fill: var(--color-flame-700);
-  transform: rotate(360deg);
-  transform-box: view-box;
-  transform-origin: center;
-}
-
-.home-hero-product {
-  position: absolute;
-  inset: 13%;
-  transform: none;
-}
-
-.home-hero-placeholder {
-  position: absolute;
-  inset: 24%;
-  border: 1px solid var(--color-fog);
+/* StarBorder wrapper around the primary CTA — inherits the CTA's radius so
+   the orbiting glow is clipped to the same pill shape. */
+.home-hero-primary-glow {
   border-radius: var(--radius-card);
-  background: var(--color-canvas);
+}
+
+.home-hero-marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+  color: rgb(255 255 255 / 0.42);
+  font-size: 0.72rem;
 }
 
 .home-hero-cue {
   position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
+  right: 50%;
+  bottom: 1.1rem;
   z-index: 3;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--color-ash);
-  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.55);
+  font-size: 0.75rem;
   font-weight: 700;
-  opacity: 1;
-  transform: translateX(-50%);
+  transform: translateX(50%);
+  transition: opacity 240ms ease;
 }
 
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .home-hero-track {
-      height: 220vh;
-      animation: home-hero-ignite 1s linear both;
-      animation-timeline: scroll(root block);
-      animation-range: 0 175vh;
-    }
+.home-hero-cue[data-gone] {
+  opacity: 0;
+}
 
-    .home-hero {
-      position: sticky;
-      top: 0;
-    }
+/* The rings draw themselves in once: a load moment, never a scroll state. The
+   default (unanimated) state is the finished ring, so no motion means no
+   missing geometry — the animation only reveals what CSS already draws. */
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero-ring-outer {
+    stroke-dasharray: 1560;
+    stroke-dashoffset: 1560;
+    animation: home-hero-ember-in 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
-    .home-hero-word {
-      opacity: clamp(0, calc(1 - (var(--home-hero-progress) - 0.58 - var(--word-index) * 0.025) * 6), 1);
-      transform: translateY(calc(var(--word-index) * -0.035em * var(--home-hero-progress)));
-    }
+  .home-hero-ring-mid {
+    stroke-dasharray: 622;
+    stroke-dashoffset: 622;
+    animation: home-hero-ember-in 800ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+  }
 
-    .home-hero-subtitle,
-    .home-hero-actions {
-      opacity: clamp(0, calc(1 - (var(--home-hero-progress) - 0.66) * 7), 1);
-      transform: translateY(calc((1 - var(--home-hero-progress)) * 0.25rem));
-    }
-
-    .home-hero-glow {
-      opacity: clamp(0, calc((var(--home-hero-progress) - 0.22) * 5), 1);
-    }
-
-    .home-hero-arc {
-      stroke-dashoffset: calc((1 - min(var(--home-hero-progress) * 1.7, 1)) * 100px);
-    }
-
-    .home-hero-spark {
-      transform: rotate(calc(min(var(--home-hero-progress) * 1.7, 1) * 360deg));
-    }
-
-    .home-hero-product {
-      transform: rotate(calc((1 - min(var(--home-hero-progress) * 1.8, 1)) * -5deg)) scale(calc(0.94 + 0.06 * min(var(--home-hero-progress) * 1.8, 1)));
-    }
-
-    .home-hero-cue {
-      opacity: clamp(0, calc(1 - var(--home-hero-progress) * 5), 1);
-    }
-
-    @media (max-width: 767px) {
-      .home-hero-track {
-        height: 185vh;
-      }
-
-      .home-hero-word,
-      .home-hero-subtitle,
-      .home-hero-actions {
-        opacity: 1;
-        transform: none;
-      }
-    }
+  .home-hero-ring-inner {
+    animation: home-hero-ring-fade 700ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards;
   }
 }
 
-@keyframes home-hero-ignite {
-  from { --home-hero-progress: 0; }
-  to { --home-hero-progress: 1; }
+@keyframes home-hero-ember-in {
+  from { stroke-dashoffset: var(--hero-dash, 1560); }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes home-hero-ring-fade {
+  from { opacity: 0; }
+  to { opacity: 0.55; }
 }
 
 @media (max-width: 767px) {
-  .home-hero-grid {
-    min-height: calc(100svh - 6rem);
-    padding-top: 4.5rem;
-    padding-bottom: 4rem;
-    grid-template-columns: 1fr;
-    align-content: center;
-    justify-items: center;
-    gap: 1.5rem;
-    text-align: center;
+  /* A phone gets a landscape panel: 16:9 instead of a 75svh wall, so the hero
+     is one swipe-and-go band and the first product row is already on screen.
+     `aspect-ratio` is the whole size contract, and a `min-height` here would
+     break it: a definite block size plus `aspect-ratio` makes the browser
+     derive the inline size from it, so the panel grew to 16/9 of the height
+     and pushed past the `margin-inline`, overflowing the viewport by 8px.
+     Without it, `aspect-ratio` alone is both the floor (content shorter than
+     width / 1.777) and the growth (a longer Persian headline or taller font
+     setting expands the panel rather than clipping the CTAs). */
+  .home-hero {
+    aspect-ratio: 16 / 9;
+    /* The base rule's `100svh - 4rem` floor is the desktop 75svh panel; on a
+       phone `aspect-ratio` owns the height, and leaving the floor in place let
+       it drive the width instead (a definite block size plus `aspect-ratio`
+       resolves the inline size from it, so a 780px panel grew to 1387px and
+       overflowed the viewport). */
+    min-height: 0;
+    margin-inline: 0.5rem;
   }
 
-  .home-hero-copy {
-    max-width: 34rem;
+  /* At phone width the copy is centre-stage, so the rings centre behind it
+     instead of sitting in the panel's left half. A viewport-multiple width
+     (128vw) sliced the circle at both edges and read as a broken image, so the
+     ring is sized against the panel instead. */
+  .home-hero-rings {
+    top: 38%;
+    left: 50%;
+    width: 86%;
+    opacity: 0.4;
+  }
+
+  /* Bottom-anchored copy in a panel this short leaves a hole above it; centred,
+     it fills a 16:9 frame the way the artwork does. */
+  .home-hero-inner {
+    justify-content: center;
+    padding: 1rem 1.25rem;
   }
 
   .home-hero-title {
-    font-size: clamp(2.65rem, 12vw, 4.6rem);
+    max-width: none;
+    font-size: clamp(1.75rem, 8vw, 2.4rem);
+    line-height: 1.15;
   }
 
   .home-hero-subtitle {
-    margin-inline: auto;
-    font-size: 0.9rem;
-    line-height: 1.85;
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
 
+  /* Both CTAs side by side: a stacked pair is what made the panel tall enough
+     to need 75svh in the first place. */
   .home-hero-actions {
-    justify-content: center;
-    margin-top: 1.35rem;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    margin-top: 0.7rem;
+  }
+
+  .home-hero-primary,
+  .home-hero-secondary {
+    min-height: 2.4rem;
+    padding-inline: 0.85rem;
+    font-size: 0.78rem;
+  }
+
+  /* The pair stops fitting below ~366px: at 360 the two pills need 313px in
+     a 304px row and both labels wrap inside the pill. Trim the horizontal
+     padding — not the type and not the side-by-side layout (a stacked pair
+     is what made the panel tall) — so each label stays on one line. */
+  @media (max-width: 374px) {
+    .home-hero-inner {
+      padding-inline: 1rem;
+    }
+
+    .home-hero-actions {
+      gap: 0.4rem;
+    }
+
+    .home-hero-primary,
+    .home-hero-secondary {
+      padding-inline: 0.7rem;
+    }
+  }
+
+  .home-hero-primary {
+    gap: 0.4rem;
   }
 
   .home-hero-secondary {
+    justify-content: center;
+  }
+
+  /* Brand marks: hidden on phones — the panel is a slim 16:9 band there and
+     the product collage beneath it carries the substance instead. */
+  .home-hero-marks {
     display: none;
   }
 
-  .home-hero-stage {
-    width: min(78vw, 23rem);
+  .home-hero-cue {
+    display: none;
   }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-hero-track {
-    animation: none !important;
+  .home-hero-word {
+    animation: none;
   }
 
-  .home-hero-word,
-  .home-hero-subtitle,
-  .home-hero-actions,
-  .home-hero-product,
-  .home-hero-glow,
   .home-hero-cue {
-    opacity: 1;
+    transition: none;
+  }
+
+  .home-hero-primary:active,
+  .home-hero-secondary:active {
     transform: none;
+  }
+}
+
+/* ---------- Mobile rails ----------
+   One rule for every collection of same-level cards on a phone: below `sm` the
+   collection scrolls horizontally with snap points instead of stacking into a
+   vertical wall that triples the page height. From `sm` up the class is inert —
+   each block's own grid utilities take over, so the desktop layout is untouched.
+
+   The item widths live here rather than as Tailwind classes on each block
+   because a `w-*` utility sits in `@layer utilities` and an unlayered rule here
+   outranks it; the `sm` reset below has to be unlayered for the same reason. */
+@media (max-width: 639px) {
+  .section-rail {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-block-end: 0.25rem;
+    /* The rail bleeds to the screen edge but rests at the `px-4` inset, so a
+       snapped card has to land on that inset too — without this,
+       `snap-align: start` puts each card flush at the viewport edge and the
+       row jumps 16px every time it settles. */
+    scroll-padding-inline: 1rem;
+  }
+
+  /* Forward overflow cues come from the card width alone — about four cards
+     per row (`.section-rail-item`s sit at ~24% each), the sliver of the fifth
+     asking for a flick. */
+
+  .section-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .section-rail > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  /* Product-like cards: roughly two per viewport with a clear peek at the
+     edge, which is what makes the rail read as "there is more" rather than
+     as a card that happens to be cut off. 50% (not less) is what keeps a
+     narrow card's proportion near its desktop stance — halve the width
+     without widening the card and the text block makes it tower. */
+  .section-rail-item {
+    width: min(44%, 21rem);
+  }
+
+  /* Small plates — badges, stats — where a wider card wastes the row. Their
+     Persian labels (`ارسال سراسری`, `پرداخت در محل`) have to stay legible
+     two-up, so this stays wider than a product card on purpose. */
+  .section-rail-item-tight {
+    width: min(56%, 13rem);
+  }
+
+  /* Deal cards: same logic as `.section-rail-item` — half the panel so the
+     card keeps its desktop proportion instead of growing tall. */
+  .section-rail-item-deal {
+    width: min(48%, 21rem);
+  }
+
+  /* Category tiles: a square plate plus a one-word label, so a wider card
+     just wastes the row. */
+  .section-rail-item-tile {
+    width: min(34%, 13rem);
+  }
+
+  /* Wide snap cards: editorial panels and quote cards — nearly the full
+     width. */
+  .section-rail-item-wide {
+    width: min(88%, 30rem);
+  }
+
+  /* A lone banner card has nothing to peek at, so it fills the rail instead
+     of floating at 88% (which left the text block off-centre on the page). */
+  .section-rail-item-full {
+    width: 100%;
+  }
+}
+
+@media (min-width: 640px) {
+  .section-rail-item,
+  .section-rail-item-tight,
+  .section-rail-item-deal,
+  .section-rail-item-tile,
+  .section-rail-item-wide,
+  .section-rail-item-full {
+    width: auto;
   }
 }
 
@@ -371,30 +527,325 @@
 /* ---------- Product detail topology ---------- */
 .product-layout {
   display: grid;
-  gap: 2rem 2.5rem;
+  gap: 2rem;
+}
+
+.product-media,
+.product-purchase,
+.product-details {
+  min-width: 0;
 }
 
 .product-media { order: 1; }
 .product-purchase { order: 2; }
-.product-details { order: 3; }
+.product-details { margin-top: 1.5rem; }
+.product-details-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.product-details-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  color: var(--color-ash);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.product-details-counts b {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+.product-spec-panel,
+.product-feature-panel {
+  border-radius: var(--radius-card);
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+.product-spec-panel {
+  background: var(--color-ink);
+  color: white;
+  box-shadow: 0 16px 36px rgb(17 17 17 / 0.12);
+}
+.product-feature-panel {
+  border: 1px solid var(--color-fog);
+  background: var(--color-plaster);
+}
+.product-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.product-section-heading h2 {
+  flex: none;
+}
+.product-section-line {
+  height: 1px;
+  flex: 1;
+  background: currentColor;
+  opacity: 0.25;
+}
+/* The spec table is one column at every width: a second column split the
+   dark panel into two cramped sub-tables, and a label rail needs the room
+   to keep values from wrapping. Rows share the panel height (1fr) so a
+   panel stretched to match its neighbour never ends in dead space. */
+.product-spec-list {
+  --spec-label-width: 8.5rem;
+  --spec-column-gap: 1.25rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: 1fr;
+  position: relative;
+  margin-top: 1.25rem;
+}
+.product-spec-list::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--spec-label-width) + var(--spec-column-gap) / 2);
+  width: 1px;
+  background: rgb(255 255 255 / 0.16);
+}
+.product-spec-row {
+  display: grid;
+  grid-template-columns: var(--spec-label-width) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--spec-column-gap);
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+  padding: 0.7rem 0;
+  font-size: 0.8125rem;
+}
+.product-spec-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.product-spec-row:last-child {
+  padding-bottom: 0;
+}
+.product-spec-row dt {
+  color: rgb(255 255 255 / 0.55);
+  line-height: 1.9;
+}
+/* Emphasis comes from size and a mid weight: full-bold 13px values on black
+   read as scattered headlines rather than a table. */
+.product-spec-row dd {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.8;
+}
+.product-feature-list {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 0.4rem 1.75rem;
+  margin-top: 1.25rem;
+}
+.product-feature-row {
+  display: flex;
+  gap: 0.6rem;
+  border-top: 1px solid var(--color-fog);
+  padding: 0.45rem 0;
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  line-height: 1.8;
+}
+.product-feature-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.product-feature-row:last-child {
+  padding-bottom: 0;
+}
+.product-feature-marker {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: none;
+  margin-top: 0.55rem;
+  border-radius: 30px;
+  background: var(--color-flame-700);
+}
+.product-summary-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.product-title,
+.product-description {
+  max-width: 38rem;
+}
+/* The clamp cuts at five lines and the ramp only reaches the card background
+   in the bottom half-rem of that box, so the final line stays readable while
+   the text still dissolves instead of ending on a hard edge. */
+.product-description-text {
+  position: relative;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
+}
+.product-description-text[data-clamped="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2rem;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--color-canvas) 0 25%, rgb(255 255 255 / 0) 100%);
+}
+.product-description-text[data-expanded="true"] {
+  display: block;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+}
+.product-details-extra {
+  display: grid;
+  gap: 1.5rem;
+}
+.product-details-extra > section {
+  min-width: 0;
+}
+/* A product carrying only one of the two lists spans the whole band instead
+   of sitting in the half-column sized for a pair. */
+.product-details-extra > section:only-child {
+  grid-column: 1 / -1;
+}
+.product-assurance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.product-assurance .product-assurance-icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-fog);
+  border-radius: 999px;
+  background: var(--color-plaster);
+  color: var(--color-ink);
+}
+.product-assurance span {
+  line-height: 1.5;
+}
+.product-assurances svg {
+  flex: none;
+}
+/* Two circular assurances in a two-column grid: each sits centred in its own
+   cell so the pair reads as one even band instead of a ragged left edge. */
+.product-assurances {
+  justify-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-description-caret {
+    transition: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .product-summary-top,
+  .product-details-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  /* Phones get the tightest list: tighter panels, tighter rows and a narrower
+     label column so spec values stop wrapping into a second line. */
+  .product-spec-panel,
+  .product-feature-panel {
+    padding: 1.125rem;
+  }
+  .product-spec-list {
+    --spec-label-width: 6.5rem;
+    margin-top: 1rem;
+  }
+  .product-feature-list {
+    margin-top: 1rem;
+  }
+  .product-spec-row {
+    padding: 0.45rem 0;
+  }
+  .product-feature-row {
+    padding: 0.35rem 0;
+  }
+}
+
+@media (max-width: 339px) {
+  .product-assurances {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* From tablet up the feature list splits into columns so a long catalogue
+   entry does not sprawl the whole way down the page. The spec table stays a
+   single ruled column. */
+@media (min-width: 640px) {
+  .product-feature-list {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  }
+  .product-feature-row {
+    border-top: 0;
+    padding: 0.3rem 0;
+  }
+}
 
 @media (min-width: 1024px) {
   .product-layout {
-    grid-template-columns: minmax(0, 1.12fr) minmax(340px, 0.88fr);
+    grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
     grid-template-areas:
-      "media purchase"
-      "details purchase";
+      "media purchase";
+    column-gap: clamp(2rem, 4vw, 4rem);
+    row-gap: 2.5rem;
     align-items: start;
   }
 
   .product-media { grid-area: media; }
   .product-purchase { grid-area: purchase; }
-  .product-details { grid-area: details; }
+  .product-details {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-plaster);
+  }
+  .product-details-extra {
+    grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
+    gap: 2rem;
+    align-items: stretch;
+  }
+}
+
+/* ---------- Category tiles (homepage category section) ----------
+   Unlayered on purpose: `card-lift` and the Tailwind group-hover utilities
+   live in @layer components/utilities, whose group-hover selectors outrank a
+   plain motion-reduce:* class. Declaring the guard here makes it win. */
+@media (prefers-reduced-motion: reduce) {
+  .product-tile,
+  .product-tile-media {
+    transition: none;
+  }
+  .product-tile:hover {
+    transform: none;
+  }
+  .product-tile:hover .product-tile-media {
+    scale: none;
+  }
 }
 
 @media (max-width: 1023px) {
   body:has(.mobile-purchase-bar),
   body:has(.checkout-mobile-surface) {
     padding-bottom: 5.5rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  body:has(.product-mobile-bar) {
+    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
   }
 }

@@ -1,6 +1,7 @@
-import BlockRenderer from "@/components/block-renderer";
-import { ProductGrid } from "@/components/product-grid";
-import { loadHome } from "@/lib/home";
+import BlockRenderer from "@/content/components/block-renderer";
+import { resolveBlockPayloads } from "@/content/lib/block-data";
+import { ProductGrid } from "@/catalogue/components/product-grid";
+import { loadHome } from "@/home/lib/home";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
  * The home page, read from the gateway.
  *
  * It renders its content from the gateway and it never touches the database: the read happens in
- * `loadHome`, which has no data-tier import to fall back to. With the gateway stopped this page
+ * `loadHome`, which has no data-tier import to fall back on. With the gateway stopped this page
  * reports the failure rather than quietly serving rows from behind the gateway's back.
  *
  * The read carries the featured deals alongside the blocks, because the gateway resolves both in one
@@ -16,6 +17,10 @@ export const dynamic = "force-dynamic";
  * Nothing here draws them yet: a deals section needs a `dealGrid` block, and that block type is part
  * of the CMS redesign rather than this change. The data is resolved, shipped and asserted so the
  * section is a rendering decision when the block type lands, not another read.
+ *
+ * The blocks' own reads are resolved here, before anything is drawn, rather than inside the
+ * renderer: a page that renders a block list decides how many round trips it makes, and this one
+ * makes them all at once.
  */
 export default async function HomePage() {
   const home = await loadHome();
@@ -33,7 +38,7 @@ export default async function HomePage() {
   }
 
   if (home.blocks.length > 0) {
-    return <BlockRenderer blocks={home.blocks} />;
+    return <BlockRenderer blocks={home.blocks} payloads={await resolveBlockPayloads(home.blocks)} />;
   }
 
   // The CMS home page has no published blocks yet. Falling back to the newest products keeps the

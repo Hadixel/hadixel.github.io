@@ -20,7 +20,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ValidationPipe, type ArgumentMetadata } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
-import type { createPrismaClient } from "../src/prisma/client.js";
+import type { createPrismaClient } from "../src/prisma/index.js";
 import { ScraperController } from "../src/scraper/scraper.controller.js";
 import { ImportCatalogDto } from "../src/scraper/dto/import-catalog.dto.js";
 import { RecordScraperActionDto } from "../src/scraper/dto/scraper-action.dto.js";

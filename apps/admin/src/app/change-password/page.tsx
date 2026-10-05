@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getAdminUser } from "@/lib/auth";
-import { ChangePasswordForm } from "./change-password-form";
+import { getAdminUser } from "@/auth/lib/auth";
+import { ChangePasswordForm } from "@/auth/components/change-password-form";
 
 /**
  * Never prerendered: this page answers a question about the caller's session, and a build has no

@@ -14,19 +14,13 @@
 // nothing to claim and does nothing. It is deliberately not a read-then-write — the claim and the
 // variant update happen inside the same transaction, and the claim's WHERE clause is the guard.
 
-// These name a generated path directly, which §8 asks us not to do. It is a deliberate, counted
-// exception: the index re-exports this module, so importing through it would make the data tier
-// import itself, and §2's answer to a cycle is a missing module rather than an exception — but the
-// module graph here is sound, and the invariant is scoped in scripts/audit.sh to what it protects,
-// which is a consumer reaching past the index. See that script's "Data tier" section.
-//
-// Extensionless, like every other import in this package: the consuming bundler does not map a
-// .js specifier onto the .ts source, so `./client.js` type-checks and then fails to build.
-import { OrderEventDimension, PaymentMethod, ReservationStatus } from "../generated/prisma/enums";
-import type { Prisma } from "../generated/prisma/client";
-import { db } from "../prisma/client";
-import { settingKeys } from "@kmodern/schema/setting-keys";
-// Extensionless, per the convention in the header above.
+// The types and the enums arrive through the data tier's one index (§8). This file used to name a
+// generated path directly, justified by the index re-exporting *it* — which would have put the data
+// tier in a cycle with itself. That alias is gone (see the note in `prisma/index.ts`), so the
+// exception is gone with it, and the import below is the same `../prisma/index.js` every other
+// gateway module writes.
+import { type Prisma, OrderEventDimension, PaymentMethod, ReservationStatus, db } from "../prisma/index.js";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
 import {
   StockConflictException,
   StockReservedException,

@@ -24,7 +24,7 @@ import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import { SaveProductDto } from "./dto/product.dto.js";
 import { MAX_PRODUCT_PAGE_SIZE, ProductListQueryDto } from "./dto/product-query.dto.js";
 import type { ProductDetail, ProductListRow, ProductPage } from "./dto/product-read.dto.js";

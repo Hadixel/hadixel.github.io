@@ -6,15 +6,23 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** done, with the caveat noted below
 
-- [ ] The money conversion function has real callers, and no call site multiplies or divides by a bare literal to reach the payment gateway's unit
-- [ ] The phone contract normalises at every write path through one shared function, and the customer record cannot be reached by two spellings of one number
-- [ ] The order totals rule is one function used by every order-creation path; no path recomputes a subtotal inline and no path hardcodes a discount of zero
-- [ ] The order number sequence has one implementation
-- [ ] Jalali dates and Persian digits each have one implementation, reached through one import specifier, and no server-local-time formatting remains
-- [ ] The same-origin check on admin writes is one function with every caller on it
-- [ ] The low-stock definition is one function, so a badge, a page header and a dashboard cannot disagree
-- [ ] Session revocation is reachable from the session implementation rather than re-implemented by the route that logs out
-- [ ] The stock lifecycle has one implementation, and it is transactional with a compare-and-set — the storefront's current copy has neither, and a comment elsewhere in the repo claims the two copies cannot disagree
-- [ ] Regression tests cover each of these, including a concurrent duplicate payment callback that cannot apply a transition twice
+- [x] The money conversion function has real callers, and no call site multiplies or divides by a bare literal to reach the payment gateway's unit
+- [x] The phone contract normalises at every write path through one shared function, and the customer record cannot be reached by two spellings of one number
+- [ ] The order totals rule is one function used by every order-creation path; no path recomputes a subtotal inline and no path hardcodes a discount of zero — **unverified as of 2026-10-01.** `grep -n "subtotalOf" -r apps/api/src` returns only `totals.ts` and `checkout/checkout.service.ts`; `apps/api/src/orders/orders.service.ts:537` still reads `const subtotal = lines.reduce((sum, line) => sum + line.variant.price * line.qty, 0);` and `:553` still reads `discountAmount: 0,` — `createManualOrder` recomputes the subtotal inline and hardcodes a zero discount, which is exactly what the box forbids. The code was left untouched.
+- [x] The order number sequence has one implementation
+- [ ] Jalali dates and Persian digits each have one implementation, reached through one import specifier, and no server-local-time formatting remains — **unverified as of 2026-10-01.** One implementation and one specifier hold (`grep -rn "۰۱۲۳۴۵۶۷۸۹" apps packages` → `packages/contracts/src/format.ts:4` only; every caller imports from `@kmodern/contracts`), but `packages/contracts/src/jalali.ts:88-90` implements `jalaliYear` from `date.getFullYear()/getMonth()/getDate()` — server-local time — and `apps/store/src/components/site-footer.tsx:118` renders `© {toFaDigits(jalaliYear())}` from it. The presentation formatters (`toJalali`, `formatJalali`, `formatJalaliLong`, `tehranTime`, `formatJalaliDateTime`) are pinned to `Asia/Tehran`; this one is not.
+- [x] The same-origin check on admin writes is one function with every caller on it
+- [ ] The low-stock definition is one function, so a badge, a page header and a dashboard cannot disagree — **unverified as of 2026-10-01.** In the gateway the definition is one function (`DashboardService.lowStockThreshold()`, read by `dashboard.service.ts:49`, `dashboard.controller.ts:46` and `stock-levels.service.ts:64`), but `apps/store/src/catalogue/components/product-buy-box.tsx:48` still carries a client-side second definition: `selected.stock - selected.reserved <= 3`. It does not come from the gateway, so a merchant who sets the threshold to 5 gets a storefront badge that disagrees with the panel's. The code was left untouched.
+- [x] Session revocation is reachable from the session implementation rather than re-implemented by the route that logs out
+- [x] The stock lifecycle has one implementation, and it is transactional with a compare-and-set — the storefront's current copy has neither, and a comment elsewhere in the repo claims the two copies cannot disagree
+- [ ] Regression tests cover each of these, including a concurrent duplicate payment callback that cannot apply a transition twice — **unverified as of 2026-10-01.** The concurrent duplicate callback is covered: `apps/api/tests/order-payment.test.ts:100` "applies a settlement at most once when the same callback arrives twice" drives two `settlePayment` calls through `Promise.all`, and `:114` asserts the stock is committed once. Money, phone, totals, order number, origin, session revocation and the stock lifecycle each have a test. Jalali date formatting has none: `grep -rn "formatJalali\|formatJalaliLong\|formatJalaliDateTime\|tehranTime\|toJalali" --include=*.test.ts .` outside `node_modules` returns nothing, so the date rule this ticket moved into the kernel is untested.
+
+## Comments
+
+The strongest evidence is negative and mechanical. `grep -rn "۰۱۲۳۴۵۶۷۸۹" apps packages` names exactly one Persian digit table (`packages/contracts/src/format.ts:4`), `grep -rn "nextOrderNumber" apps/api/src` names one implementation with exactly two callers (`checkout/checkout.service.ts:118`, `orders/orders.service.ts:536`), and the same-origin check is one file — `grep -rln 'headers.get("origin")' apps/admin/src` returns `apps/admin/src/lib/origin.ts` alone, and every mutating route handler under `apps/admin/src/app` calls `sameOrigin` (loop over `export async function (POST|PUT|PATCH|DELETE)` produced no misses).
+
+The four unticked boxes are code defects, not missing work, and all four are inside code another ticket owns; none was touched here. Two of them are arithmetic that the ticket explicitly named: `createManualOrder` recomputes the subtotal with an inline `reduce` and hardcodes `discountAmount: 0`, and the storefront buy box hardcodes `<= 3` as its low-stock line while the gateway reads the merchant's setting through one function. The third is narrower: `jalaliYear` is the one date helper still computed from the server's local clock rather than from `Asia/Tehran`, and the storefront footer renders it.
+
+`apps/api/tests/order-payment.test.ts:100` is the box that mattered most and it holds exactly as written — two settlements driven concurrently, one event recorded, and `:114` pins `stock: 8, reserved: 0` rather than a double decrement.

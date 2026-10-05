@@ -5,7 +5,7 @@
 // the cap is now stated in one place instead of being a number typed into a page.
 
 import Link from "next/link";
-import { BlogEditor } from "@/components/blog-editor";
+import { BlogEditor } from "@/content/components/blog-editor";
 import { readThrough } from "@/lib/reads";
 
 /** An id and a label, which is all a picker needs. */

@@ -20,13 +20,12 @@ import type { Request } from "express";
 // The `./slug` subpath rather than the package root, because the canonicalisation is not part of the
 // schema's vocabulary — it is the one answer to "what is this thing's address", and it is imported on
 // purpose by the writers that have to produce one.
-import { canonicalSlug } from "@kmodern/schema/slug";
+import { canonicalSlug } from "@kmodern/contracts/slug";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { createPrismaClient } from "../prisma/client.js";
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma, createPrismaClient } from "../prisma/index.js";
 import { SaveCategoryDto, UpdateCategoryDto, type SpecFieldInputDto } from "./dto/category.dto.js";
 import {
   CategoryNotEmptyException,

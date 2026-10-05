@@ -1,0 +1,401 @@
+"use client";
+
+// Navigation editor (006) — three menus (HEADER/FOOTER/MOBILE), each a
+// recursive item tree; saved as a full replace per location. Item target is
+// a typed link object; CATEGORY childSource auto-populates children on the
+// storefront. Promos are optional per top-level item.
+
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { saveNav } from "@/content/lib/nav-actions";
+// The vocabulary of link targets is the kernel's: `LinkRef` is what the storefront renders and what
+// the gateway validates, and its `type` member is the closed set of names. This file declared the
+// same seven names again as a local union, which is a second list to add a name to — and a
+// `TARGET_LABELS` record keyed by the local one would have said nothing about a target the kernel
+// accepts, so the omission would only surface as a raw untranslated value in the form.
+import type { LinkRef } from "@kmodern/contracts";
+import { idle, type ActionResult } from "@/lib/actions/result";
+import { Button, Card, CardContent, CardHeader, Checkbox, Input } from "@kmodern/ui";
+import { Field, Select } from "@/components/panel-ui";
+
+interface PromoState {
+  imageUrl: string;
+  alt: string;
+  linkType: LinkRef["type"];
+  linkValue: string;
+  heading: string;
+  subtext: string;
+  mobileVisible: boolean;
+}
+
+export interface ItemState {
+  key: string;
+  label: string;
+  targetType: LinkRef["type"];
+  targetValue: string;
+  childSource: "STATIC" | "CATEGORY";
+  categoryId: string;
+  display: "DROPDOWN" | "MEGA";
+  visible: boolean;
+  mobileVisible: boolean;
+  children: ItemState[];
+  promos: PromoState[];
+}
+
+const TARGET_LABELS: Record<LinkRef["type"], string> = {
+  PAGE: "صفحه داخلی",
+  CATEGORY: "دسته‌بندی",
+  COLLECTION: "مجموعه",
+  BLOG_INDEX: "فهرست وبلاگ",
+  BLOG_POST: "نوشته وبلاگ",
+  EXTERNAL: "لینک خارجی",
+  NONE: "بدون لینک",
+};
+
+export interface NavSeed {
+  location: string;
+  name: string;
+  items: ItemState[];
+  categories: Array<{ id: string; name: string; slug: string }>;
+  pages: Array<{ id: string; slug: string; title: string }>;
+  collections: Array<{ id: string; name: string }>;
+}
+
+interface ItemInput {
+  label: string;
+  target: LinkRef;
+  childSource: "STATIC" | "CATEGORY";
+  categoryId?: string;
+  display: "DROPDOWN" | "MEGA";
+  visible: boolean;
+  mobileVisible: boolean;
+  children: ItemInput[];
+  promos: Array<{
+    imageUrl: string;
+    alt: string;
+    link: LinkRef;
+    heading?: string;
+    subtext?: string;
+    mobileVisible: boolean;
+  }>;
+}
+
+function toLinkRef(type: LinkRef["type"], value: string): LinkRef {
+  if (type === "EXTERNAL") return { type, url: value, newTab: true };
+  if (type === "BLOG_INDEX") return { type };
+  if (type === "NONE") return { type };
+  return { type, targetId: value } as LinkRef;
+}
+
+function itemToInput(item: ItemState): ItemInput {
+  return {
+    label: item.label,
+    target: toLinkRef(item.targetType, item.targetValue),
+    childSource: item.childSource,
+    categoryId: item.categoryId || undefined,
+    display: item.display,
+    visible: item.visible,
+    mobileVisible: item.mobileVisible,
+    children: item.children.map(itemToInput),
+    promos: item.promos.map((p) => ({
+      imageUrl: p.imageUrl,
+      alt: p.alt,
+      link: toLinkRef(p.linkType, p.linkValue),
+      heading: p.heading || undefined,
+      subtext: p.subtext || undefined,
+      mobileVisible: p.mobileVisible,
+    })),
+  };
+}
+
+const newItem = (): ItemState => ({
+  key: `i-${Math.random().toString(36).slice(2, 8)}`,
+  label: "",
+  targetType: "PAGE",
+  targetValue: "",
+  childSource: "STATIC",
+  categoryId: "",
+  display: "DROPDOWN",
+  visible: true,
+  mobileVisible: true,
+  children: [],
+  promos: [],
+});
+
+export function NavEditor({ seed }: { seed: NavSeed }) {
+  const router = useRouter();
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(saveNav, idle);
+  useEffect(() => {
+    if (state.ok) router.refresh();
+  }, [state, router]);
+
+  const [items, setItems] = useState<ItemState[]>(seed.items);
+
+  const patchItem = (path: number[], patch: Partial<ItemState>) =>
+    setItems((items) => {
+      const copy = structuredClone(items);
+      let node: ItemState = copy[path[0]];
+      for (let i = 1; i < path.length; i++) node = node.children[path[i]];
+      Object.assign(node, patch);
+      return copy;
+    });
+
+  const removeItem = (path: number[]) =>
+    setItems((items) => {
+      const copy = structuredClone(items);
+      if (path.length === 1) {
+        copy.splice(path[0], 1);
+        return copy;
+      }
+      let node: ItemState = copy[path[0]];
+      for (let i = 1; i < path.length - 1; i++) node = node.children[path[i]];
+      node.children.splice(path[path.length - 1], 1);
+      return copy;
+    });
+
+  const addChild = (path: number[]) =>
+    setItems((items) => {
+      const copy = structuredClone(items);
+      let node: ItemState = copy[path[0]];
+      for (let i = 1; i < path.length; i++) node = node.children[path[i]];
+      node.children.push(newItem());
+      return copy;
+    });
+
+  const addRoot = () => setItems((items) => [...items, newItem()]);
+
+  const addPromo = (path: number[]) =>
+    setItems((items) => {
+      const copy = structuredClone(items);
+      let node: ItemState = copy[path[0]];
+      for (let i = 1; i < path.length; i++) node = node.children[path[i]];
+      node.promos.push({
+        imageUrl: "",
+        alt: "",
+        linkType: "PAGE",
+        linkValue: "",
+        heading: "",
+        subtext: "",
+        mobileVisible: false,
+      });
+      return copy;
+    });
+
+  const patchPromo = (path: number[], promoIndex: number, patch: Partial<PromoState>) =>
+    setItems((items) => {
+      const copy = structuredClone(items);
+      let node: ItemState = copy[path[0]];
+      for (let i = 1; i < path.length; i++) node = node.children[path[i]];
+      Object.assign(node.promos[promoIndex], patch);
+      return copy;
+    });
+
+  const removePromo = (path: number[], promoIndex: number) =>
+    setItems((items) => {
+      const copy = structuredClone(items);
+      let node: ItemState = copy[path[0]];
+      for (let i = 1; i < path.length; i++) node = node.children[path[i]];
+      node.promos.splice(promoIndex, 1);
+      return copy;
+    });
+
+  return (
+    <form action={formAction} className="space-y-5">
+      <input type="hidden" name="location" value={seed.location} />
+      <input type="hidden" name="name" value={seed.name} />
+      <input type="hidden" name="items" value={JSON.stringify(items.map(itemToInput))} />
+
+      <Card>
+        <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-ink">{`منوی ${seed.location === "HEADER" ? "سربرگ" : seed.location === "FOOTER" ? "پاصفحه" : "موبایل"}`}</h2>
+            <p className="mt-0.5 text-sm text-ash">{seed.name}</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 flex items-center gap-3">
+            <span className="text-sm text-ink">ساختار درختی منو:</span>
+            <Button type="button" variant="outline" onClick={addRoot}>+ افزودن آیتم ریشه</Button>
+            <span className="text-xs text-ash">{items.length} آیتم ریشه</span>
+          </div>
+
+          <div className="space-y-3">
+            {items.map((item, i) => (
+              <ItemEditor
+                key={item.key}
+                item={item}
+                path={[i]}
+                depth={0}
+                seed={seed}
+                patchItem={patchItem}
+                removeItem={removeItem}
+                addChild={addChild}
+                addPromo={addPromo}
+                patchPromo={patchPromo}
+                removePromo={removePromo}
+              />
+            ))}
+            {items.length === 0 && (
+              <p className="rounded-card border border-dashed border-fog py-8 text-center text-sm text-ash">منو خالی است</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Narrowed on `ok`, which is the point of the union: the old `ActionState` had four
+          optional fields, so a failure with no message type-checked and rendered an empty box. */}
+      {!state.ok && <p role="alert" className="notice-error">{state.error}</p>}
+      {state.ok && <p className="notice-success">{state.message}</p>}
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending}>{pending ? "در حال ذخیره…" : "ذخیره منو"}</Button>
+      </div>
+    </form>
+  );
+}
+
+function ItemEditor({
+  item,
+  path,
+  depth,
+  seed,
+  patchItem,
+  removeItem,
+  addChild,
+  addPromo,
+  patchPromo,
+  removePromo,
+}: {
+  item: ItemState;
+  path: number[];
+  depth: number;
+  seed: NavSeed;
+  patchItem: (path: number[], patch: Partial<ItemState>) => void;
+  removeItem: (path: number[]) => void;
+  addChild: (path: number[]) => void;
+  addPromo: (path: number[]) => void;
+  patchPromo: (path: number[], index: number, patch: Partial<PromoState>) => void;
+  removePromo: (path: number[], index: number) => void;
+}) {
+  const isCategory = item.childSource === "CATEGORY";
+
+  return (
+    <div className={`rounded-card border bg-white ${depth > 0 ? "ms-6 border-plaster" : "border-fog"}`}>
+      <div className="space-y-3 p-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Field label="عنوان"><Input value={item.label} onChange={(e) => patchItem(path, { label: e.target.value })} /></Field>
+          <Field label="نوع لینک">
+            <Select value={item.targetType} onChange={(e) => patchItem(path, { targetType: e.target.value as LinkRef["type"] })}>
+              {Object.entries(TARGET_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </Select>
+          </Field>
+          <Field label="مقدار لینک">
+            {item.targetType === "PAGE" ? (
+              <Select value={item.targetValue} onChange={(e) => patchItem(path, { targetValue: e.target.value })}>
+                <option value="" disabled>انتخاب صفحه…</option>
+                {seed.pages.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </Select>
+            ) : item.targetType === "CATEGORY" ? (
+              <Select value={item.targetValue} onChange={(e) => patchItem(path, { targetValue: e.target.value })}>
+                <option value="" disabled>انتخاب دسته…</option>
+                {seed.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            ) : item.targetType === "COLLECTION" ? (
+              <Select value={item.targetValue} onChange={(e) => patchItem(path, { targetValue: e.target.value })}>
+                <option value="" disabled>انتخاب مجموعه…</option>
+                {seed.collections.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            ) : (
+              <Input dir="ltr" value={item.targetValue} onChange={(e) => patchItem(path, { targetValue: e.target.value })} />
+            )}
+          </Field>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <Field label="نمایش زیرمنو">
+            <Select value={item.childSource} onChange={(e) => patchItem(path, { childSource: e.target.value as "STATIC" | "CATEGORY" })}>
+              <option value="STATIC">ساختار دستی</option>
+              <option value="CATEGORY">خودکار از دسته</option>
+            </Select>
+          </Field>
+          {isCategory && (
+            <Field label="دسته">
+              <Select value={item.categoryId} onChange={(e) => patchItem(path, { categoryId: e.target.value })}>
+                <option value="" disabled>انتخاب دسته…</option>
+                {seed.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            </Field>
+          )}
+          <Field label="نوع نمایش">
+            <Select value={item.display} onChange={(e) => patchItem(path, { display: e.target.value as "DROPDOWN" | "MEGA" })}>
+              <option value="DROPDOWN">منوی کشویی</option>
+              <option value="MEGA">مگامنو</option>
+            </Select>
+          </Field>
+          <div className="flex items-end gap-3 pb-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+              <Checkbox checked={item.visible} onCheckedChange={(v) => patchItem(path, { visible: v === true })} />
+              نمایش
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+              <Checkbox checked={item.mobileVisible} onCheckedChange={(v) => patchItem(path, { mobileVisible: v === true })} />
+              موبایل
+            </label>
+          </div>
+          <div className="flex-1" />
+          <Button type="button" variant="destructive" size="sm" onClick={() => removeItem(path)}>حذف</Button>
+        </div>
+
+        {!isCategory && (
+          <div className="space-y-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => addChild(path)}>+ زیرمنو</Button>
+            {item.children.map((child, i) => (
+              <ItemEditor
+                key={child.key}
+                item={child}
+                path={[...path, i]}
+                depth={depth + 1}
+                seed={seed}
+                patchItem={patchItem}
+                removeItem={removeItem}
+                addChild={addChild}
+                addPromo={addPromo}
+                patchPromo={patchPromo}
+                removePromo={removePromo}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-card bg-plaster p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs font-semibold text-ash">بنرهای پیشنهادی (Promo)</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => addPromo(path)}>+ تبلیغ</Button>
+          </div>
+          {item.promos.length > 0 && (
+            <div className="space-y-2">
+              {item.promos.map((p, k) => (
+                <div key={k} className="rounded-card border border-plaster bg-white p-3">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <Input aria-label={`آدرس تصویر تبلیغ ${k + 1}`} placeholder="آدرس تصویر" dir="ltr" value={p.imageUrl} onChange={(e) => patchPromo(path, k, { imageUrl: e.target.value })} />
+                    <Input aria-label={`متن جایگزین تبلیغ ${k + 1}`} placeholder="متن جایگزین" value={p.alt} onChange={(e) => patchPromo(path, k, { alt: e.target.value })} />
+                    <Select aria-label={`نوع لینک تبلیغ ${k + 1}`} value={p.linkType} onChange={(e) => patchPromo(path, k, { linkType: e.target.value as LinkRef["type"] })}>
+                      {Object.entries(TARGET_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </Select>
+                    <Input aria-label={`مقدار لینک تبلیغ ${k + 1}`} placeholder="مقدار لینک" dir="ltr" value={p.linkValue} onChange={(e) => patchPromo(path, k, { linkValue: e.target.value })} />
+                    <Input aria-label={`عنوان تبلیغ ${k + 1}`} placeholder="عنوان" value={p.heading} onChange={(e) => patchPromo(path, k, { heading: e.target.value })} />
+                    <Input aria-label={`زیرعنوان تبلیغ ${k + 1}`} placeholder="زیرعنوان" value={p.subtext} onChange={(e) => patchPromo(path, k, { subtext: e.target.value })} />
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
+                      <Checkbox checked={p.mobileVisible} onCheckedChange={(v) => patchPromo(path, k, { mobileVisible: v === true })} />
+                      نمایش در موبایل
+                    </label>
+                  </div>
+                  <button type="button" className="mt-2 text-xs text-red-600" onClick={() => removePromo(path, k)}>حذف تبلیغ</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { imageExtensionForContentType } from "../src/images";
-import { sniffContentType } from "../src/http";
+import { imageExtensionForContentType, sniffContentType } from "@kmodern/scraper-core";
 
 const ascii = (value: string) => Uint8Array.from([...value].map((char) => char.charCodeAt(0)));
 

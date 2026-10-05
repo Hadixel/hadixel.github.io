@@ -19,10 +19,20 @@
 // client is produced by the generate step and is not committed, so a fresh checkout has no such
 // file to find. The count is printed so the deferral is visible instead of a silent pass — §16.1
 // treats a green check that examined nothing as the failure mode to design against.
+//
+// The specifiers come from the parse tree, not from a regex over the text. A regex matches import
+// syntax inside string literals too: the test that writes an ESM probe to prove the URL guard is
+// enforced contains a whole import statement as a string, and a regex reports an import that does
+// not exist. Stripping the strings first is the obvious repair and is worse — a hand-rolled string
+// stripper mis-pairs an odd quote and swallows the real imports after it, which was verified by
+// planting a broken import next to one: the regex version called the tree clean. A gate that cannot
+// see a break is not a gate. The compiler is already a pinned root devDependency, so it does the
+// reading.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // Anywhere in the tree: these are never source, at any depth.
@@ -60,7 +70,37 @@ function resolves(fromFile, specifier) {
   return false;
 }
 
-const specifier = /(?:from|import|require)\s*\(?\s*['"](\.[^'"]+)['"]/g;
+// Every way source can name another module: a static import, a re-export, a dynamic `import()`,
+// and a CommonJS `require()`. Read off the tree, so a string that merely looks like an import is
+// not one.
+const SCRIPT_KIND = { ".ts": ts.ScriptKind.TS, ".tsx": ts.ScriptKind.TSX, ".jsx": ts.ScriptKind.JSX, ".js": ts.ScriptKind.JS, ".mjs": ts.ScriptKind.JS, ".cjs": ts.ScriptKind.JS, ".mts": ts.ScriptKind.TS, ".cts": ts.ScriptKind.TS };
+
+function specifiersOf(file, source) {
+  const kind = SCRIPT_KIND[file.slice(file.lastIndexOf("."))] ?? ts.ScriptKind.TS;
+  const tree = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, false, kind);
+  const found = [];
+  const literal = (node) => (ts.isStringLiteralLike(node) ? node.text : undefined);
+  const visit = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier
+    ) {
+      const text = literal(node.moduleSpecifier);
+      if (text !== undefined) found.push(text);
+    } else if (
+      ts.isCallExpression(node) &&
+      (ts.isImportKeyword(node.expression) ||
+        (ts.isIdentifier(node.expression) && node.expression.text === "require"))
+    ) {
+      const text = literal(node.arguments[0]);
+      if (text !== undefined) found.push(text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(tree);
+  return found;
+}
+
 // A path segment, not a substring: a file called generated-helpers.ts is ordinary source.
 const isGenerated = (path) => path.split(sep).includes("generated");
 const broken = [];
@@ -69,10 +109,11 @@ let examined = 0;
 for (const file of sourceFiles(ROOT, 0)) {
   examined++;
   const source = readFileSync(file, "utf8");
-  for (const match of source.matchAll(specifier)) {
-    if (resolves(file, match[1])) continue;
-    const line = `${relative(ROOT, file)} -> ${match[1]}`;
-    if (isGenerated(resolve(dirname(file), match[1]))) deferred.push(line);
+  for (const specifier of specifiersOf(file, source)) {
+    if (!specifier.startsWith(".")) continue;
+    if (resolves(file, specifier)) continue;
+    const line = `${relative(ROOT, file)} -> ${specifier}`;
+    if (isGenerated(resolve(dirname(file), specifier))) deferred.push(line);
     else broken.push(line);
   }
 }

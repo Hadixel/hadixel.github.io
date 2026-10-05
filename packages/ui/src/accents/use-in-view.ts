@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { cn } from "../cn";
-
 /* Shared mount observer: animates once when visible; SSR renders final state. */
 function useInView<T extends HTMLElement>() {
   const ref = useRef<T>(null);

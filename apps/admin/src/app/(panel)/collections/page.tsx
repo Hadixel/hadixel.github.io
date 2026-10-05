@@ -9,7 +9,7 @@
 // needs names beside them. One page, one `Promise.all`, and nothing is fetched to label a row afterwards.
 
 import { readThrough } from "@/lib/reads";
-import { CollectionsManager } from "./collections-manager";
+import { CollectionsManager } from "@/catalogue/components/collections-manager";
 
 /** One collection as the gateway's `GET /collections` answers. */
 interface CollectionSummary {

@@ -21,12 +21,12 @@ _Avoid_: color option, model (the model code belongs to the Product)
 **Color**:
 The named finish of a Variant (e.g. استیل, مشکی). Every Variant has exactly one. Colors are a *presentation* attribute of a Variant, not an independent purchasable entity.
 
-**Brand (برند)**:
+**Brand**:
 An appliance brand the store carries (e.g. Datees داتیس, Schuffle) — attribution appears only in a Product's specs table.
 _Avoid_: supplier credits in chrome, per-card brand stamps, "Powered by …", bylines like "توسط …"
 ### Presentation
 
-**Showcase (نمای ویژه)**:
+**Showcase**:
 The brand's premium visual language: one-of-a-kind presentation where product qualities are shown, not labeled. A "4 colors" badge is retail-store signage — a Showcase presents the actual Color dots on the card instead.
 _Avoid_: badge-driven UI, retail tags, generic e-commerce look
 
@@ -34,7 +34,7 @@ _Avoid_: badge-driven UI, retail tags, generic e-commerce look
 The single chromatic accent (#1d4ed8 family, pale sibling #dbeafe) — product-native (a working gas flame), reserved for activation moments: status badges, active navigation, primary CTA, current-state indicators. No more than ~3% of any screen.
 _Avoid_: copper, gold, warm metallics (retired — read traditional, not modern kitchen)
 
-**Popular searches (جستجوهای پرطرفدار)**:
+**Popular searches**:
 The header search panel's discovery row: chips of the newest published Products, served by the public search endpoint's hot mode before the shopper types.
 _Avoid_: hand-typed suggestion lists, bestseller claims
 

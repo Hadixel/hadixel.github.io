@@ -29,7 +29,7 @@
         "prisma/schema.prisma",
         "tsconfig.build.json",
         "nest-cli.json",
-        "../../packages/schema/src/**",
+        "../../packages/contracts/src/**",
         "../../scripts/gateway-dist-manifest.mjs"
       ],
       "env": ["NODE_ENV"]
@@ -50,6 +50,43 @@
       // The audit boots a disposable database, starts a server and reads the git history. None of
       // that is a function of the source, so a cached "pass" would be a claim about the past.
       "cache": false
+    }
+  },
+
+  // Which workspace may depend on which, checked by `turbo boundaries`.
+  //
+  // turbo takes a package's tags from that package's own turbo.json (`"tags": ["app"]`), and the
+  // rules below are keyed by tag, so a rank is declared once per package and enforced once per rank.
+  // Nothing here is a prose declaration that can drift: the command fails if an edge the rules do not
+  // allow exists, and it fails if an import names a package the importer did not declare — which is
+  // how a hoisted node_modules otherwise hides a dependency nobody owns.
+  //
+  // The ranks are §4's: the kernel sits on nothing, a package sits on the kernel, an app sits on
+  // packages and on nothing else. `app.dependents` is empty because §5.1 gives an app no exports
+  // field — nothing imports an app — and a cycle needs two edges, so both directions are named.
+  "boundaries": {
+    // `vitest` is imported by every workspace's tests and declared once, at the root, because a test
+    // runner is one tool for one repo (§6). Listed rather than repeated in nine manifests so the
+    // version cannot drift, and so the "did you declare what you import" check stays useful instead
+    // of printing the same 67 lines on every run.
+    "implicitDependencies": ["vitest"],
+    "tags": {
+      "kernel": {
+        "dependencies": { "allow": [] },
+        "dependents": { "allow": ["kernel", "pkg", "app", "build-only"] }
+      },
+      "pkg": {
+        "dependencies": { "allow": ["kernel"] },
+        "dependents": { "allow": ["kernel", "pkg", "app"] }
+      },
+      "app": {
+        "dependencies": { "allow": ["kernel", "pkg"] },
+        "dependents": { "allow": [] }
+      },
+      "build-only": {
+        "dependencies": { "allow": [] },
+        "dependents": { "allow": [] }
+      }
     }
   }
 }

@@ -8,7 +8,7 @@
 // from apps/store/public/products (copy step in prepare-images).
 
 import "dotenv/config";
-import { db } from "../src/prisma/client.js";
+import { db } from "../src/prisma/index.js";
 import { readFileSync } from "node:fs";
 import { dirname, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import BlockRenderer from "@/components/block-renderer";
+import BlockRenderer from "@/content/components/block-renderer";
 import { EmptyState } from "@/components/empty-state";
-import { lookupPage } from "@/lib/gateway-page";
+import { resolveBlockPayloads } from "@/content/lib/block-data";
+import { lookupPage } from "@/content/lib/gateway-page";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
         </div>
       </div>
       {page.blocks.length > 0 ? (
-        <BlockRenderer blocks={page.blocks} />
+        <BlockRenderer blocks={page.blocks} payloads={await resolveBlockPayloads(page.blocks)} />
       ) : (
         <EmptyState
           title="محتوای این صفحه هنوز آماده نیست"

@@ -157,6 +157,7 @@ export interface CatalogueProduct {
   category: { id: string; name: string; slug: string };
   price: number;
   maxPrice: number;
+  discount: { label: string; discountedPrice: number; endsAt: string | null } | null;
   available: boolean;
   image: string | null;
   variantCount: number;
@@ -235,6 +236,7 @@ export interface CatalogueProductDetail {
   features: string[];
   categoryId: string;
   category: { id: string; name: string; slug: string };
+  discount: { label: string; endsAt: string | null; variantPrices: Record<string, number> } | null;
   variants: CatalogueDetailVariant[];
   specValues: CatalogueSpecValue[];
 }

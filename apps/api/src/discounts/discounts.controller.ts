@@ -29,7 +29,7 @@ import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../prisma/index.js";
 import { SaveDiscountDto, UpdateDiscountDto } from "./dto/discount.dto.js";
 import { DiscountCodeTakenException, DiscountNotFoundException } from "./exceptions/discount.exception.js";
 import {

@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       name: p.name,
       price: p.price,
       maxPrice: p.maxPrice > p.price ? p.maxPrice : undefined,
+      discount: p.discount,
       image: p.image,
     })),
   });

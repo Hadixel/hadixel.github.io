@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { logout } from "@/lib/auth";
+import { logout } from "@/auth/lib/auth";
 import { sameOrigin } from "@/lib/origin";
 
 export const runtime = "nodejs";

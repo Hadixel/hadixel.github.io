@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toFaDigits } from "@kmodern/schema";
+import { toFaDigits } from "@kmodern/contracts";
 import { cn } from "../cn";
 import { useInView } from "./use-in-view";
 

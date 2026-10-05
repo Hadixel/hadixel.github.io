@@ -1,0 +1,34 @@
+{
+  "flat-dto": {
+    "command": "find apps/api/src -name \"*.dto.ts\" -not -path \"*/dto/*\" | wc -l",
+    "seed": 0
+  },
+  "flat-exception": {
+    "command": "find apps/api/src -name \"*.exception.ts\" -not -path \"*/exceptions/*\" | wc -l",
+    "seed": 0
+  },
+  "stray-tool-config": {
+    "command": "find . -mindepth 2 \\( -name \"*lint.config.*\" -o -name \".*lintrc*\" -o -name \".*lintignore\" -o -name \"prettier.config.*\" -o -name \".prettierrc*\" -o -name \".prettierignore\" -o -name \"biome.json*\" -o -name \"dprint.json*\" -o -name \".editorconfig\" \\) | grep -v node_modules | grep -v .claude/worktrees | grep -v docs/blueprint | wc -l",
+    "seed": 0
+  },
+  "colour-literal-store": {
+    "command": "grep -rEoh \"#[0-9a-fA-F]{3,8}\" --include=\"*.ts\" --include=\"*.tsx\" apps/store/src | wc -l",
+    "seed": 0
+  },
+  "colour-literal-admin": {
+    "command": "grep -rEoh \"#[0-9a-fA-F]{3,8}\" --include=\"*.ts\" --include=\"*.tsx\" apps/admin/src | wc -l",
+    "seed": 0
+  },
+  "suppression": {
+    "command": "grep -rn \"boundaries-ignore\" --include=\"*.ts\" --include=\"*.tsx\" apps packages | wc -l",
+    "seed": 0
+  },
+  "client-route-files-only": {
+    "command": "node scripts/audit-client-structure.js --metric=route-files-only",
+    "seed": 0
+  },
+  "app-root-stray-entry": {
+    "command": "node scripts/audit-app-root.js --metric=stray-app-root-entries",
+    "seed": 0
+  }
+}

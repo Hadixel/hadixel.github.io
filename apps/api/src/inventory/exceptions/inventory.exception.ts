@@ -1,8 +1,7 @@
 import { HttpStatus } from "@nestjs/common";
-// Extensionless, and not by accident: `inventory.service.ts` is re-exported by `prisma/index.ts`,
-// which `packages/db` forwards, which both clients bundle. A `.js` specifier type-checks and then
-// fails the Next build, because the consuming bundler does not map `.js` onto the `.ts` source — the
-// note at the top of `inventory.service.ts` says so, and this file is in its import graph.
+// Extensionless, and not by accident: this file sits in the inventory service's import graph, and
+// that module names this file extensionless too. Both spellings resolve under this workspace's
+// compiler settings — the pair is kept alike rather than half of it migrated.
 import { GatewayException } from "../../common/exceptions/gateway.exception";
 
 /**

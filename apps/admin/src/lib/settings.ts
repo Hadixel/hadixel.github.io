@@ -10,7 +10,7 @@
 
 import { cache } from "react";
 import { readThrough } from "@/lib/reads";
-import { settingKeys, type SettingKey } from "@kmodern/schema/setting-keys";
+import { settingKeys, type SettingKey } from "@kmodern/contracts/setting-keys";
 
 /**
  * One read for every setting, memoised for the length of one render.

@@ -1,8 +1,8 @@
-import { formatToman, toFaDigits } from "@kmodern/schema/format";
-import type { LinkRef } from "@kmodern/schema";
+import type { LinkRef } from "@kmodern/contracts";
 import { Inject, Injectable } from "@nestjs/common";
+import { cardDiscount, resolveProductDiscounts } from "../discounts/product-discounts.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { createPrismaClient } from "../prisma/client.js";
+import type { createPrismaClient } from "../prisma/index.js";
 import { resolveLinks } from "./links.js";
 import type {
   BlockData,
@@ -121,7 +121,7 @@ export class ContentService {
       },
       take: opts.limit,
     });
-    return products.map((p) => ({
+    const cards = products.map((p) => ({
       id: p.id,
       slug: p.slug,
       name: p.name,
@@ -141,6 +141,20 @@ export class ContentService {
         price: v.price,
       })),
     }));
+
+    // One discount query for the whole read, over the cards it just built — never one per product.
+    const discounts = await resolveProductDiscounts(
+      this.db,
+      cards.map((card) => ({
+        id: card.id,
+        categoryId: card.category.id,
+        price: card.price,
+      })),
+    );
+    return cards.map((card) => ({
+      ...card,
+      discount: cardDiscount(discounts.get(card.id) ?? null, card.price),
+    }));
   }
 
   async publishedPosts(limit: number): Promise<HomePost[]> {
@@ -154,62 +168,33 @@ export class ContentService {
   }
 
   /**
-   * Special offers: active automatic discounts inside their window.
+   * Special offers: the discounted products of the shop's published list, biggest saving first.
    *
-   * Coupon-only codes are deliberately excluded. They are not a storefront section, and advertising
-   * a code nobody can see is noise.
-   *
-   * A Discount names its products in a scalar `productIds` array rather than a relation, so there
-   * is nothing to join: the discounts are read first, the products they name are read second, and the
-   * two are joined here. The best discount per product wins, and the cap on a percentage
-   * discount (`maxAmount`) is honoured — dropping either would silently overstate every offer on
-   * the page.
+   * Nothing is decided here. `publishedProducts` resolves each card's winning discount through
+   * `discounts/product-discounts.ts` — the one rule every product read in the gateway resolves
+   * through — and this reads the result back out. That is what one rule buys: a discount scoped to
+   * a category, a collection or the whole shop is a deal exactly as a product-scoped one is, the
+   * percentage cap is honoured exactly as the cards honour it, and a coupon-only code stays out
+   * because the rule only ever picks AUTOMATIC discounts.
    */
   async activeDeals(limit: number): Promise<HomeDeal[]> {
-    const now = new Date();
-    const discounts = await this.db.discount.findMany({
-      where: {
-        status: "ACTIVE",
-        mode: "AUTOMATIC",
-        type: { in: ["PERCENT", "FIXED"] },
-        startsAt: { lte: now },
-        OR: [{ endsAt: null }, { endsAt: { gte: now } }],
-      },
-      orderBy: { value: "desc" },
-    });
-    if (discounts.length === 0) return [];
-
-    const productIds = [...new Set(discounts.flatMap((d) => d.productIds))].slice(0, limit * 2);
-    if (productIds.length === 0) return [];
-
-    const products = (await this.publishedProducts({ limit: 100 })).filter((p) =>
-      productIds.includes(p.id),
+    const products = await this.publishedProducts({ limit: 100 });
+    const deals = products.flatMap((product): HomeDeal[] =>
+      product.discount === null
+        ? []
+        : [
+            {
+              product,
+              label: product.discount.label,
+              discountedPrice: product.discount.discountedPrice,
+              endsAt: product.discount.endsAt,
+            },
+          ],
     );
-    const byId = new Map(products.map((p) => [p.id, p]));
-
-    const deals: HomeDeal[] = [];
-    for (const id of productIds) {
-      const product = byId.get(id);
-      if (!product) continue;
-      const best = discounts
-        .filter((d) => d.productIds.includes(id))
-        .sort(
-          (a, b) => discountAmount(b, product.price) - discountAmount(a, product.price),
-        )[0];
-      if (!best) continue;
-      // The saving can never exceed the price. A fixed discount larger than the product would
-      // otherwise render as a negative price on the storefront.
-      const amount = Math.min(discountAmount(best, product.price), product.price);
-      deals.push({
-        product,
-        label:
-          best.type === "PERCENT"
-            ? `${toFaDigits(Math.round(best.value))}٪`
-            : formatToman(best.value),
-        discountedPrice: Math.round(product.price - amount),
-        endsAt: best.endsAt ? best.endsAt.toISOString() : null,
-      });
-    }
+    // The biggest saving first, so a larger offer never falls below a smaller one.
+    deals.sort(
+      (a, b) => b.product.price - b.discountedPrice - (a.product.price - a.discountedPrice),
+    );
     return deals.slice(0, limit);
   }
 
@@ -532,16 +517,4 @@ function productSourceOf(source: unknown): ProductSource {
 function bannersOf(type: string, props: Record<string, unknown>): Record<string, unknown>[] {
   if (type !== "banner") return list(props.banners).map(obj);
   return [props];
-}
-
-/** The saving a discount represents, in Toman, honouring the percentage cap. */
-function discountAmount(
-  discount: { type: string; value: number; maxAmount: number | null },
-  price: number,
-): number {
-  if (discount.type === "PERCENT") {
-    const raw = (price * discount.value) / 100;
-    return discount.maxAmount != null ? Math.min(raw, discount.maxAmount) : raw;
-  }
-  return discount.value;
 }

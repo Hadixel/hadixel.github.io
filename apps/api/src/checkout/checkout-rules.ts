@@ -8,7 +8,7 @@
 // Each rule here is named, pure and separately testable, because the point of moving them is that they
 // can be reasoned about away from a database.
 
-import { settingKeys } from "@kmodern/schema/setting-keys";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
 import type { CheckoutDb as Db } from "./db-types.js";
 import type { ShippingMethod } from "./shipping.js";
 

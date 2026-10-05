@@ -6,7 +6,7 @@ import { cn } from "../cn";
 /* Status badges: identical pill anatomy, fill-only differentiation
    (Showcase rule — never differentiate by shape). 30px pill radius. */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-[30px] px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+  "inline-flex items-center rounded-pill px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
   {
     variants: {
       variant: {

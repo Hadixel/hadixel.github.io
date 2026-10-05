@@ -1,8 +1,8 @@
-import { currentCustomer } from "@/lib/customer-session";
-import { orderRows, readMyOrders } from "@/lib/my-orders";
+import { currentCustomer } from "@/account/lib/customer-session";
+import { orderRows, readMyOrders } from "@/orders/lib/my-orders";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { OrderRow } from "@/components/order-row";
+import { OrderRow } from "@/orders/components/order-row";
 
 export const dynamic = "force-dynamic";
 

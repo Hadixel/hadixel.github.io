@@ -279,6 +279,9 @@ export async function makeDiscount(opts: {
    * will happily create and a write test will then trip over for the wrong reason.
    */
   scope?: "ALL" | "PRODUCTS" | "CATEGORIES" | "COLLECTIONS";
+  /** Targets for a `CATEGORIES`/`COLLECTIONS` scope. Empty unless the test says otherwise. */
+  categoryIds?: string[];
+  collectionIds?: string[];
   value: number;
   maxAmount?: number | null;
   mode?: "AUTOMATIC" | "COUPON";
@@ -297,6 +300,8 @@ export async function makeDiscount(opts: {
       mode: opts.mode ?? "AUTOMATIC",
       status: opts.status ?? "ACTIVE",
       productIds: opts.productIds,
+      categoryIds: opts.categoryIds ?? [],
+      collectionIds: opts.collectionIds ?? [],
       startsAt: opts.startsAt ?? new Date(Date.now() - 60_000),
       endsAt: opts.endsAt === undefined ? null : opts.endsAt,
     },

@@ -8,7 +8,7 @@
 // *whole* tree, and the schema describes one item at a time. The panel threw bare
 // `Error("NAV_DEPTH")` and matched the text afterwards, which is a rule about a string.
 
-import { linkRefSchema, menuSchema, type MenuItemValue } from "@kmodern/schema";
+import { linkRefSchema, menuSchema, type MenuItemValue } from "@kmodern/contracts";
 import { NavRuleException } from "./exceptions/nav.exception.js";
 import { MAX_DEPTH, MAX_TOTAL_ITEMS } from "./dto/nav.dto.js";
 

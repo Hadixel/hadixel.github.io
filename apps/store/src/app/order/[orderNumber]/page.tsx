@@ -1,11 +1,11 @@
-import { currentCustomer } from "@/lib/customer-session";
-import { readMyOrderByNumber } from "@/lib/my-orders";
+import { currentCustomer } from "@/account/lib/customer-session";
+import { readMyOrderByNumber } from "@/orders/lib/my-orders";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { toFaDigits } from "@kmodern/schema/format";
-import { settingKeys } from "@kmodern/schema/setting-keys";
+import { formatJalali, formatJalaliDateTime, toFaDigits } from "@kmodern/contracts";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
 import Link from "next/link";
-import PayButton from "@/components/pay-button";
+import PayButton from "@/orders/components/pay-button";
 import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
 import { StatusNotice } from "@/components/status-notice";
@@ -53,7 +53,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
       <PageHeader
         title={`سفارش ${toFaDigits(order.orderNumber)}`}
-        description={`ثبت‌شده در ${new Date(order.placedAt).toLocaleDateString("fa-IR")}`}
+        description={`ثبت‌شده در ${formatJalali(new Date(order.placedAt))}`}
         actions={<Link href="/orders" className="inline-flex min-h-11 items-center rounded-card border border-fog px-4 text-sm font-bold text-ink transition-colors hover:bg-plaster">همه سفارش‌ها</Link>}
       />
 
@@ -98,10 +98,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             {order.events.map((event, index) => (
               <li key={`${event.at}-${index}`} className="relative flex gap-4 pb-5 last:pb-0">
                 {index < order.events.length - 1 && <span className="absolute right-[5px] top-4 h-full w-px bg-fog" aria-hidden />}
-                <span className="relative z-10 mt-1.5 size-3 shrink-0 rounded-[30px] bg-flame-700 ring-4 ring-flame-50" aria-hidden />
+                <span className="relative z-10 mt-1.5 size-3 shrink-0 rounded-pill bg-flame-700 ring-4 ring-flame-50" aria-hidden />
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-ink">{event.label}</div>
-                  <div className="mt-1 text-xs text-ash">{new Date(event.at).toLocaleString("fa-IR")}</div>
+                  <div className="mt-1 text-xs text-ash">{formatJalaliDateTime(new Date(event.at))}</div>
                   {event.note && <div className="mt-1.5 text-xs leading-6 text-ash">{event.note}</div>}
                 </div>
               </li>

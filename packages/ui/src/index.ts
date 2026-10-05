@@ -27,17 +27,22 @@ export { ColorDots } from "./showcase/color-dots";
 export { deriveColorDots, type DotVariant } from "./showcase/color-dots-logic";
 export { Price } from "./showcase/price";
 export {
-  SectionHeader,
   NewBadge,
   SoldOutBadge,
   AnnouncementStrip,
   RankNumeral,
 } from "./showcase/showcase";
 
+// Editorial section anchor — shared by every block/section surface
+export { SectionHeader } from "./components/section-header";
+
 // Showcase accents (React Bits adaptations — marketing surfaces only, see accents/README.md)
 export { FadeWords } from "./accents/fade-words";
 export { SlideWords } from "./accents/slide-words";
 export { RiseBlock } from "./accents/rise-block";
 export { Counter } from "./accents/counter";
+export { ShinyText } from "./accents/shiny-text";
+export { SpotlightCard } from "./accents/spotlight-card";
+export { StarBorder } from "./accents/star-border";
 export { ProductGallery } from "./showcase/product-gallery";
 export { ColorDotSwatches } from "./showcase/color-dots";

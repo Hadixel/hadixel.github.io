@@ -15,7 +15,7 @@
 // column is read as. That conversion is the whole of the typed accessor contract (011/017) — and it
 // lives beside the definitions, so a field cannot be declared as a number and stored as a string.
 
-import { isIranPhone, normalizeIranPhone } from "@kmodern/schema";
+import { isIranPhone, normalizeIranPhone } from "@kmodern/contracts";
 import { SETTING_FIELDS, columnKeyFor, type SettingFieldDef } from "./definitions.js";
 
 /**

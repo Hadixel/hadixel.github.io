@@ -13,7 +13,7 @@
   "dependencies": {
     "@heroui/react": "^3.2.4",
     "@heroui/styles": "^3.2.4",
-    "@kmodern/schema": "workspace:*",
+    "@kmodern/contracts": "workspace:*",
     "@kmodern/transport": "workspace:*",
     "@kmodern/ui": "workspace:*",
     "dotenv": "^16.4.5",

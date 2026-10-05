@@ -13,7 +13,7 @@ import {
   UnauthorizedException,
 } from "../common/exceptions/gateway.exception.js";
 import { AuthService } from "./auth.service.js";
-import { ADMIN_COOKIE, CUSTOMER_COOKIE } from "./session.js";
+import { ADMIN_COOKIE, CUSTOMER_COOKIE, tokenFromCookie } from "./session.js";
 
 /**
  * A phone number as it arrives, before normalisation.
@@ -324,12 +324,3 @@ function adminPasswordMessage(reason: string): string {
   return "گذرواژه جدید باید حداقل ۸ نویسه باشد";
 }
 
-/** One cookie out of a `Cookie:` header, by name. */
-export function tokenFromCookie(header: string | undefined, name: string): string | null {
-  if (!header) return null;
-  for (const part of header.split(";")) {
-    const [key, ...rest] = part.trim().split("=");
-    if (key === name) return rest.join("=") || null;
-  }
-  return null;
-}

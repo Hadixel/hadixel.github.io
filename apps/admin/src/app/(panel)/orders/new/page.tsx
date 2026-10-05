@@ -6,7 +6,7 @@
 // list belongs where the write is validated rather than in a page.
 
 import { readThrough } from "@/lib/reads";
-import { ManualOrderForm } from "./form";
+import { ManualOrderForm } from "@/orders/components/new-order-form";
 
 /** What the gateway's `GET /orders/options` answers. */
 interface OrderFormOptions {

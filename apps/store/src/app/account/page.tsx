@@ -1,7 +1,7 @@
-import { currentCustomer } from "@/lib/customer-session";
-import { readMyOrders, recentOrderRows } from "@/lib/my-orders";
-import AccountLogin from "./account-login";
-import { AccountArea } from "./account-area";
+import { currentCustomer } from "@/account/lib/customer-session";
+import { readMyOrders, recentOrderRows } from "@/orders/lib/my-orders";
+import AccountLogin from "@/account/components/account-login";
+import { AccountArea } from "@/account/components/account-area";
 
 export const dynamic = "force-dynamic";
 

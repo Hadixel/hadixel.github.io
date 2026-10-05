@@ -18,8 +18,14 @@
 // a client that has to unpack a row is a client that can unpack it wrongly.
 
 import { Inject, Injectable } from "@nestjs/common";
+import {
+  cardDiscount,
+  detailDiscount,
+  resolveProductDiscounts,
+  type CardDiscount,
+} from "../discounts/product-discounts.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../prisma/index.js";
 import {
   CATALOGUE_PAGE_SIZE,
   COLLECTION_PREVIEW_SIZE,
@@ -140,11 +146,17 @@ export class CatalogueService {
       orderBy: { sortOrder: "asc" },
       select: collectionSelect,
     });
-    return rows.map((row) => ({
+    // Every collection's members discounted in one batched read, not one query per collection.
+    const memberCards = rows.map((row) => row.items.map((item) => this.toCard(item.product)));
+    const discounts = await this.cardDiscounts(memberCards.flat());
+    return rows.map((row, index) => ({
       id: row.id,
       name: row.name,
       slug: row.slug,
-      items: row.items.map((item) => this.toCard(item.product)),
+      items: memberCards[index].map((card) => ({
+        ...card,
+        discount: discounts.get(card.id) ?? null,
+      })),
     }));
   }
 
@@ -209,9 +221,14 @@ export class CatalogueService {
     });
 
     const cards = products.map((product) => this.toCard(product));
-    if (opts.sort === CatalogueSortDto.PriceAsc) cards.sort((a, b) => a.price - b.price);
-    if (opts.sort === CatalogueSortDto.PriceDesc) cards.sort((a, b) => b.price - a.price);
-    return priceSort ? cards.slice(0, limit) : cards;
+    const discounts = await this.cardDiscounts(cards);
+    const rows = cards.map((card) => ({
+      ...card,
+      discount: discounts.get(card.id) ?? null,
+    }));
+    if (opts.sort === CatalogueSortDto.PriceAsc) rows.sort((a, b) => a.price - b.price);
+    if (opts.sort === CatalogueSortDto.PriceDesc) rows.sort((a, b) => b.price - a.price);
+    return priceSort ? rows.slice(0, limit) : rows;
   }
 
   /**
@@ -249,6 +266,23 @@ export class CatalogueService {
     });
     if (!row) return null;
 
+    // The rule is chosen against the lead price a card prices this product at — the cheapest
+    // *sellable* variant — so the card that links here and this page pick the same winner. Every
+    // variant's own price then carries the saving, sold-out colours included: the page shows what
+    // each colour would cost under the same rule.
+    const sellablePrices = row.variants
+      .filter((variant) => variant.stock > 0 || variant.allowBackorder)
+      .map((variant) => variant.price);
+    const winners = await resolveProductDiscounts(this.db, [
+      {
+        id: row.id,
+        categoryId: row.categoryId,
+        price: sellablePrices.length ? Math.min(...sellablePrices) : 0,
+      },
+    ]);
+    const variantPrices: Record<string, number> = {};
+    for (const variant of row.variants) variantPrices[variant.id] = variant.price;
+
     return {
       id: row.id,
       slug: row.slug,
@@ -259,6 +293,7 @@ export class CatalogueService {
       features: row.features,
       categoryId: row.categoryId,
       category: row.category,
+      discount: detailDiscount(winners.get(row.id) ?? null, variantPrices),
       variants: row.variants.map((variant) => ({
         ...variant,
         available: variant.allowBackorder || variant.stock - variant.reserved > 0,
@@ -272,14 +307,17 @@ export class CatalogueService {
   }
 
   /**
-   * A product row as a card draws it.
+   * A product row as a card draws it — minus the `discount` field.
    *
    * The one place a product's price and availability are decided, shared by the listing, the
    * collection preview and the product page's related row. A product with no sellable variant is
    * `available: false` rather than absent: it is a published product with nothing to buy today, and
    * hiding it would make a category look empty for a reason the shopper cannot see.
+   *
+   * The discount is the one field a single row cannot answer: it is resolved for a read's whole
+   * batch in one query (`cardDiscounts` below) and attached after, never per row.
    */
-  private toCard(row: CardRow): CatalogueProduct {
+  private toCard(row: CardRow): Omit<CatalogueProduct, "discount"> {
     const prices = row.variants.map((variant) => variant.price);
     return {
       id: row.id,
@@ -301,5 +339,25 @@ export class CatalogueService {
         price: variant.price,
       })),
     };
+  }
+
+  /**
+   * The winning discount for each card — one batched resolution for the whole read, then the
+   * card's own `discount` view keyed by product id. A card nothing targets has no entry, which the
+   * call sites read back as `null`.
+   */
+  private async cardDiscounts(
+    cards: readonly Omit<CatalogueProduct, "discount">[],
+  ): Promise<Map<string, CardDiscount>> {
+    const rules = await resolveProductDiscounts(
+      this.db,
+      cards.map((card) => ({ id: card.id, categoryId: card.category.id, price: card.price })),
+    );
+    const views = new Map<string, CardDiscount>();
+    for (const card of cards) {
+      const view = cardDiscount(rules.get(card.id) ?? null, card.price);
+      if (view) views.set(card.id, view);
+    }
+    return views;
   }
 }

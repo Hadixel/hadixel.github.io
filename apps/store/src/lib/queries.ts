@@ -15,13 +15,7 @@
 
 import { gateway } from "@/lib/gateway";
 import { GatewayError } from "@kmodern/transport/client";
-
-export interface CategorySummary {
-  id: string;
-  name: string;
-  slug: string;
-  parentId: string | null;
-}
+import type { CategorySummary } from "@/types";
 
 export interface CategoryNode extends CategorySummary {
   children: CategoryNode[];
@@ -46,6 +40,9 @@ export interface PublishedProduct {
     images: string[];
     price: number;
   }>;
+  /** The gateway's price cut for this card, or none. `label` is already formatted (۲۰٪ or an
+      amount), so no renderer appends a sign to it. */
+  discount: { label: string; discountedPrice: number; endsAt: string | null } | null;
 }
 
 export type PublishedProductList = PublishedProduct[];
@@ -87,6 +84,10 @@ export interface ProductDetail {
   category: { id: string; name: string; slug: string };
   variants: ProductDetailVariant[];
   specValues: ProductSpecValue[];
+  /** The gateway's price cut for this product: the label for the badge, and every variant id at its
+      discounted price. `null` when nothing here is discounted; a variant id absent from the record
+      is simply not discounted. */
+  discount: { label: string; endsAt: string | null; variantPrices: Record<string, number> } | null;
 }
 
 export interface ProductDetailVariant {

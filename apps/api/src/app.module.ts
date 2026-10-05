@@ -21,6 +21,7 @@ import { PostsModule } from "./posts/posts.module.js";
 import { ProductsModule } from "./products/products.module.js";
 import { ScraperModule } from "./scraper/scraper.module.js";
 import { SettingsModule } from "./settings/settings.module.js";
+import { PriceWatchModule } from "./price-watch/price-watch.module.js";
 import { ShopperModule } from "./shopper/shopper.module.js";
 import { StockLevelsModule } from "./stock-levels/stock-levels.module.js";
 import { StorefrontModule } from "./storefront/storefront.module.js";
@@ -89,6 +90,11 @@ import { StorefrontModule } from "./storefront/storefront.module.js";
     // upsert of products, their categories and their variants: it is the one route that writes every
     // table Products writes, and it holds the vocabulary deciding which of those rows exist.
     ScraperModule,
+    // The price watch sits with the scraper and after it, because it reads the same source: its
+    // comparison is against the Datees Shop catalogue the scraper harvested from. It writes no
+    // product of its own — only `PriceChange` rows, and `Variant.price` when an operator applies
+    // one — so it declares nothing beyond the data client.
+    PriceWatchModule,
     // Pages sit beside the content reads they feed: the storefront renders these blocks.
     PagesModule,
     // Settings last among the operator's features: it names no other feature's rows, and everything

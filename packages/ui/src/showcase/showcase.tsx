@@ -1,39 +1,6 @@
 import { cn } from "../cn";
 import { Badge } from "../components/badge";
-import { toFaDigits } from "@kmodern/schema";
-
-/* Section header — title right (RTL), optional hairline arrow controls left. */
-export function SectionHeader({
-  title,
-  seeAllHref,
-  className,
-}: {
-  title: string;
-  seeAllHref?: string;
-  className?: string;
-}) {
-  return (
-    <div className={cn("relative mb-8 text-center", className)}>
-      <h2 className="inline-flex flex-col items-center gap-3 font-display text-2xl font-extrabold text-ink">
-        {title}
-        {/* flame-dot flourish — the section-title signature */}
-        <span aria-hidden className="flex items-center gap-1.5">
-          <span className="h-px w-7 bg-fog" />
-          <span className="size-1.5 rounded-[30px] bg-flame-700" />
-          <span className="h-px w-7 bg-fog" />
-        </span>
-      </h2>
-      {seeAllHref && (
-        <a
-          href={seeAllHref}
-          className="absolute left-0 top-0 hidden rounded-card border border-plaster bg-canvas px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-plaster sm:block"
-        >
-          مشاهده همه
-        </a>
-      )}
-    </div>
-  );
-}
+import { toFaDigits } from "@kmodern/contracts";
 
 /* Status badges — Persian retail states in the token system (fill-only differentiation). */
 export function NewBadge({ className }: { className?: string }) {
@@ -64,7 +31,14 @@ export function AnnouncementStrip({ text, spark }: { text: string; spark?: strin
   );
 }
 
-/* Ranked numeral watermark — giant translucent Persian digit, top of card. */
+/* Ranked numeral watermark — giant translucent Persian digit, top of card.
+   Anchored to the logical start (right on this RTL page) per the "top-right"
+   treatment, and stepped so it keeps the same ~40-48% of card at every
+   breakpoint: a phone rail card is ~136px (so 64px), the two-up listing card
+   ~170px, sm/lg grid cards 236-300px (so 104px — 150px there would be 64% of
+   the card, the original complaint at another width), and the wide desktop
+   card ~312-340px (150px). Mobile also gets a slightly stronger ink so the
+   smaller digit still reads as the rank cue. */
 export function RankNumeral({ rank, className }: { rank: number; className?: string }) {
   const fa = toFaDigits(String(rank));
   return (
@@ -73,7 +47,7 @@ export function RankNumeral({ rank, className }: { rank: number; className?: str
       className={cn(
         // ink at low opacity — legible on plaster, exactly the reference's
         // watermark treatment (theirs is white on their darker card art)
-        "pointer-events-none absolute top-2 left-3 z-10 select-none text-[150px] leading-none font-black text-ink/10",
+        "pointer-events-none absolute top-1.5 start-2 z-10 select-none text-[64px] leading-none font-black text-ink/15 sm:top-2 sm:start-3 sm:text-[104px] sm:text-ink/10 xl:text-[150px]",
         className,
       )}
     >

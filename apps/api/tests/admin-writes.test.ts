@@ -11,7 +11,7 @@
 // transaction as the change, so it cannot fail alone.
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { createPrismaClient } from "../src/prisma/client.js";
+import type { createPrismaClient } from "../src/prisma/index.js";
 import { InventoryController } from "../src/inventory/inventory.controller.js";
 import { CategoriesController } from "../src/categories/categories.controller.js";
 import { CollectionsController } from "../src/collections/collections.controller.js";

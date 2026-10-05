@@ -1,8 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { linkRefSchema, type LinkRef } from "@kmodern/schema";
+import { linkRefSchema, type LinkRef } from "@kmodern/contracts";
 import { normalizeLinkRef, resolveLinks } from "../content/links.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../prisma/index.js";
 import type {
   FooterLink,
   NavMenu,

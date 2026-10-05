@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PageBuilder } from "@/components/page-builder";
+import { PageBuilder } from "@/content/components/page-builder";
 
 export default function NewPage() {
   return (

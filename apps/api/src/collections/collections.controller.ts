@@ -18,13 +18,12 @@
 
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { canonicalSlug } from "@kmodern/schema/slug";
+import { canonicalSlug } from "@kmodern/contracts/slug";
 import { writeAudit } from "../common/audit.js";
 import { AuthService } from "../auth/auth.service.js";
 import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { createPrismaClient } from "../prisma/client.js";
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma, createPrismaClient } from "../prisma/index.js";
 import {
   SaveCollectionDto,
   UpdateCollectionDto,

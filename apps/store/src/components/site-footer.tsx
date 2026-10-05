@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSettingOrDefault } from "@/lib/settings";
-import { jalaliYear, toFaDigits } from "@kmodern/schema";
-import { settingKeys } from "@kmodern/schema/setting-keys";
+import { jalaliYear, latinDigits, toFaDigits } from "@kmodern/contracts";
+import { settingKeys } from "@kmodern/contracts/setting-keys";
 import { loadFooter } from "@/lib/nav";
 
 /*
@@ -19,9 +19,8 @@ import { loadFooter } from "@/lib/nav";
  */
 
 export async function SiteFooter() {
-  const [storeName, tagline, contact, footer] = await Promise.all([
+  const [storeName, contact, footer] = await Promise.all([
     getSettingOrDefault<string>(settingKeys.storeName, "خانه مدرن"),
-    getSettingOrDefault<string>(settingKeys.storeTagline, ""),
     getSettingOrDefault<string>(settingKeys.storeContact, ""),
     loadFooter(),
   ]);
@@ -55,10 +54,9 @@ export async function SiteFooter() {
       <div className="mx-auto grid max-w-[1440px] gap-x-8 gap-y-10 px-4 py-12 sm:grid-cols-2 sm:py-14 lg:grid-cols-12 lg:gap-y-12">
         <div className="sm:col-span-2 lg:col-span-4 lg:pe-6">
           <Link href="/" className="inline-flex items-center gap-2.5 font-display text-xl font-black">
-            <span className="size-2 rounded-[30px] bg-flame-600" aria-hidden />
+            <span className="size-2 rounded-pill bg-flame-600" aria-hidden />
             {storeName}
           </Link>
-          {tagline && <p className="mt-4 max-w-sm text-sm leading-7 text-white/60">{tagline}</p>}
 
           {channels.length > 0 && (
             <section className="mt-8" aria-labelledby="footer-channels">
@@ -73,7 +71,7 @@ export async function SiteFooter() {
                     <a
                       href={channel.href}
                       {...(channel.external ? { target: "_blank", rel: "noreferrer" } : {})}
-                      className="inline-flex items-center gap-2 rounded-[30px] border border-white/12 bg-white/5 px-3 py-1.5 text-sm text-white/70 transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-pill border border-white/12 bg-white/5 px-3 py-1.5 text-sm text-white/70 transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white"
                     >
                       {CHANNEL_ICONS[channel.kind]()}
                       <span dir={channel.labelLtr ? "ltr" : undefined}>{channel.label}</span>
@@ -102,7 +100,7 @@ export async function SiteFooter() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-[1440px] px-4">
-          <ul className="flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-white/10 py-5 text-xs text-white/60">
+          <ul className="flex flex-nowrap items-center justify-between gap-x-3 border-b border-white/10 py-5 text-[11px] text-white/60 sm:flex-wrap sm:gap-x-8 sm:gap-y-3 sm:text-xs">
             {[
               { icon: TruckIcon, label: "ارسال سراسری" },
               { icon: ShieldIcon, label: "ضمانت اصالت" },
@@ -256,12 +254,6 @@ const LINK_RE = /(?:https?:\/\/|www\.|mailto:|tel:)[^\s،,;؛|]+/i;
 const EMAIL_RE = /[\w.+-]+@[\w-]+(\.[\w-]+)+/;
 const NUMBER_RE = /[\d۰-۹٠-٩][\d۰-۹٠-٩+\-()\s]*/;
 
-function toLatinDigits(value: string): string {
-  return value
-    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
-    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
-}
-
 function channelFromSegment(segment: string): Channel | null {
   const text = segment.trim();
   if (!text) return null;
@@ -283,7 +275,7 @@ function channelFromSegment(segment: string): Channel | null {
       fallback = raw.slice("mailto:".length);
     } else if (/^tel:/i.test(raw)) {
       kind = "phone";
-      href = `tel:${toLatinDigits(raw.slice("tel:".length))}`;
+      href = `tel:${latinDigits(raw.slice("tel:".length))}`;
       fallback = raw.slice("tel:".length).trim();
     } else {
       href = /^www\./i.test(raw) ? `https://${raw}` : raw;
@@ -309,7 +301,7 @@ function channelFromSegment(segment: string): Channel | null {
     if (!number) return null;
     const at = number.index ?? 0;
     if (text.slice(at + number[0].length).trim()) return null;
-    const digits = toLatinDigits(number[0]);
+    const digits = latinDigits(number[0]);
     if (digits.replace(/\D/g, "").length < 7) return null;
     kind = "phone";
     href = `tel:${digits.replace(/[^\d+]/g, "")}`;

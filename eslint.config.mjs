@@ -161,10 +161,20 @@ export default tseslint.config(
     },
   },
 
+  // The scraper's library half, now a package: pure functions plus filesystem, DNS and HTTP, so
+  // Node and nothing else. Its own block because the app's pattern names `apps/`, and a `files`
+  // pattern that has stopped matching anything is a rule that has quietly stopped applying.
+  {
+    files: ["packages/scraper-core/**/*.{ts,tsx}"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
+
   // The kernel: pure domain contracts. Neither browser nor Node globals — if it ever reaches
   // for one, that is a signal the contract belongs in a client, not here.
   {
-    files: ["packages/schema/**/*.{ts,tsx}"],
+    files: ["packages/contracts/**/*.{ts,tsx}"],
     languageOptions: {
       globals: {},
     },
@@ -182,6 +192,34 @@ export default tseslint.config(
     languageOptions: {
       sourceType: "module",
       globals: { ...globals.node },
+    },
+  },
+
+  // The CommonJS gate scripts, and the one CommonJS file at the root, are CommonJS on purpose: the
+  // root manifest declares no `"type"`, so `export default` in any of them is reparsed as an ES
+  // module on every run — a warning and an extra parse each time — while `.dependency-cruiser.js`
+  // is discovered by name and loaded either way. `node --test` loads a `scripts/*.test.js` the
+  // same way.
+  //
+  // The exemption is scoped by path, not by turning the rule off for `*.js` everywhere: the rule
+  // exists to keep the app and package sources on ESM, and a blanket `**/*.js` exemption would
+  // extend that silence to any CommonJS file a future change drops in those trees. It is written
+  // as an explicit list because each of these files is a deliberate exception and a new one should
+  // be a decision someone makes twice — once here and once in review.
+  {
+    files: [
+      ".dependency-cruiser.js",
+      "scripts/fs-tree.js",
+      "scripts/gateway-archetypes.js",
+      "scripts/client-structure-config.js",
+      "scripts/audit-structure.js",
+      "scripts/audit-client-structure.js",
+      "scripts/audit-app-root.js",
+      "scripts/*.test.js",
+    ],
+    languageOptions: { sourceType: "commonjs" },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 

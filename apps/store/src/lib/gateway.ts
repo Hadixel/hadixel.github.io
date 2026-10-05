@@ -13,7 +13,7 @@
 // from §5.1 and it is deliberate: the gateway cannot export them without the client importing an app,
 // which §5.1 forbids outright, so one of the two sides has to restate the contract.
 
-import type { Block, ComponentProps } from "@kmodern/schema";
+import type { Block, ComponentProps } from "@kmodern/contracts";
 import { GatewayError, type ApiClient, type RequestOptions } from "@kmodern/transport/client";
 import { createServerApiClient, gatewayBaseUrl } from "@kmodern/transport/next";
 
@@ -60,6 +60,9 @@ export interface HomeProduct {
   image: string | null;
   variantCount: number;
   dots: HomeVariant[];
+  /** The gateway's price cut for this card, or none. `label` is already formatted (۲۰٪ or an
+      amount), so no renderer appends a sign to it. */
+  discount: { label: string; discountedPrice: number; endsAt: string | null } | null;
 }
 
 export interface HomeDeal {

@@ -14,7 +14,7 @@ import {
   latinDigits,
   normalizeIranPhone,
   normalizePostalCode,
-} from "@kmodern/schema";
+} from "@kmodern/contracts";
 
 describe("bringing a phone number to one spelling", () => {
   it("leaves the canonical form alone", () => {

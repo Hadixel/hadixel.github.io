@@ -14,7 +14,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CategoryPage from "@/app/category/[slug]/page";
-import { lookupCategory, lookupCollection } from "@/lib/gateway-catalogue";
+import { lookupCategory, lookupCollection } from "@/catalogue/lib/gateway-catalogue";
 
 const BASE = "http://gateway.test:3102";
 

@@ -12,8 +12,8 @@
 // database disclosure does not hand out live sessions.
 
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { normalizeIranPhone } from "@kmodern/schema";
-import type { createPrismaClient } from "../prisma/client.js";
+import { normalizeIranPhone } from "@kmodern/contracts";
+import type { createPrismaClient } from "../prisma/index.js";
 
 type Db = ReturnType<typeof createPrismaClient>;
 
@@ -209,4 +209,14 @@ export function canonicalPhone(input: string): string {
   const normalized = normalizeIranPhone(input);
   if (normalized === null) throw new Error(`INVALID_PHONE:${input}`);
   return normalized;
+}
+
+/** One cookie out of a `Cookie:` header, by name. */
+export function tokenFromCookie(header: string | undefined, name: string): string | null {
+  if (!header) return null;
+  for (const part of header.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === name) return rest.join("=") || null;
+  }
+  return null;
 }

@@ -15,7 +15,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProductForm } from "@/components/product-form";
+import { ProductForm } from "@/catalogue/components/product-form";
 import { readThrough } from "@/lib/reads";
 
 /** One product in full, as the gateway's `GET /products/:id` answers. */

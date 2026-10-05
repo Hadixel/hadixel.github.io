@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesScrapeFilters } from "../src/pipeline";
-import type { ScrapeFilters, ScrapeRecord } from "../src/types";
+import { matchesScrapeFilters, type ScrapeFilters, type ScrapeRecord } from "@kmodern/scraper-core";
 
 const record: ScrapeRecord = {
   sourceId: "datees",

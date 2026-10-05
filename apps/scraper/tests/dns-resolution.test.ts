@@ -4,7 +4,7 @@ const lookupMock = vi.hoisted(() => vi.fn());
 
 vi.mock("node:dns/promises", () => ({ lookup: lookupMock }));
 
-const { assertSafeRemoteUrl } = await import("../src/http");
+const { assertSafeRemoteUrl } = await import("@kmodern/scraper-core");
 
 // The resolution cache is module-level and survives between tests, so every
 // test uses its own hostname to keep them independent.

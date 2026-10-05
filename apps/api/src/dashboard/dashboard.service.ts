@@ -14,7 +14,7 @@
 // configured threshold and the number the shop acted on had drifted apart and neither could see it.
 import { Inject, Injectable } from "@nestjs/common";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 
 @Injectable()
 export class DashboardService {

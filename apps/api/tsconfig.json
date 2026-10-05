@@ -1,9 +1,17 @@
 {
-  "extends": "../../packages/config/tsconfig.node.json",
-  "compilerOptions": {
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  },
+  "extends": "../../packages/config/tsconfig.service.json",
+  "//": [
+    "Extends the service flavour so that this file carries no compiler option of its own - the two",
+    "decorator flags moved to packages/config/tsconfig.service.json because §5.3 says 'Compiler",
+    "options are never redefined per workspace - change the base', and a NestJS app is an app type",
+    "this repo has, so it gets its flavour like every other workspace gets one. See that file's own",
+    "comment for why the flags could not simply go into tsconfig.node.json.",
+    "",
+    "`include` is local by §5.3's own list (rootDir, include, exclude, paths) and is a feature-index:",
+    "a new feature directory under src/ must be added here or it is not a root of the program. It is",
+    "not the set of files typechecked - everything these import is in the program too, which is why",
+    "src/payments, src/shipping, src/sms and src/storage are absent from this list and still checked."
+  ],
   "include": [
     "src/prisma/index.ts",
     "src/config",
@@ -28,6 +36,7 @@
     "src/customers",
     "src/dashboard",
     "src/scraper",
+    "src/price-watch",
     "src/stock-levels",
     "src/shopper",
     "src/storefront",
@@ -35,6 +44,6 @@
     "src/main.ts",
     "prisma.config.ts",
     "vitest.config.ts",
-    "tests",
+    "tests"
   ]
 }

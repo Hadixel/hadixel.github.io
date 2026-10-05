@@ -20,12 +20,12 @@
 // route's is not.
 
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/auth";
-import { scraperJobs } from "@/lib/scraper-jobs";
-import { prepareScrapedImages } from "@/lib/scraper-images";
+import { requireAdminApi } from "@/auth/lib/auth";
+import { scraperJobs } from "@/scraper/lib/scraper-jobs";
+import { prepareScrapedImages } from "@/scraper/lib/scraper-images";
 import { sameOrigin } from "@/lib/origin";
 import { fromGateway } from "@/lib/gateway";
-import type { ScraperCatalogEdit, ScraperCatalogItem } from "@/lib/scraper-types";
+import type { ScraperCatalogEdit, ScraperCatalogItem } from "@/scraper/lib/scraper-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

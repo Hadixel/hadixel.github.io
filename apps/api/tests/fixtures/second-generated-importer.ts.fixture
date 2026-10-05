@@ -1,0 +1,14 @@
+// The file apps/api/tests/generated-index.test.ts writes, runs dependency-cruiser over, and deletes.
+//
+// It lives here, as a `.ts.fixture`, for two reasons that are the same reason: the audit's §15.1
+// check is a textual grep for `generated/prisma` over every `.ts`/`.tsx` under `apps` and `packages`
+// — the invariant is "which source files name a generated path" — so the string may not sit in a
+// source file (it would count as a violation that is really a test), and the probe itself is written
+// to the repository root for the seconds it exists, outside both trees, so a concurrent
+// `turbo run audit` never sees a file that exists only to be rejected.
+//
+// The content below is a real TypeScript module: it is typechecked wherever it lands and it really
+// does import the generated client by path, which is what makes it the violation the rule exists for.
+import type { PrismaClient } from "./apps/api/src/generated/prisma/client.js";
+
+export type SecondGeneratedImporter = PrismaClient;

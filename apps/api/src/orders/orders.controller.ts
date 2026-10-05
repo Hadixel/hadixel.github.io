@@ -5,7 +5,7 @@
 // gateway's business and the fact that its money is a `Float` in TOMAN is not something a client should
 // have to know to add up a basket.
 //
-// Labels come from `@kmodern/schema` rather than from here, because they are domain vocabulary and the
+// Labels come from `@kmodern/contracts` rather than from here, because they are domain vocabulary and the
 // panel used to keep its own copy. Resolving them once here is what lets a client render a status
 // without knowing the enum.
 
@@ -34,7 +34,7 @@ import {
   TransitionNotAllowedException,
 } from "./exceptions/order.exception.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../prisma/index.js";
 import { OrdersService } from "./orders.service.js";
 
 export interface OrderListResponse {
