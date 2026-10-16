@@ -9,15 +9,18 @@ export function Price({
   amount,
   maxAmount,
   className,
+  tone = "ink",
 }: {
   amount: number;
   /** when present, renders a range "از amount" (variant span) */
   maxAmount?: number;
   className?: string;
+  tone?: "ink" | "flame";
 }) {
   const fa = (n: number) => toFaDigits(new Intl.NumberFormat("fa-IR").format(n));
+  const color = tone === "flame" ? "text-flame-700" : "text-ink";
   return (
-    <span className={cn("text-price whitespace-nowrap text-ink", className)}>
+    <span className={cn("text-price whitespace-nowrap", color, className)}>
       {maxAmount != null && maxAmount !== amount ? (
         <>
           {fa(amount)} <span className="text-ash">تا</span> {fa(maxAmount)}

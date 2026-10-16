@@ -1,8 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { StarBorder } from "@kmodern/ui";
+import Image from "next/image";
 
 type HeroLink = {
   href: string;
@@ -10,79 +7,48 @@ type HeroLink = {
   newTab?: boolean;
 };
 
-/*
- * «شعله» v3 — type + authored flame geometry.
- *
- * The hero is typography on a dark ink panel, backed by geometry this file
- * owns: a blue radial glow and three ember rings drawn as inline SVG strokes.
- * No product photography, no raster cut-outs, no image bytes at all — the
- * headline is the image, and the rings are the flame it burns on.
- *
- * Everything is server-rendered final-state; the word and ring animations run
- * once on load and only when the shopper accepts motion. The only JS is the
- * scroll-cue fade. Persian headline animates word-level.
- */
+type HeroImage = {
+  src: string;
+  alt?: string;
+};
 
+/**
+ * «گالری» — the appliance on the wall.
+ *
+ * The store sells built-in kitchen appliances, so the hero shows one: the object
+ * stands in a plaster alcove, lit and framed like a gallery shows its pieces, and
+ * the copy sits beside it as a wall label. This is the storefront's documented
+ * language — white canvas, plaster, ink, Farhang display, flame blue as the only
+ * chromatic signal — after the imagery-free «شعله» era, and it refuses the
+ * category's stock split-hero by treating the whole first viewport as one wall.
+ *
+ * Server-rendered and JS-free: the one load moment (alcove up, object settles,
+ * label lines in sequence) runs in CSS from an already-visible default state and
+ * never runs when the shopper asks for reduced motion. The secondary action is
+ * deliberate: it opens the category of the object on the wall, so the picture and
+ * the destination agree.
+ */
 export function HomeHero({
   title,
   subtitle,
   cta,
+  image,
 }: {
   title: string;
   subtitle?: string;
   cta?: HeroLink | null;
+  image?: HeroImage | null;
 }) {
-  const [cueGone, setCueGone] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setCueGone(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <>
-      <section className="home-hero" aria-labelledby="home-hero-title">
-      {/* Authored geometry, not photography: an ember ring system behind the
-          headline. Crisp vector strokes + a light gradient — no raster bytes,
-          no product cut-outs. */}
-      <div className="home-hero-aurora" aria-hidden="true">
-        <div className="home-hero-glow" />
-        <svg className="home-hero-rings" viewBox="0 0 640 640" fill="none" focusable="false">
-          <defs>
-            <linearGradient id="hero-ember" x1="0" y1="0" x2="1" y2="1">
-              {/* `stop-color` is the property that paints a gradient stop; `fill` does not. The
-                  earlier `className="fill-flame-*"` form compiled and built, and rendered black —
-                  verified by rasterising both forms in a browser before choosing this one. */}
-              <stop offset="0" style={{ stopColor: "var(--color-flame-600)" }} />
-              <stop offset="0.55" style={{ stopColor: "var(--color-flame-500)" }} />
-              <stop offset="1" style={{ stopColor: "var(--color-flame-400)" }} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <circle className="home-hero-ring-outer" cx="320" cy="320" r="248" stroke="url(#hero-ember)" />
-          <path className="home-hero-ring-mid" d="M 122 320 A 198 198 0 0 1 518 320" stroke="url(#hero-ember)" />
-          <circle className="home-hero-ring-inner" cx="320" cy="320" r="108" stroke="url(#hero-ember)" />
-        </svg>
-        <div className="home-hero-horizon" />
-      </div>
-
-      {/* ---------- Copy ---------- */}
+    <section className="home-hero" aria-labelledby="home-hero-title">
       <div className="home-hero-inner">
-        <h1 id="home-hero-title" className="home-hero-title">
-          <span className="sr-only">{title}</span>
-          {title.split(" ").map((word, i) => (
-            <span key={`${word}-${i}`} aria-hidden="true" className="home-hero-word" style={{ "--word-i": i } as React.CSSProperties}>
-              {word}
-            </span>
-          ))}
-        </h1>
-
-        {subtitle && <p className="home-hero-subtitle">{subtitle}</p>}
-
-        <div className="home-hero-actions">
-          {cta && (
-            <StarBorder color="var(--color-flame-500)" speed="7s" className="home-hero-primary-glow">
+        <div className="home-hero-label">
+          <h1 id="home-hero-title" className="home-hero-title">
+            {title}
+          </h1>
+          {subtitle && <p className="home-hero-subtitle">{subtitle}</p>}
+          <div className="home-hero-actions">
+            {cta && (
               <Link
                 href={cta.href}
                 target={cta.newTab ? "_blank" : undefined}
@@ -90,44 +56,46 @@ export function HomeHero({
                 className="home-hero-primary"
               >
                 {cta.label}
-                <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="home-hero-primary-arrow">
+                <svg
+                  aria-hidden
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="home-hero-primary-arrow"
+                >
                   <path d="M19 12H5" />
                   <path d="m12 19-7-7 7-7" />
                 </svg>
               </Link>
-            </StarBorder>
-          )}
-          <Link href="/products" className="home-hero-secondary">
-            خرید بر اساس دسته‌بندی
-          </Link>
+            )}
+            <Link href="/category/oven-datees" className="home-hero-secondary">
+              مشاهده فرهای داتیس
+            </Link>
+          </div>
         </div>
 
-        <dl className="home-hero-marks" aria-label="برندهای موجود">
-          <div>
-            <dt className="sr-only">برند داتیس</dt>
-            <dd className="text-code">DATEES</dd>
+        <figure className="home-hero-object">
+          <div className="home-hero-frame">
+            <div className="home-hero-alcove" aria-hidden="true" />
+            {image && (
+              <Image
+                className="home-hero-img"
+                src={image.src}
+                alt={image.alt ?? ""}
+                width={646}
+                height={645}
+                style={{ height: "clamp(320px, 54vh, 560px)" }}
+              />
+            )}
           </div>
-          <div>
-            <dt className="sr-only">برند شافل</dt>
-            <dd className="text-code">SCHUFFLE</dd>
-          </div>
-          <div>
-            <dt className="sr-only">برند آلتون</dt>
-            <dd className="text-code">ALTON</dd>
-          </div>
-          <div>
-            <dt className="sr-only">برند بیمکس</dt>
-            <dd className="text-code">BIMAX</dd>
-          </div>
-        </dl>
+          {image?.alt && <figcaption className="home-hero-plate">{image.alt}</figcaption>}
+        </figure>
       </div>
-      <div className="home-hero-cue" aria-hidden="true" data-gone={cueGone || undefined}>
-        <span>اسکرول</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
-      </section>
-    </>
+    </section>
   );
 }
