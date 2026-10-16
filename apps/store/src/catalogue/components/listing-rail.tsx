@@ -37,11 +37,25 @@ export function SortFieldset({
               key={s.value}
               className={cn(
                 "flex cursor-pointer items-center gap-2.5 rounded-card px-3 py-2.5 text-sm font-semibold transition-colors",
-                active ? "bg-flame-50 text-flame-800 ring-1 ring-flame-200" : "text-ash hover:bg-plaster hover:text-ink",
+                active
+                  ? "bg-flame-50 text-flame-800 ring-1 ring-flame-200"
+                  : "text-ash hover:bg-plaster hover:text-ink",
               )}
             >
-              <input type="radio" name="sort" value={s.value} defaultChecked={active} className="sr-only" />
-              <span aria-hidden className={cn("size-4 shrink-0 rounded-full border", active ? "border-[5px] border-flame-700" : "border-fog")} />
+              <input
+                type="radio"
+                name="sort"
+                value={s.value}
+                defaultChecked={active}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className={cn(
+                  "size-4 shrink-0 rounded-full border",
+                  active ? "border-[5px] border-flame-700" : "border-fog",
+                )}
+              />
               {s.label}
             </label>
           );
@@ -91,8 +105,8 @@ export function ListingFilterRail({
     }));
 
   return (
-    <aside className="sticky top-40 hidden h-fit w-full lg:block">
-      <div className="rounded-card border border-plaster bg-canvas p-4 shadow-sm">
+    <aside className="store-sticky hidden h-[calc(100dvh-var(--store-header-offset)-2.5rem)] w-full overflow-y-auto self-start me-4 lg:block">
+      <div className="flex h-full flex-col rounded-card border border-fog bg-canvas p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-black text-ink">فیلتر و مرتب‌سازی</span>
           <span className="text-micro font-semibold text-ash">{toFaDigits(count)} محصول</span>
@@ -100,7 +114,9 @@ export function ListingFilterRail({
         <SortFieldset action={action} sort={sort} query={query} />
         <div className="my-4 border-t border-plaster" />
         <div className="mb-2 text-sm font-black text-ink">دسته‌بندی‌ها</div>
-        <CategoryTree items={items} activeValue={activeSlug} />
+        <div className="min-h-0 flex-1">
+          <CategoryTree items={items} activeValue={activeSlug} />
+        </div>
       </div>
     </aside>
   );

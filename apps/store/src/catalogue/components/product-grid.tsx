@@ -36,7 +36,10 @@ export type MobileViewMode = "grid" | "rail";
 
 const VIEW_STORAGE_KEY = "kmodern:listing-mobile-view";
 
-const MobileViewContext = createContext<{ mode: MobileViewMode; setMode: (mode: MobileViewMode) => void } | null>(null);
+const MobileViewContext = createContext<{
+  mode: MobileViewMode;
+  setMode: (mode: MobileViewMode) => void;
+} | null>(null);
 
 export function ListingMobileViewProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<MobileViewMode>("grid");
@@ -92,17 +95,37 @@ export function ListingMobileViewToggle() {
             title={option.label}
             onClick={() => view.setMode(option.mode)}
             className={cn(
-              "flex size-9 items-center justify-center rounded-card transition-colors",
+              "flex size-9 items-center justify-center rounded-card transition-[color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100",
               active ? "bg-flame-700 text-white" : "text-ash hover:bg-plaster hover:text-ink",
             )}
           >
             {option.icon === "two-up" ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
                 <rect x="3.5" y="5" width="7" height="14" rx="2" />
                 <rect x="13.5" y="5" width="7" height="14" rx="2" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
                 <rect x="3" y="6" width="18" height="12" rx="3" />
               </svg>
             )}
@@ -166,7 +189,12 @@ export function ProductGrid({
       )}
       <div className={containerClass}>
         {products.map((product, index) => (
-          <AnimatedContent key={product.id} delay={Math.min(index, 7) * 45} distance={22} className={itemClass}>
+          <AnimatedContent
+            key={product.id}
+            delay={Math.min(index, 7) * 45}
+            distance={22}
+            className={itemClass}
+          >
             <ProductCard product={product} imageSizes={imageSizes} />
           </AnimatedContent>
         ))}

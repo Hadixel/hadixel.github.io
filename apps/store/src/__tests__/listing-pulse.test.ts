@@ -33,7 +33,12 @@ describe("listing pulse", () => {
 
     expect(pulse.chips).toHaveLength(2);
     const [categoryChip, queryChip] = pulse.chips;
-    expect(categoryChip).toMatchObject({ key: "category", label: "شیشه‌ای", active: true, removable: true });
+    expect(categoryChip).toMatchObject({
+      key: "category",
+      label: "شیشه‌ای",
+      active: true,
+      removable: true,
+    });
     expect(queryChip).toMatchObject({ key: "query", label: "«فر»", active: true, removable: true });
 
     // chips reflect the active state and stay removable

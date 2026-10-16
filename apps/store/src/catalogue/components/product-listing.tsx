@@ -86,7 +86,7 @@ export function ProductListing({
             <Link
               key={chip.key}
               href={chip.href}
-              className="inline-flex items-center gap-1 rounded-pill border border-fog bg-canvas px-3 py-1 text-xs font-semibold text-ink transition-[color,border-color,transform] hover:border-flame-300 hover:text-flame-700 active:scale-[0.97] motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700"
+              className="inline-flex items-center gap-1 rounded-pill border border-fog bg-canvas px-3 py-1 text-xs font-semibold text-ink transition-[color,border-color,transform,scale] hover:border-flame-300 hover:text-flame-700 active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700"
             >
               <span className="text-ash" aria-hidden>
                 ✕
@@ -101,7 +101,7 @@ export function ProductListing({
               key={s.value}
               href={s.href}
               className={cn(
-                "rounded-pill px-3 py-1 text-xs font-semibold transition-[color,background-color,transform] active:scale-[0.97] motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
+                "rounded-pill px-3 py-1 text-xs font-semibold transition-[color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
                 s.active ? "bg-flame-700 text-white" : "text-ash hover:bg-plaster hover:text-ink",
               )}
             >
@@ -111,11 +111,11 @@ export function ProductListing({
         </span>
       </div>
 
-      <div className="mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-scrollbar]:hidden">
+      <div className="mb-6 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-scrollbar]:hidden">
         <Link
           href="/products"
           className={cn(
-            "shrink-0 rounded-pill border px-3 py-1.5 text-xs font-semibold transition-[color,border-color,background-color,transform] active:scale-[0.97] motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
+            "shrink-0 snap-start rounded-pill border px-3 py-1.5 text-xs font-semibold transition-[color,border-color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
             pulse.allActive
               ? "border-flame-700 bg-flame-700 text-white"
               : "border-fog bg-canvas text-ash hover:border-flame-300 hover:text-ink",
@@ -128,7 +128,7 @@ export function ProductListing({
             key={c.slug}
             href={c.href}
             className={cn(
-              "shrink-0 rounded-pill border px-3 py-1.5 text-xs font-semibold transition-[color,border-color,background-color,transform] active:scale-[0.97] motion-reduce:transform-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
+              "shrink-0 snap-start rounded-pill border px-3 py-1.5 text-xs font-semibold transition-[color,border-color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
               c.active
                 ? "border-flame-700 bg-flame-700 text-white"
                 : "border-fog bg-canvas text-ash hover:border-flame-300 hover:text-ink",

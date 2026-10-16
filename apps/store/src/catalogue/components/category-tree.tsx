@@ -47,7 +47,9 @@ export function CategoryTree({
         const hasKids = kids.length > 0;
         // Uncontrolled until the shopper touches it: a branch the page is
         // inside is open, everything else is shut.
-        const open = opened[item.value] ?? (item.value === activeValue || kids.some((kid) => kid.value === activeValue));
+        const open =
+          opened[item.value] ??
+          (item.value === activeValue || kids.some((kid) => kid.value === activeValue));
         const panelId = `category-tree-${item.value}`;
 
         return (
@@ -58,7 +60,9 @@ export function CategoryTree({
                 aria-current={item.value === activeValue ? "page" : undefined}
                 className={cn(
                   "flex-1 truncate py-2.5 text-start text-sm transition-colors",
-                  item.value === activeValue ? "font-bold text-flame-700" : "font-semibold text-ink hover:text-flame-700",
+                  item.value === activeValue
+                    ? "font-bold text-flame-700"
+                    : "font-semibold text-ink hover:text-flame-700",
                 )}
               >
                 {item.label}
@@ -82,7 +86,10 @@ export function CategoryTree({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden
-                    className={cn("transition-transform duration-200 motion-reduce:transform-none", !open && "-rotate-90")}
+                    className={cn(
+                      "transition-transform duration-200 motion-reduce:transform-none",
+                      !open && "rotate-90",
+                    )}
                   >
                     <path d="m6 9 6 6 6-6" />
                   </svg>
@@ -110,7 +117,9 @@ export function CategoryTree({
                         aria-current={kid.value === activeValue ? "page" : undefined}
                         className={cn(
                           "block truncate py-2 text-sm transition-colors",
-                          kid.value === activeValue ? "font-bold text-flame-700" : "text-ash hover:text-ink",
+                          kid.value === activeValue
+                            ? "font-bold text-flame-700"
+                            : "text-ash hover:text-ink",
                         )}
                       >
                         {kid.label}

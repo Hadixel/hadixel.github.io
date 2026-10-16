@@ -6,6 +6,7 @@ import type { BlockRendererProps } from "./types";
 export function DealGridBlock({ block, payload }: BlockRendererProps) {
   const p = block.props as ComponentProps["dealGrid"];
   const deals = payload.deals ?? [];
+  if (deals.length === 0 && !p.emptyText) return null;
   return (
     <Section>
       <DealGrid deals={deals} title={p.title} emptyText={p.emptyText} />

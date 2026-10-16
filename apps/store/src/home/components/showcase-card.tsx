@@ -54,6 +54,9 @@ export function ShowcaseCard({
   const imgA = activeImages[0];
   const imgB = activeImages[1] ?? activeImages[0];
   const hasB = Boolean(imgB && imgB !== imgA);
+  /* One name for "this card is on sale": the plate wash and the price lead
+     are the same decision, so they must not drift apart. */
+  const onSale = available && Boolean(discount);
 
   return (
     <div
@@ -69,9 +72,15 @@ export function ShowcaseCard({
             as a tall sliver next to the desktop card's wide stance. The
             `sm:` switch is what keeps the desktop card byte-identical. */}
         <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-plaster sm:aspect-square">
+          {/* The plate behind the cut-out: canvas normally, a pale flame wash
+              when the gateway's price cut is live. That is the card's one
+              chromatic moment — value, not decoration (GLOSSARY.md). */}
           <div
             aria-hidden
-            className="absolute inset-2 rounded-card bg-canvas ring-1 ring-fog/40 sm:inset-3"
+            className={cn(
+              "absolute inset-2 rounded-card ring-1 ring-fog/40 sm:inset-3",
+              onSale ? "bg-flame-50" : "bg-canvas",
+            )}
           />
           {/* The caller's own `badge`, then the discount pill (the gateway's `label`,
               already carrying its sign — ۲۰٪), then ناموجود while the product is
@@ -86,7 +95,7 @@ export function ShowcaseCard({
                 {badge.label}
               </Badge>
             )}
-            {available && discount && <FlameBadge variant="flame">{discount.label}</FlameBadge>}
+            {onSale && discount && <FlameBadge variant="flame">{discount.label}</FlameBadge>}
             {!available && !badge && (
               <Badge color="default" variant="primary">
                 ناموجود
