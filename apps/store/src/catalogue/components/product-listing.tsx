@@ -111,34 +111,6 @@ export function ProductListing({
         </span>
       </div>
 
-      <div className="mb-6 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 scrollbar-none [-webkit-scrollbar]:hidden">
-        <Link
-          href="/products"
-          className={cn(
-            "shrink-0 snap-start rounded-pill border px-3 py-1.5 text-xs font-semibold transition-[color,border-color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
-            pulse.allActive
-              ? "border-flame-700 bg-flame-700 text-white"
-              : "border-fog bg-canvas text-ash hover:border-flame-300 hover:text-ink",
-          )}
-        >
-          همه
-        </Link>
-        {pulse.tops.map((c) => (
-          <Link
-            key={c.slug}
-            href={c.href}
-            className={cn(
-              "shrink-0 snap-start rounded-pill border px-3 py-1.5 text-xs font-semibold transition-[color,border-color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
-              c.active
-                ? "border-flame-700 bg-flame-700 text-white"
-                : "border-fog bg-canvas text-ash hover:border-flame-300 hover:text-ink",
-            )}
-          >
-            {c.name}
-          </Link>
-        ))}
-      </div>
-
       <div className="grid items-start gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
         <ListingFilterRail
           categories={categories}

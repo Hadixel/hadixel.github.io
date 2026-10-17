@@ -16,13 +16,6 @@ export interface ListingPulseSort {
   active: boolean;
 }
 
-export interface ListingPulseCategory {
-  slug: string;
-  name: string;
-  href: string;
-  active: boolean;
-}
-
 export interface ListingPulseInput {
   count: number;
   categories: CategorySummary[];
@@ -34,10 +27,8 @@ export interface ListingPulseInput {
 
 export interface ListingPulse {
   count: number;
-  allActive: boolean;
   chips: ListingPulseChip[];
   sorts: ListingPulseSort[];
-  tops: ListingPulseCategory[];
 }
 
 function paramsOf(entries: Array<[string, string | undefined]>): string {
@@ -94,21 +85,5 @@ export function listingPulse(input: ListingPulseInput): ListingPulse {
     };
   });
 
-  const tops: ListingPulseCategory[] = categories
-    .filter((c) => !c.parentId)
-    .slice(0, 10)
-    .map((c) => ({
-      slug: c.slug,
-      name: c.name,
-      href: (() => {
-        const qs = paramsOf([["sort", preserveSort]]);
-        const path = `/category/${c.slug}`;
-        return qs ? `${path}?${qs}` : path;
-      })(),
-      active:
-        c.slug === activeSlug ||
-        categories.some((kid) => kid.parentId === c.id && kid.slug === activeSlug),
-    }));
-
-  return { count, allActive: !activeSlug, chips, sorts, tops };
+  return { count, chips, sorts };
 }

@@ -17,10 +17,9 @@ describe("listing pulse", () => {
     expect(pulse.count).toBe(24);
   });
 
-  it("produces no chips when no filter is active (allActive true)", () => {
+  it("produces no chips when no filter is active", () => {
     const pulse = listingPulse({ ...base() });
     expect(pulse.chips).toEqual([]);
-    expect(pulse.allActive).toBe(true);
   });
 
   it("exposes chips for an active category and a query", () => {
@@ -40,15 +39,6 @@ describe("listing pulse", () => {
       removable: true,
     });
     expect(queryChip).toMatchObject({ key: "query", label: "«فر»", active: true, removable: true });
-
-    // chips reflect the active state and stay removable
-    expect(pulse.allActive).toBe(false);
-
-    // top chips mark the root ancestor as active even though a descendant is selected
-    const hood = pulse.tops.find((c) => c.slug === "oven");
-    expect(hood?.active).toBe(true);
-
-    // count is unchanged by filters
   });
 
   it("preserves sort and q on sort links; omits the default", () => {
@@ -65,24 +55,6 @@ describe("listing pulse", () => {
     expect(asc.href).toContain("q=");
     expect(newest.active).toBe(false);
     expect(newest.href).toBe("/products?q=%D9%81%D8%B1");
-  });
-
-  it("sorts top roots with sort carried and ten-at-most", () => {
-    const many = Array.from({ length: 12 }, (_, i) => ({
-      id: `r${i}`,
-      name: `رده ${i}`,
-      slug: `r-${i}`,
-      parentId: null,
-    })) as CategorySummary[];
-    const pulse = listingPulse({
-      count: 2,
-      categories: many,
-      sort: "price-desc",
-      action: "/products",
-    });
-    expect(pulse.tops).toHaveLength(10);
-    expect(pulse.tops[0].href).toBe("/category/r-0?sort=price-desc");
-    expect(pulse.tops[0].active).toBe(false);
   });
 
   it("clearing category keeps q and sort, clearing query keeps sort", () => {
