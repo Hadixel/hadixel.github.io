@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @import "@heroui/styles/css";
 @import "@kmodern/ui/tailwind.css";
@@ -8,6 +9,12 @@
 @layer base {
   :root {
     --store-header-offset: 9.5rem;
+  }
+
+  @media (max-width: 1023px) {
+    :root {
+      --store-header-offset: 6.25rem;
+    }
   }
 
   html {
@@ -52,378 +59,290 @@
   }
 }
 
-/* ---------- «شعله» v3 — type + authored flame geometry ---------- */
-/* The hero carries no imagery: a dark ink panel, the headline, and geometry
-   this stylesheet owns — a blue radial glow, three ember rings drawn as SVG
-   strokes, and a horizon line the light sits on. The rings draw themselves in
-   once on load, and only when the shopper accepts motion; the default state
-   is the finished frame. JS fades the scroll cue only. */
+/* ============ Built-in Kitchens Hero Showcase ============ */
+:root {
+  --hero-bg: #ffffff;
+  --hero-ink: #111111;
+  --hero-mute: #5f5f5f;
+  --hero-pill: #efefef;
+  --hero-line: #dcdcdc;
+  --hero-red: #e60023;
+  --hero-red-d: #ad081b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hero-bg: #111111;
+    --hero-ink: #f6f6f6;
+    --hero-mute: #a9a9a9;
+    --hero-pill: #2b2b2b;
+    --hero-line: #3a3a3a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --hero-bg: #111111;
+  --hero-ink: #f6f6f6;
+  --hero-mute: #a9a9a9;
+  --hero-pill: #2b2b2b;
+  --hero-line: #3a3a3a;
+}
 
 .home-hero {
   position: relative;
-  display: grid;
-  min-height: calc(100svh - 4rem);
-  overflow: hidden;
-  margin-inline: clamp(0.5rem, 1vw, 1.25rem);
-  /* The logo strip below is a full-bleed ink band, the same colour as this
-     panel: with no gap the panel's rounded bottom edge disappears into it
-     and the hero reads as one bleeding slab. */
-  margin-bottom: clamp(0.5rem, 1vw, 1.25rem);
-  border-radius: clamp(14px, 2vw, 24px);
-  background:
-    radial-gradient(90% 70% at 30% 0%, #1c1c1f, transparent 60%),
-    var(--color-ink);
-  color: white;
+  height: calc(100svh - var(--store-header-offset, 9.5rem) + 15svh);
+  background: var(--hero-bg);
+  color: var(--hero-ink);
+  font-family: "Figtree", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: clip;
 }
 
-/* Depth cue comes from the radial ink sheen, the glow, and the horizon line
-   — no grid overlay: a two-axis grid field reads as generated wallpaper
-   unless a real blueprint sits under it. */
+.home-hero .stage {
+  position: sticky;
+  top: var(--store-header-offset, 9.5rem);
+  width: 100%;
+  height: calc(100vh - var(--store-header-offset, 9.5rem));
+  height: calc(100svh - var(--store-header-offset, 9.5rem));
+  overflow: hidden;
+  background: var(--hero-bg);
+  contain: strict;
+}
 
-/* The geometry layer. Plain absolute positioning — no perspective, no layers,
-   nothing to preserve: rings and light are flat strokes on the panel. */
-.home-hero-aurora {
+.home-hero #stageCanvas {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  display: block;
   pointer-events: none;
 }
 
-/* Flame-blue volumetric light behind the headline — the single chromatic
-   moment of the panel. */
-.home-hero-glow {
+.home-hero .intro {
   position: absolute;
-  inset: -12%;
-  background: radial-gradient(40% 34% at 30% 46%, rgb(29 78 216 / 0.45), transparent 70%);
-  filter: blur(2px);
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: max(10vh, 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
 }
 
-/* Ember ring system: a full outer ring, a top-half arc, a dashed inner ring. */
-.home-hero-rings {
+.home-hero .intro h1 {
+  margin: 0;
+  max-width: 15ch;
+  font-weight: 800;
+  font-size: clamp(34px, 5.8vw, 84px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  color: var(--hero-ink);
+}
+
+.home-hero .intro p {
+  margin: 14px 0 0;
+  max-width: 38ch;
+  font-size: clamp(15px, 1.4vw, 20px);
+  color: var(--hero-mute);
+}
+
+.home-hero .search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(560px, 92vw);
+  height: 54px;
+  margin-top: 22px;
+  padding: 0 22px;
+  border-radius: 30px;
+  background: var(--hero-pill);
+  color: var(--hero-mute);
+  font-weight: 500;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.home-hero .search:hover {
+  transform: translateY(-1px);
+}
+
+.home-hero .search b {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.home-hero .search b::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 9px;
+  background: currentColor;
+  border-radius: 2px;
+  right: -5px;
+  bottom: -8px;
+  transform: rotate(-45deg);
+}
+
+.home-hero .chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 640px;
+}
+
+.home-hero .chip {
+  padding: 8px 15px;
+  border-radius: 20px;
+  background: var(--c);
+  color: #111;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.home-hero .chip:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- Brand reveal at animation end ---------- */
+.home-hero .brand-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  transform: translate3d(0, 16px, 0);
+}
+
+/* Center box: خانه مدرن */
+.home-hero .brand-reveal-center {
   position: absolute;
   top: 50%;
-  left: 30%;
-  width: min(760px, 52vw);
-  aspect-ratio: 1;
+  left: 50%;
   transform: translate(-50%, -50%);
-  opacity: 0.55;
-}
-
-.home-hero-ring-outer,
-.home-hero-ring-mid,
-.home-hero-ring-inner {
-  stroke-width: 1;
-}
-.home-hero-ring-mid {
-  --hero-dash: 622;
-  stroke-width: 1.5;
-}
-.home-hero-ring-inner {
-  stroke-dasharray: 2 10;
-  opacity: 0.55;
-}
-
-/* Horizon line under the rings — anchors the light in space */
-.home-hero-horizon {
-  position: absolute;
-  inset-inline: 8%;
-  bottom: 24%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.2), transparent);
-}
-
-.home-hero-inner {
-  position: relative;
-  z-index: 2;
   display: flex;
-  width: min(100%, 1440px);
-  flex-direction: column;
-  justify-content: flex-end;
-  margin-inline: auto;
-  padding: clamp(5rem, 12vh, 8rem) clamp(1.25rem, 4vw, 3.5rem) clamp(4rem, 9vh, 6rem);
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
 }
 
-
-.home-hero-title {
-  max-width: 18ch;
-  color: white;
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 8.5vw, 7rem);
-  font-weight: 900;
-  line-height: 1.04;
-  text-wrap: balance;
-  text-shadow: 0 2px 24px rgb(0 0 0 / 0.55);
-}
-
-.home-hero-word {
+.home-hero .brand-reveal-title-link {
   display: inline-block;
-  animation: home-hero-word-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  animation-delay: calc(var(--word-i, 0) * 90ms);
+  text-decoration: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-@keyframes home-hero-word-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.45em) translateZ(60px);
-    filter: blur(8px);
-  }
+.home-hero .brand-reveal-title-link:hover {
+  transform: scale(1.02);
 }
 
-.home-hero-subtitle {
-  max-width: 34rem;
-  margin-top: 1.5rem;
-  color: rgb(255 255 255 / 0.72);
-  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
-  line-height: 2;
+.home-hero .brand-reveal-title {
+  margin: 0;
+  font-family: "Farhang", "Yekan Bakh", var(--font-display), system-ui, sans-serif;
+  font-size: clamp(5rem, 16vw, 12.5rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0;
+  color: #ffffff;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 6px 16px rgba(0, 0, 0, 0.75),
+    0 12px 32px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
 }
 
-.home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2.25rem;
-}
-
-.home-hero-primary {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  gap: 0.75rem;
-  border-radius: var(--radius-card);
-  background: var(--color-flame-700);
-  padding-inline: 1.9rem;
-  color: white;
-  font-size: 0.98rem;
-  font-weight: 700;
-  transition: background-color 160ms ease, transform 160ms ease;
-}
-
-.home-hero-primary:hover {
-  background: var(--color-flame-600);
-}
-
-.home-hero-primary:hover .home-hero-primary-arrow {
-  transform: translateX(-3px);
-}
-
-.home-hero-primary-arrow {
-  transition: transform 160ms ease;
-}
-
-.home-hero-secondary {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  border: 1px solid rgb(255 255 255 / 0.28);
-  border-radius: var(--radius-card);
-  padding-inline: 1.6rem;
-  color: white;
-  font-size: 0.95rem;
-  font-weight: 700;
-  transition: border-color 160ms ease, background-color 160ms ease;
-}
-
-.home-hero-secondary:hover {
-  border-color: rgb(255 255 255 / 0.55);
-  background: rgb(255 255 255 / 0.07);
-}
-
-/* Tap feedback: a press on either hero CTA scales it, not just a hover. */
-.home-hero-primary:active,
-.home-hero-secondary:active {
-  transform: scale(0.97);
-}
-
-/* StarBorder wrapper around the primary CTA — inherits the CTA's radius so
-   the orbiting glow is clipped to the same pill shape. */
-.home-hero-primary-glow {
-  border-radius: var(--radius-card);
-}
-
-.home-hero-marks {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: clamp(1rem, 3vw, 2.5rem);
-  margin-top: clamp(2.5rem, 6vh, 4rem);
-  padding-top: 1.5rem;
-  border-top: 1px solid rgb(255 255 255 / 0.14);
-  color: rgb(255 255 255 / 0.42);
-  font-size: 0.72rem;
-}
-
-.home-hero-cue {
+/* Bottom box: هود · سینک · شیرآلات · فر · اجاق */
+.home-hero .brand-reveal-bottom {
   position: absolute;
-  right: 50%;
-  bottom: 1.1rem;
-  z-index: 3;
-  display: inline-flex;
+  top: 87.5%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  color: rgb(255 255 255 / 0.55);
-  font-size: 0.75rem;
-  font-weight: 700;
-  transform: translateX(50%);
-  transition: opacity 240ms ease;
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
 }
 
-.home-hero-cue[data-gone] {
-  opacity: 0;
+.home-hero .brand-reveal-sub-link {
+  display: inline-block;
+  text-decoration: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  transition: transform 0.2s ease;
 }
 
-/* The rings draw themselves in once: a load moment, never a scroll state. The
-   default (unanimated) state is the finished ring, so no motion means no
-   missing geometry — the animation only reveals what CSS already draws. */
-@media (prefers-reduced-motion: no-preference) {
-  .home-hero-ring-outer {
-    stroke-dasharray: 1560;
-    stroke-dashoffset: 1560;
-    animation: home-hero-ember-in 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .home-hero-ring-mid {
-    stroke-dasharray: 622;
-    stroke-dashoffset: 622;
-    animation: home-hero-ember-in 800ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
-  }
-
-  .home-hero-ring-inner {
-    animation: home-hero-ring-fade 700ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards;
-  }
+.home-hero .brand-reveal-sub-link:hover {
+  transform: scale(1.02);
 }
 
-@keyframes home-hero-ember-in {
-  from { stroke-dashoffset: var(--hero-dash, 1560); }
-  to { stroke-dashoffset: 0; }
+.home-hero .brand-reveal-subtitle {
+  margin: 0;
+  font-family: "Yekan Bakh", var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.25rem, 3.8vw, 2.7rem);
+  font-weight: 800;
+  line-height: 1.3;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 12px rgba(0, 0, 0, 0.75);
+  white-space: nowrap;
 }
 
-@keyframes home-hero-ring-fade {
-  from { opacity: 0; }
-  to { opacity: 0.55; }
-}
-
-@media (max-width: 767px) {
-  /* A phone gets a landscape panel: 16:9 instead of a 75svh wall, so the hero
-     is one swipe-and-go band and the first product row is already on screen.
-     `aspect-ratio` is the whole size contract, and a `min-height` here would
-     break it: a definite block size plus `aspect-ratio` makes the browser
-     derive the inline size from it, so the panel grew to 16/9 of the height
-     and pushed past the `margin-inline`, overflowing the viewport by 8px.
-     Without it, `aspect-ratio` alone is both the floor (content shorter than
-     width / 1.777) and the growth (a longer Persian headline or taller font
-     setting expands the panel rather than clipping the CTAs). */
-  .home-hero {
-    aspect-ratio: 16 / 9;
-    /* The base rule's `100svh - 4rem` floor is the desktop 75svh panel; on a
-       phone `aspect-ratio` owns the height, and leaving the floor in place let
-       it drive the width instead (a definite block size plus `aspect-ratio`
-       resolves the inline size from it, so a 780px panel grew to 1387px and
-       overflowed the viewport). */
-    min-height: 0;
-    margin-inline: 0.5rem;
-  }
-
-  /* At phone width the copy is centre-stage, so the rings centre behind it
-     instead of sitting in the panel's left half. A viewport-multiple width
-     (128vw) sliced the circle at both edges and read as a broken image, so the
-     ring is sized against the panel instead. */
-  .home-hero-rings {
-    top: 38%;
-    left: 50%;
-    width: 86%;
-    opacity: 0.4;
-  }
-
-  /* Bottom-anchored copy in a panel this short leaves a hole above it; centred,
-     it fills a 16:9 frame the way the artwork does. */
-  .home-hero-inner {
-    justify-content: center;
-    padding: 1rem 1.25rem;
-  }
-
-  .home-hero-title {
-    max-width: none;
-    font-size: clamp(1.75rem, 8vw, 2.4rem);
-    line-height: 1.15;
-  }
-
-  .home-hero-subtitle {
-    margin-top: 0.5rem;
-    font-size: 0.8125rem;
-    line-height: 1.75;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
-
-  /* Both CTAs side by side: a stacked pair is what made the panel tall enough
-     to need 75svh in the first place. */
-  .home-hero-actions {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-    margin-top: 0.7rem;
-  }
-
-  .home-hero-primary,
-  .home-hero-secondary {
-    min-height: 2.4rem;
-    padding-inline: 0.85rem;
-    font-size: 0.78rem;
-  }
-
-  /* The pair stops fitting below ~366px: at 360 the two pills need 313px in
-     a 304px row and both labels wrap inside the pill. Trim the horizontal
-     padding — not the type and not the side-by-side layout (a stacked pair
-     is what made the panel tall) — so each label stays on one line. */
-  @media (max-width: 374px) {
-    .home-hero-inner {
-      padding-inline: 1rem;
-    }
-
-    .home-hero-actions {
-      gap: 0.4rem;
-    }
-
-    .home-hero-primary,
-    .home-hero-secondary {
-      padding-inline: 0.7rem;
-    }
-  }
-
-  .home-hero-primary {
-    gap: 0.4rem;
-  }
-
-  .home-hero-secondary {
-    justify-content: center;
-  }
-
-  /* Brand marks: hidden on phones — the panel is a slim 16:9 band there and
-     the product collage beneath it carries the substance instead. */
-  .home-hero-marks {
+@media (max-width: 819px) {
+  .home-hero .chips {
     display: none;
   }
-
-  .home-hero-cue {
-    display: none;
+  .home-hero .intro {
+    top: max(6vh, 48px);
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-hero-word {
-    animation: none;
+  .home-hero .search {
+    height: 48px;
+    margin-top: 16px;
+    font-size: 15px;
   }
-
-  .home-hero-cue {
-    transition: none;
+  .home-hero .brand-reveal-center {
+    top: 50%;
   }
-
-  .home-hero-primary:active,
-  .home-hero-secondary:active {
-    transform: none;
+  .home-hero .brand-reveal-title {
+    font-size: clamp(3.2rem, 15.5vw, 6rem);
+    text-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.9),
+      0 4px 14px rgba(0, 0, 0, 0.75);
+  }
+  .home-hero .brand-reveal-bottom {
+    top: 87.5%;
+  }
+  .home-hero .brand-reveal-subtitle {
+    font-size: clamp(0.95rem, 4.2vw, 1.5rem);
+    letter-spacing: 0.02em;
+    text-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.9),
+      0 3px 8px rgba(0, 0, 0, 0.75);
   }
 }
 
