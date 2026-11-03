@@ -245,22 +245,15 @@ function drawPinArtwork(
     coords.forEach(([bx, by, br]) => drawBurner(c, ux(bx), uy(by), uw(br), uw(br), 0.9));
     [24, 41, 58, 75].forEach((kx) => fillCircle(c, ux(kx), uy(92), uw(3), "#b8c0c7"));
   } else if (pin.type === "palette") {
-    fillCircle(c, ux(50), uy(46), uw(36), pin.main);
-    c.fillStyle = "#1b1f22";
-    c.font = `800 ${Math.round(uw(6.2))}px Figtree, system-ui, sans-serif`;
-    c.textAlign = "center";
-    c.fillText(pin.label, ux(50), uy(91));
+    fillCircle(c, ux(50), uy(50), uw(36), pin.main);
     [
-      [21, pin.c1, pin.l1],
-      [50, pin.c2, pin.l2],
-      [79, pin.c3, pin.l3],
-    ].forEach(([cx, col, lbl]) => {
-      fillCircle(c, ux(Number(cx)), uy(116), uw(12), String(col));
-      c.fillStyle = "#1b1f22";
-      c.font = `700 ${Math.round(uw(4.4))}px Figtree, system-ui, sans-serif`;
-      c.fillText(String(lbl), ux(Number(cx)), uy(136));
+      [21, pin.c1],
+      [50, pin.c2],
+      [79, pin.c3],
+    ].forEach(([cx, col]) => {
+      fillCircle(c, ux(Number(cx)), uy(105), uw(12), String(col));
     });
-    fillRRect(c, ux(9), uy(146), uw(82), uw(12), uw(2.4), pin.bar);
+    fillRRect(c, ux(9), uy(130), uw(82), uw(12), uw(2.4), pin.bar);
   } else if (pin.type === "pendant") {
     fillRRect(c, ux(49.4), uy(0), uw(1.2), uw(35), 0, "#1b1f22");
     fillRRect(c, ux(46), uy(33), uw(8), uw(4), uw(1), "#c49b52");
@@ -635,33 +628,17 @@ function drawKitchenOverlays(
   }
 }
 
-const CHIPS = [
-  { label: "Forest green", jump: 0.58, color: "#cfe0d3" },
-  { label: "Brass details", jump: 0.72, color: "#f6e8b8" },
-  { label: "Marble", jump: 0.65, color: "#f3d6d1" },
-  { label: "Hidden hoods", jump: 0.68, color: "#d3e3f0" },
-  { label: "Flush hobs", jump: 0.76, color: "#e0d9f0" },
-];
-
-export function HomeHero({ title, subtitle }: HomeHeroProps) {
+export function HomeHero({}: HomeHeroProps) {
   const heroRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const introRef = useRef<HTMLDivElement>(null);
   const brandRevealRef = useRef<HTMLDivElement>(null);
-
-  const displayTitle =
-    title && title !== "خانه مدرن" ? title : "Built-in kitchens worth saving";
-  const displaySubtitle =
-    subtitle && !subtitle.includes("فروشگاه لوازم خانگی")
-      ? subtitle
-      : "Ovens, hobs, hoods and sinks that sit flush with your cabinets.";
 
   const currentPRef = useRef(0);
   const isPlayingRef = useRef(true);
   const inViewRef = useRef(true);
   const scrollBoostRef = useRef(0);
-  const delayRemainingRef = useRef(350);
+  const delayRemainingRef = useRef(150);
   const lastTimeRef = useRef(0);
   const rafIdRef = useRef(0);
 
@@ -677,8 +654,6 @@ export function HomeHero({ title, subtitle }: HomeHeroProps) {
   const colGapRef = useRef(16);
   const wallTotalWRef = useRef(1264);
 
-  const introCulledRef = useRef<boolean | null>(null);
-  const lastIntroTRef = useRef(-1);
   const brandCulledRef = useRef<boolean | null>(null);
   const lastBrandTRef = useRef(-1);
 
@@ -689,28 +664,8 @@ export function HomeHero({ title, subtitle }: HomeHeroProps) {
     if (!ctx) return;
 
     if (force) {
-      introCulledRef.current = null;
-      lastIntroTRef.current = -1;
       brandCulledRef.current = null;
       lastBrandTRef.current = -1;
-    }
-
-    // Intro DOM fade & slide
-    const intro = introRef.current;
-    if (intro) {
-      const hideIntro = p >= 0.23;
-      if (hideIntro !== introCulledRef.current) {
-        introCulledRef.current = hideIntro;
-        intro.style.display = hideIntro ? "none" : "flex";
-      }
-      if (!hideIntro) {
-        const tIntro = easeOutCubic(invLerp(0.01, 0.21, p));
-        if (Math.abs(tIntro - lastIntroTRef.current) > 0.001) {
-          lastIntroTRef.current = tIntro;
-          intro.style.opacity = (1 - tIntro).toFixed(3);
-          intro.style.transform = `translate3d(0,${(-6 * tIntro).toFixed(2)}vh,0)`;
-        }
-      }
     }
 
     // Brand reveal fade & slide at end of reveal (0.76 -> 0.96)
@@ -881,16 +836,13 @@ export function HomeHero({ title, subtitle }: HomeHeroProps) {
     wallTotalWRef.current = wallTotalW;
     colWidthRef.current = colWidth;
 
-    const captionH = 34;
-    const textCol = isDark ? "#f6f6f6" : "#111111";
-
     const colSprites: { canvas: HTMLCanvasElement; w: number; h: number }[] = [];
     for (let cIdx = 0; cIdx < numCols; cIdx++) {
       const pins = COLUMNS_DATA[cIdx];
       let totalH = 0;
       const heights = pins.map((p) => {
         const h = Math.round(colWidth / p.ar);
-        totalH += h + captionH + colGap;
+        totalH += h + colGap;
         return h;
       });
 
@@ -906,12 +858,7 @@ export function HomeHero({ title, subtitle }: HomeHeroProps) {
         const pin = pins[i];
         const ph = heights[i];
         drawPinArtwork(c, pin, 0, curY, colWidth, ph);
-
-        c.fillStyle = textCol;
-        c.font = "700 13px Figtree, system-ui, sans-serif";
-        c.textAlign = "left";
-        c.fillText(pin.title, 4, curY + ph + 20, colWidth - 8);
-        curY += ph + captionH + colGap;
+        curY += ph + colGap;
       }
       colSprites.push({ canvas: off, w: colWidth, h: totalH });
     }
@@ -982,24 +929,6 @@ export function HomeHero({ title, subtitle }: HomeHeroProps) {
     };
   }, []);
 
-  const handleSearchClick = () => {
-    delayRemainingRef.current = 0;
-    if (currentPRef.current < 0.32) {
-      currentPRef.current = 0.32;
-    }
-    isPlayingRef.current = true;
-    renderFrame(currentPRef.current, performance.now(), true);
-    ensureLoop();
-  };
-
-  const handleChipClick = (jump: number) => {
-    currentPRef.current = jump;
-    delayRemainingRef.current = 0;
-    isPlayingRef.current = true;
-    renderFrame(currentPRef.current, performance.now(), true);
-    ensureLoop();
-  };
-
   return (
     <section
       ref={heroRef}
@@ -1011,41 +940,6 @@ export function HomeHero({ title, subtitle }: HomeHeroProps) {
       <div ref={stageRef} className="stage" id="stage">
         {/* Hardware-accelerated canvas */}
         <canvas ref={canvasRef} id="stageCanvas" aria-hidden="true" />
-
-        {/* Intro */}
-        <div ref={introRef} className="intro" id="intro">
-          <h1>{displayTitle}</h1>
-          <p>{displaySubtitle}</p>
-          <div
-            className="search"
-            id="searchTrigger"
-            role="button"
-            tabIndex={0}
-            aria-label="Preview built-in kitchen"
-            onClick={handleSearchClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleSearchClick();
-              }
-            }}
-          >
-            <b />Search built-in ovens, hobs, hoods and taps
-          </div>
-          <div className="chips" aria-hidden="true">
-            {CHIPS.map((chip) => (
-              <span
-                key={chip.label}
-                className="chip"
-                style={{ "--c": chip.color } as React.CSSProperties}
-                data-jump={chip.jump}
-                onClick={() => handleChipClick(chip.jump)}
-              >
-                {chip.label}
-              </span>
-            ))}
-          </div>
-        </div>
 
         {/* Brand reveal at end of animation (Center box & Bottom box matching user mockup) */}
         <div
