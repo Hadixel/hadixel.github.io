@@ -633,6 +633,9 @@ export function HomeHero({}: HomeHeroProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const brandRevealRef = useRef<HTMLDivElement>(null);
+  const brandScrimRef = useRef<HTMLDivElement>(null);
+  const brandTitleRef = useRef<HTMLHeadingElement>(null);
+  const brandSubRef = useRef<HTMLDivElement>(null);
 
   const currentPRef = useRef(0);
   const isPlayingRef = useRef(true);
@@ -668,22 +671,41 @@ export function HomeHero({}: HomeHeroProps) {
       lastBrandTRef.current = -1;
     }
 
-    // Brand reveal fade & slide at end of reveal (0.76 -> 0.96)
+    // Brand reveal: cinematic lighting shift, mask glide, focus pull & staggered entrance
     const brandReveal = brandRevealRef.current;
     if (brandReveal) {
-      const showBrand = p >= 0.74;
+      const showBrand = p >= 0.72;
       if (showBrand !== brandCulledRef.current) {
         brandCulledRef.current = showBrand;
-        brandReveal.style.display = showBrand ? "flex" : "none";
+        brandReveal.style.display = showBrand ? "block" : "none";
       }
       if (showBrand) {
-        const tBrand = easeOutCubic(invLerp(0.76, 0.96, p));
-        if (Math.abs(tBrand - lastBrandTRef.current) > 0.001) {
-          lastBrandTRef.current = tBrand;
-          brandReveal.style.opacity = tBrand.toFixed(3);
-          brandReveal.style.transform = `translate3d(0,${((1 - tBrand) * 18).toFixed(1)}px,0)`;
-          brandReveal.style.pointerEvents = tBrand > 0.5 ? "auto" : "none";
+        // Scrim opacity (0.72 -> 0.90): gentle showroom mood lighting
+        const tScrim = easeOutCubic(invLerp(0.72, 0.90, p));
+        if (brandScrimRef.current) {
+          brandScrimRef.current.style.opacity = (tScrim * 0.65).toFixed(3);
         }
+
+        // Title entrance (0.75 -> 0.93): rises 60px from baseline mask, blur dissolves, scale settles
+        const tTitle = easeOutCubic(invLerp(0.75, 0.93, p));
+        if (brandTitleRef.current) {
+          const yOff = (1 - tTitle) * 60;
+          const blurVal = (1 - tTitle) * 8;
+          const scaleVal = 1.05 - 0.05 * tTitle;
+          brandTitleRef.current.style.transform = `translate3d(0,${yOff.toFixed(1)}px,0) scale(${scaleVal.toFixed(3)})`;
+          brandTitleRef.current.style.opacity = tTitle.toFixed(3);
+          brandTitleRef.current.style.filter = blurVal > 0.1 ? `blur(${blurVal.toFixed(1)}px)` : "none";
+        }
+
+        // Subtitle entrance (0.83 -> 0.98): staggered float up in frosted pill
+        const tSub = easeOutCubic(invLerp(0.83, 0.98, p));
+        if (brandSubRef.current) {
+          const yOffSub = (1 - tSub) * 32;
+          brandSubRef.current.style.transform = `translate3d(0,${yOffSub.toFixed(1)}px,0)`;
+          brandSubRef.current.style.opacity = tSub.toFixed(3);
+        }
+
+        brandReveal.style.pointerEvents = tTitle > 0.7 ? "auto" : "none";
       }
     }
 
@@ -941,24 +963,33 @@ export function HomeHero({}: HomeHeroProps) {
         {/* Hardware-accelerated canvas */}
         <canvas ref={canvasRef} id="stageCanvas" aria-hidden="true" />
 
-        {/* Brand reveal at end of animation (Center box & Bottom box matching user mockup) */}
+        {/* Brand reveal at end of animation */}
         <div
           ref={brandRevealRef}
           className="brand-reveal"
           id="brandReveal"
           dir="rtl"
         >
-          {/* Box 1 (center): خانه مدرن */}
+          {/* Ambient showroom lighting scrim */}
+          <div ref={brandScrimRef} className="brand-reveal-scrim" />
+
+          {/* Box 1 (center): خانه مدرن with mask & blur-to-sharp reveal */}
           <div className="brand-reveal-center">
             <Link href="/products" className="brand-reveal-title-link">
-              <h2 className="brand-reveal-title">خانه مدرن</h2>
+              <div className="brand-title-mask">
+                <h2 ref={brandTitleRef} className="brand-reveal-title">
+                  خانه مدرن
+                </h2>
+              </div>
             </Link>
           </div>
 
-          {/* Box 2 (bottom): هود · سینک · شیرآلات · فر · اجاق */}
+          {/* Box 2 (bottom): هود · سینک · شیرآلات · فر · اجاق with frosted badge */}
           <div className="brand-reveal-bottom">
             <Link href="/products" className="brand-reveal-sub-link">
-              <p className="brand-reveal-subtitle">هود · سینک · شیرآلات · فر · اجاق</p>
+              <div ref={brandSubRef} className="brand-sub-badge">
+                <p className="brand-reveal-subtitle">هود · سینک · شیرآلات · فر · اجاق</p>
+              </div>
             </Link>
           </div>
         </div>
