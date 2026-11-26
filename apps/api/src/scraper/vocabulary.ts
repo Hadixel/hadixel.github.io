@@ -18,9 +18,16 @@ export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 export const ROOT_META: Record<string, { name: string; weightKg: number }> = {
   sink: { name: "سینک", weightKg: 12 },
   hood: { name: "هود", weightKg: 18 },
-  oven: { name: "فر", weightKg: 35 },
+  oven: { name: "فر توکار", weightKg: 35 },
   stove: { name: "اجاق گاز", weightKg: 18 },
   "air-fryer": { name: "سرخ‌کن", weightKg: 6 },
+  // Three the manufacturer sells and the catalogue had nowhere to put: nine vacuum models, eight
+  // microwaves and five tea makers/samovars were each parked under whichever category was nearest
+  // and least wrong, which put vacuum cleaners in the hood tree. The weights are the courier's
+  // charge basis, so they are estimates until shipping confirms them.
+  vacuum: { name: "جاروبرقی", weightKg: 5 },
+  microwave: { name: "مایکروویو", weightKg: 15 },
+  kettle: { name: "کتری و سماور", weightKg: 3 },
 };
 
 /** A subcategory: the Persian name the child category takes. */
@@ -35,6 +42,8 @@ export const SUB_META: Record<string, string> = {
   glass: "شیشه‌ای",
   freestanding: "رومیزی",
   "dual-basket": "دوسبد",
+  corded: "سیمی",
+  electric: "برقی",
 };
 
 /** A colour token: the Persian name and the hex a swatch renders as. */
@@ -57,9 +66,17 @@ export const COLOR_META: Record<string, { name: string; code: string }> = {
 export const CATEGORY_SUBCATEGORIES: Record<string, string[]> = {
   sink: ["steel", "granite"],
   hood: ["chimney", "concealed", "wall", "glass"],
-  oven: ["built-in", "steel", "glass"],
+  // `steel` was a material parked here because the site's "tabletop electric oven" category had
+  // nowhere else to go; `freestanding` is what it actually is, and the name the table already had.
+  oven: ["built-in", "freestanding"],
   stove: ["built-in", "freestanding"],
   "air-fryer": ["dual-basket", "double-bowl"],
+  // One sub each, because that is what the manufacturer sells today. A root with a single child
+  // looks thin and is honest: the import refuses a subcategory nobody chose, so inventing
+  // "canister" for vacuums that do not exist would only let a filter offer an empty shelf.
+  vacuum: ["corded"],
+  microwave: ["built-in"],
+  kettle: ["electric"],
 };
 
 /**

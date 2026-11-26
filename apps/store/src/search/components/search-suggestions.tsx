@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Skeleton } from "@heroui/react";
 import { formatToman, toFaDigits } from "@kmodern/contracts/format";
+import { ShimmerImage } from "@/components/shimmer-image";
 
 interface Hit {
   slug: string;
@@ -105,11 +106,11 @@ export default function SearchSuggestions({ query, onNavigate }: { query: string
                 className="flex w-full items-center gap-3 py-2.5 text-right transition-colors hover:bg-plaster"
               >
                 <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-card bg-plaster">
-                  {h.image && <Image src={h.image} alt="" fill sizes="48px" className="object-contain p-0.5" />}
+                  {h.image && <ShimmerImage src={h.image} alt="" fill sizes="48px" className="object-contain p-0.5" />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
-                  <span className="mt-0.5 block text-xs text-ash">
+                  <span className="mt-0.5 block text-xs sm:text-sm text-ash font-medium">
                     {h.discount ? (
                       <>
                         <span className="font-bold text-flame-800">{formatToman(h.discount.discountedPrice)}</span>{" "}

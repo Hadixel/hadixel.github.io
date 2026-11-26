@@ -2,10 +2,10 @@
 
 ## Status
 
-In progress (2026-09-27). Records the shape of the change and what is already closed; the remaining
-work is listed under Consequences. Ticket 12 of the adoption plan, kept as
-[`.scratch/blueprint-adoption/issues/12-admin-writes.md`](../../.scratch/blueprint-adoption/issues/12-admin-writes.md)
-— the disposable plan it came from was deleted when its last phase landed, per its own rule.
+Accepted (2026-10-01). Records the shape of the change and its completed migration.
+Ticket 12 of the adoption plan, kept as
+[`.scratch/blueprint-adoption/issues/12-admin-writes.md`](../../.scratch/blueprint-adoption/issues/12-admin-writes.md),
+is closed and verified.
 
 ## Context
 
@@ -68,12 +68,10 @@ Persian name, which is every name in this shop.
 
 - **Closed:** the audit guarantee, the shared origin check, inventory adjustment on the gateway's own
   stock lifecycle, the result shape in mechanism, the one canonicalisation, and the discount code at
-  the write path.
-- **To do:** media and customers, then every panel page reading through the gateway, type-only
-  imports included, then the panel's own five `sameOrigin` copies collapsed to the one the gate counts.
-  The doubled delete paths are down to one: media is the last, and it is the only one of the original
-  eight still holding both a bare `deleteX(formData)` and a `deleteXAction(_prev, formData)` that
-  exists only to satisfy `useActionState`.
+  the write path. Media and customer operations were subsequently moved to the gateway (`/media`,
+  `/customers`), all 10 panel page routes read through the gateway via `readThrough` (asserted by
+  `src/lib/panel-page-reads.test.ts`), redundant delete paths were collapsed to single implementations,
+  and direct database imports (`@kmodern/db`) were completely eliminated.
 - **A vocabulary the panel held was not a guarantee, and three of them turned out to be doing real
   work.** Pages, blog and nav each ran `blockSchema`, `postBodySchema` and `menuSchema` on the
   panel's own form, as a fast-fail before its own write. Each read like a guarantee because each

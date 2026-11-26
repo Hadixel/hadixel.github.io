@@ -17,10 +17,11 @@ import {
   TableRow,
 } from "@kmodern/ui";
 import { Field, Select, Spinner } from "@/components/panel-ui";
+import { MultiSelectField } from "@/scraper/components/multi-select-field";
 import { ProductThumbnail } from "@/scraper/components/product-media";
 import { ProductDetail } from "@/scraper/components/product-detail";
 import { COLOR_LABELS, ROOT_LABELS, SUB_LABELS, labelOptions } from "@/scraper/lib/scraper-labels";
-import { websiteLabel, type ContentFilter, type PriceFilter, type SortOrder } from "@/scraper/lib/scraper-catalog";
+import { websiteLabel, type ContentFilter, type PriceFilter, type SortOrder, type StockFilter } from "@/scraper/lib/scraper-catalog";
 import type { ScraperNotice } from "@/scraper/hooks/use-scraper-job";
 import type { ScraperCatalogEdit, ScraperCatalogItem } from "@/scraper/lib/scraper-types";
 
@@ -53,6 +54,8 @@ export function CatalogResultsCard({
   setColorFilter,
   priceFilter,
   setPriceFilter,
+  stockFilter,
+  setStockFilter,
   contentFilter,
   setContentFilter,
   sortOrder,
@@ -87,14 +90,16 @@ export function CatalogResultsCard({
   setManufacturerFilter: (value: string) => void;
   websiteFilter: string;
   setWebsiteFilter: (value: string) => void;
-  rootFilter: string;
-  setRootFilter: (value: string) => void;
-  subFilter: string;
-  setSubFilter: (value: string) => void;
+  rootFilter: string[];
+  setRootFilter: (values: string[]) => void;
+  subFilter: string[];
+  setSubFilter: (values: string[]) => void;
   colorFilter: string;
   setColorFilter: (value: string) => void;
   priceFilter: PriceFilter;
   setPriceFilter: (value: PriceFilter) => void;
+  stockFilter: StockFilter;
+  setStockFilter: (value: StockFilter) => void;
   contentFilter: ContentFilter;
   setContentFilter: (value: ContentFilter) => void;
   sortOrder: SortOrder;
@@ -152,17 +157,23 @@ export function CatalogResultsCard({
                    {websiteOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                  </Select>
                </Field>
-               <Field label="دسته اصلی" className="mb-0">
-                <Select value={rootFilter} onChange={(event) => { setRootFilter(event.target.value); setSubFilter("all"); }}>
-                  <option value="all">همه دسته‌ها</option>
-                  {labelOptions(ROOT_LABELS).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </Select>
+               <Field label="دسته اصلی" className="mb-0" hint="می‌توانید چند دسته انتخاب کنید.">
+                <MultiSelectField
+                  label="دسته اصلی"
+                  values={rootFilter}
+                  options={labelOptions(ROOT_LABELS)}
+                  onChange={(values) => { setRootFilter(values); setSubFilter([]); }}
+                  placeholder="همه دسته‌ها"
+                />
               </Field>
-              <Field label="زیر‌دسته" className="mb-0">
-                <Select value={subFilter} onChange={(event) => setSubFilter(event.target.value)}>
-                  <option value="all">همه زیر‌دسته‌ها</option>
-                  {subcategoryOptions.map((value) => <option key={value} value={value}>{SUB_LABELS[value] ?? value}</option>)}
-                </Select>
+              <Field label="زیر‌دسته" className="mb-0" hint="انتخاب چند زیر‌دسته مجاز است.">
+                <MultiSelectField
+                  label="زیر‌دسته"
+                  values={subFilter}
+                  options={labelOptions(SUB_LABELS).filter((option) => subcategoryOptions.includes(option.value))}
+                  onChange={setSubFilter}
+                  placeholder="همه زیر‌دسته‌ها"
+                />
               </Field>
               <Field label="رنگ" className="mb-0">
                 <Select value={colorFilter} onChange={(event) => setColorFilter(event.target.value)}>
@@ -175,6 +186,14 @@ export function CatalogResultsCard({
                   <option value="all">همه</option>
                   <option value="priced">دارای قیمت</option>
                   <option value="missing">نیازمند قیمت</option>
+                </Select>
+              </Field>
+              <Field label="وضعیت موجودی" className="mb-0" hint="وضعیت اعلام‌شده در داتیس‌شاپ پس از دریافت قیمت">
+                <Select value={stockFilter} onChange={(event) => setStockFilter(event.target.value as StockFilter)}>
+                  <option value="all">همه</option>
+                  <option value="available">موجود</option>
+                  <option value="unavailable">ناموجود</option>
+                  <option value="unspecified">اعلام‌نشده</option>
                 </Select>
               </Field>
               <Field label="محتوا" className="mb-0">

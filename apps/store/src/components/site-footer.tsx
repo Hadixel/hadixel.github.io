@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getSettingOrDefault } from "@/lib/settings";
-import { jalaliYear, latinDigits, toFaDigits } from "@kmodern/contracts";
+import { digitsOnly, jalaliYear, latinDigits, toFaDigits } from "@kmodern/contracts";
 import { settingKeys } from "@kmodern/contracts/setting-keys";
 import { loadFooter } from "@/lib/nav";
+import { StoreAddressCopy } from "@/components/store-address-copy";
 
 /*
  * Footer — ink surface, RTL. The start (right) column carries identity plus the
@@ -47,23 +48,77 @@ export async function SiteFooter() {
   });
 
   return (
-    <footer className="mt-16 w-full bg-ink text-white">
+    <footer className="mt-16 w-full border-t-2 border-flame-600 bg-ink text-white">
       {/* Identity band (start/right) then an equal-width link band; the two
           sit side by side only from lg, where a split column would strand one
           of them. */}
-      <div className="mx-auto grid max-w-[1440px] gap-x-8 gap-y-10 px-4 py-12 sm:grid-cols-2 sm:py-14 lg:grid-cols-12 lg:gap-y-12">
-        <div className="sm:col-span-2 lg:col-span-4 lg:pe-6">
-          <Link href="/" className="inline-flex items-center gap-2.5 font-display text-xl font-black">
-            <span className="size-2 rounded-pill bg-flame-600" aria-hidden />
+      <div className="mx-auto grid max-w-[1600px] gap-x-8 gap-y-8 px-4 py-8 sm:grid-cols-2 sm:gap-y-10 sm:py-14 lg:grid-cols-12 lg:gap-y-12">
+        <div className="sm:col-span-2 lg:col-span-5 lg:pe-6">
+          <Link href="/" className="inline-flex items-center gap-2.5 font-display text-xl font-black transition-colors hover:text-flame-200">
+            <span className="size-2.5 rounded-pill bg-flame-500 ring-4 ring-flame-500/20" aria-hidden />
             {storeName}
           </Link>
 
+          {/* Store Location */}
+          <section className="mt-6" aria-labelledby="footer-store-location">
+            <h2 id="footer-store-location" className="mb-3 flex items-center gap-2 text-xs font-bold text-white/60">
+              <span aria-hidden className="h-px w-6 bg-flame-500/40" />
+              فروشگاه حضوری
+              <span aria-hidden className="h-px w-6 bg-flame-500/40" />
+            </h2>
+
+            <div className="mb-2.5 flex items-center justify-between gap-2 text-xs text-white/80">
+              <span className="truncate">کرمان، خیابان خواجو، روبروی کوچه ۲۷</span>
+              <StoreAddressCopy address="کرمان، خیابان خواجو، روبروی کوچه ۲۷" />
+            </div>
+
+            <div className="overflow-hidden rounded-card border border-flame-500/25 bg-white/5">
+              <iframe
+                title="موقعیت فروشگاه خانه مدرن روی نقشه گوگل"
+                src="https://maps.google.com/maps?q=30.2808077,57.0540475&hl=fa&t=k&z=19&output=embed"
+                className="h-48 w-full border-0 transition-opacity hover:opacity-90 sm:h-64 lg:h-72"
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-2 text-xs text-white/55">
+              <span>مسیریابی در:</span>
+              <a
+                href="https://nshn.ir/d2_bP_FApdY5Hr"
+                target="_blank"
+                rel="noreferrer"
+                className="text-white/75 transition-colors hover:text-flame-300 underline-offset-4 hover:underline"
+              >
+                نشان
+              </a>
+              <span className="text-white/25" aria-hidden>•</span>
+              <a
+                href="https://balad.ir/location?latitude=30.2808077&longitude=57.0540475"
+                target="_blank"
+                rel="noreferrer"
+                className="text-white/75 transition-colors hover:text-flame-300 underline-offset-4 hover:underline"
+              >
+                بلد
+              </a>
+              <span className="text-white/25" aria-hidden>•</span>
+              <a
+                href="https://www.google.com/maps/dir/?api=1&destination=30.2808077,57.0540475"
+                target="_blank"
+                rel="noreferrer"
+                className="text-white/75 transition-colors hover:text-flame-300 underline-offset-4 hover:underline"
+              >
+                گوگل مپ
+              </a>
+            </div>
+          </section>
+
           {channels.length > 0 && (
-            <section className="mt-8" aria-labelledby="footer-channels">
-              <h2 id="footer-channels" className="mb-4 flex items-center gap-2 text-xs font-bold text-white/50">
-                <span aria-hidden className="h-px w-6 bg-white/15" />
+            <section className="mt-6" aria-labelledby="footer-channels">
+              <h2 id="footer-channels" className="mb-4 flex items-center gap-2 text-xs font-bold text-white/60">
+                <span aria-hidden className="h-px w-6 bg-flame-500/40" />
                 راه‌های ارتباطی
-                <span aria-hidden className="h-px w-6 bg-white/15" />
+                <span aria-hidden className="h-px w-6 bg-flame-500/40" />
               </h2>
               <ul className="flex flex-wrap gap-2">
                 {channels.map((channel) => (
@@ -71,9 +126,9 @@ export async function SiteFooter() {
                     <a
                       href={channel.href}
                       {...(channel.external ? { target: "_blank", rel: "noreferrer" } : {})}
-                      className="inline-flex items-center gap-2 rounded-pill border border-white/12 bg-white/5 px-3 py-1.5 text-sm text-white/70 transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-pill border border-flame-400/20 bg-flame-950/60 px-3 py-1.5 text-sm text-white/80 transition-colors hover:border-flame-400/60 hover:bg-flame-900/50 hover:text-white"
                     >
-                      {CHANNEL_ICONS[channel.kind]()}
+                      <span className="text-flame-400">{CHANNEL_ICONS[channel.kind]()}</span>
                       <span dir={channel.labelLtr ? "ltr" : undefined}>{channel.label}</span>
                     </a>
                   </li>
@@ -83,12 +138,12 @@ export async function SiteFooter() {
           )}
         </div>
 
-        <div className="grid gap-x-8 gap-y-9 sm:col-span-2 sm:grid-cols-3 sm:gap-y-10 lg:col-span-8">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:col-span-2 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:col-span-7">
           {groups.map((group) => (
             <FooterGroup key={group.title} title={group.title}>
               {group.links.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="transition-colors hover:text-white">
+                  <Link href={link.href} className="transition-colors hover:text-flame-300">
                     {link.label}
                   </Link>
                 </li>
@@ -99,20 +154,20 @@ export async function SiteFooter() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto max-w-[1440px] px-4">
-          <ul className="flex flex-nowrap items-center justify-between gap-x-3 border-b border-white/10 py-5 text-[11px] text-white/60 sm:flex-wrap sm:gap-x-8 sm:gap-y-3 sm:text-xs">
+        <div className="mx-auto max-w-[1600px] px-4">
+          <ul className="flex flex-nowrap items-center justify-between gap-x-3 border-b border-white/10 py-3.5 text-[11px] text-white/70 sm:flex-wrap sm:gap-x-8 sm:gap-y-3 sm:py-5 sm:text-xs">
             {[
               { icon: TruckIcon, label: "ارسال سراسری" },
               { icon: ShieldIcon, label: "ضمانت اصالت" },
               { icon: LockIcon, label: "پرداخت امن" },
             ].map((trust) => (
               <li key={trust.label} className="inline-flex items-center gap-2">
-                <span className="text-flame-600">{trust.icon()}</span>
+                <span className="text-flame-400">{trust.icon()}</span>
                 {trust.label}
               </li>
             ))}
           </ul>
-          <div className="flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 text-xs text-white/50">
+          <div className="flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 text-xs text-white/55">
             <span>© {toFaDigits(jalaliYear())} {storeName}</span>
             <span>تمام حقوق برای فروشگاه محفوظ است</span>
           </div>
@@ -124,13 +179,13 @@ export async function SiteFooter() {
 
 function FooterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="text-center">
-      <h2 className="mb-5 flex items-center justify-center gap-2 pb-3 text-xs font-bold text-white/50">
-        <span aria-hidden className="h-px w-6 bg-white/15" />
+    <div className="text-center last:odd:col-span-2 sm:last:odd:col-span-1">
+      <h2 className="mb-3 flex items-center justify-center gap-2 pb-1.5 text-xs font-bold text-white/60 sm:mb-5 sm:pb-3">
+        <span aria-hidden className="h-px w-6 bg-flame-500/40" />
         {title}
-        <span aria-hidden className="h-px w-6 bg-white/15" />
+        <span aria-hidden className="h-px w-6 bg-flame-500/40" />
       </h2>
-      <ul className="space-y-3.5 text-sm text-white/65">{children}</ul>
+      <ul className="space-y-2 text-sm text-white/70 sm:space-y-3.5">{children}</ul>
     </div>
   );
 }
@@ -302,7 +357,7 @@ function channelFromSegment(segment: string): Channel | null {
     const at = number.index ?? 0;
     if (text.slice(at + number[0].length).trim()) return null;
     const digits = latinDigits(number[0]);
-    if (digits.replace(/\D/g, "").length < 7) return null;
+    if (digitsOnly(digits).length < 7) return null;
     kind = "phone";
     href = `tel:${digits.replace(/[^\d+]/g, "")}`;
     fallback = number[0].trim();

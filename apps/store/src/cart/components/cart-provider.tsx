@@ -23,6 +23,7 @@ export type CartLine = CartItemInput;
 interface CartCtx {
   lines: CartLine[];
   count: number;
+  hydrated: boolean;
   add: (variantId: string, qty?: number) => void;
   setQty: (variantId: string, qty: number) => void;
   remove: (variantId: string) => void;
@@ -32,6 +33,7 @@ interface CartCtx {
 const Ctx = createContext<CartCtx>({
   lines: [],
   count: 0,
+  hydrated: false,
   add: () => {},
   setQty: () => {},
   remove: () => {},
@@ -52,7 +54,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as CartLine[];
-        if (Array.isArray(parsed)) setLines(parsed.filter((l) => l && l.variantId && l.qty > 0));
+        if (Array.isArray(parsed)) {
+          setLines(
+            parsed
+              .filter((l) => l && typeof l.variantId === "string" && l.variantId.trim())
+              .map((l) => ({
+                variantId: l.variantId.trim(),
+                qty: typeof l.qty === "number" && Number.isFinite(l.qty) && l.qty >= 1 ? Math.min(99, Math.floor(l.qty)) : 1,
+              })),
+          );
+        }
       }
     } catch {
       /* ignore corrupt cart */
@@ -70,15 +81,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [lines, hydrated]);
 
   const add = useCallback((variantId: string, qty = 1) => {
+    const validQty = typeof qty === "number" && Number.isFinite(qty) && qty >= 1 ? Math.min(99, Math.floor(qty)) : 1;
     setLines((prev) => {
       const found = prev.find((l) => l.variantId === variantId);
-      if (found) return prev.map((l) => (l.variantId === variantId ? { ...l, qty: l.qty + qty } : l));
-      return [...prev, { variantId, qty }];
+      if (found) return prev.map((l) => (l.variantId === variantId ? { ...l, qty: Math.min(99, l.qty + validQty) } : l));
+      return [...prev, { variantId, qty: validQty }];
     });
   }, []);
 
   const setQty = useCallback((variantId: string, qty: number) => {
-    setLines((prev) => (qty <= 0 ? prev.filter((l) => l.variantId !== variantId) : prev.map((l) => (l.variantId === variantId ? { ...l, qty } : l))));
+    const validQty = typeof qty === "number" && Number.isFinite(qty) ? Math.floor(qty) : 0;
+    setLines((prev) => (validQty <= 0 ? prev.filter((l) => l.variantId !== variantId) : prev.map((l) => (l.variantId === variantId ? { ...l, qty: Math.min(99, validQty) } : l))));
   }, []);
 
   const remove = useCallback((variantId: string) => {
@@ -89,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const count = useMemo(() => lines.reduce((s, l) => s + l.qty, 0), [lines]);
 
-  return <Ctx.Provider value={{ lines, count, add, setQty, remove, clear }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ lines, count, hydrated, add, setQty, remove, clear }}>{children}</Ctx.Provider>;
 }
 
 export function useCart() {

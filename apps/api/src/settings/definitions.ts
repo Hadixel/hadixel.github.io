@@ -123,6 +123,7 @@ export const SETTING_SECTIONS: readonly SettingSectionDef[] = [
     description: "پرداخت کارت‌به‌کارت (C2C) درگاه انسانی",
     fields: [
       { key: "paymentC2cCardNumber", label: "شماره کارت", type: "text", public: true },
+      { key: "paymentC2cIban", label: "شماره شبا (IBAN)", type: "text", public: true },
       { key: "paymentC2cCardHolder", label: "نام دارنده کارت", type: "text", public: true },
       { key: "paymentC2cBankName", label: "نام بانک", type: "text", public: true },
     ],

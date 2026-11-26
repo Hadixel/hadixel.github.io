@@ -52,7 +52,7 @@ afterEach(async () => {
 });
 
 function start(): string {
-  return scraperJobs.start({ source: "all", cache: false, downloadImages: false, priceLookup: false }).id;
+  return scraperJobs.start({ source: "all", cache: false, downloadImages: false }).id;
 }
 
 function scraped(index: number): PipelineEvent {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Price } from "@kmodern/ui";
+import { ShimmerImage } from "@/components/shimmer-image";
 
 /*
  * Floating product info card — exact Zellerfeld anatomy: white surface,
@@ -27,7 +28,7 @@ export function FloatingProductCard({
     <div className="card-lift w-full max-w-[280px] rounded-card bg-canvas p-5">
       <div className="flex items-center gap-3">
         <div className="relative size-[60px] shrink-0 overflow-hidden rounded-card bg-plaster">
-          {image && <Image src={image} alt={name} fill sizes="60px" className="object-contain p-1" />}
+          {image && <ShimmerImage src={image} alt={name} fill sizes="60px" className="object-contain p-1" />}
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-ink">{name}</div>

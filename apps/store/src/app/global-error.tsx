@@ -3,10 +3,29 @@
 import { useEffect } from "react";
 import "./globals.css";
 
-export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  reset?: () => void;
+  retry?: () => void;
+}) {
   useEffect(() => {
     console.error(error);
   }, [error]);
+
+  const handleRetry = () => {
+    if (typeof reset === "function") {
+      reset();
+    } else if (typeof retry === "function") {
+      retry();
+    } else {
+      window.location.reload();
+    }
+  };
+
   return (
     <html lang="fa" dir="rtl">
       <body className="min-h-screen bg-canvas text-ink">
@@ -14,7 +33,13 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
           <div>
             <div className="font-display text-5xl font-black text-ink">خطایی رخ داد</div>
             <p className="mt-4 text-sm leading-7 text-ash">فروشگاه در این لحظه قابل نمایش نیست. دوباره تلاش کنید.</p>
-            <button type="button" onClick={() => retry()} className="mt-7 min-h-11 rounded-card bg-flame-700 px-6 text-sm font-bold text-white">تلاش دوباره</button>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="mt-7 min-h-11 rounded-card bg-flame-700 px-6 text-sm font-bold text-white transition-colors hover:bg-flame-600"
+            >
+              تلاش دوباره
+            </button>
           </div>
         </main>
       </body>

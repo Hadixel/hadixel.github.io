@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 import { cn } from "../cn";
 import { deriveColorDots, type DotVariant } from "./color-dots-logic";
+import { ShimmerImage } from "../components/shimmer-image";
 
 /*
- * ColorDotSwatches — dots row only (no image box). Used on Product Cards,
- * where the card's main image is the swap target. One dot per Color;
- * disabled dots don't pretend to swap. Never renders a count
- * (CONTEXT.md "Color dots").
+ * ColorDotSwatches — dots row only (no image box). Used on Product Cards
+ * to passively display available colors (or interactively when `onSwap` is
+ * provided). One dot per Color; never renders a count (CONTEXT.md "Color dots").
  */
 export function ColorDotSwatches({
   variants,
@@ -22,34 +21,56 @@ export function ColorDotSwatches({
   className?: string;
 }) {
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const { dots, selected, swappable } = deriveColorDots(variants, selectedId);
+  const { dots, selected } = deriveColorDots(variants, selectedId);
 
   if (dots.length < 2 || !selected) return null;
 
+  if (!onSwap) {
+    return (
+      <div
+        className={cn("inline-flex items-center gap-1.5", className)}
+        aria-label="رنگ‌های موجود"
+      >
+        {dots.map((dot) => (
+          <span
+            key={dot.id}
+            role="img"
+            title={dot.colorName}
+            aria-label={dot.colorName}
+            className={cn(
+              "size-3.5 shrink-0 rounded-full border-[1.5px] border-canvas ring-1 ring-ink/15 shadow-2xs sm:size-4",
+              !dot.colorCode && "bg-plaster",
+            )}
+            style={dot.colorCode ? { backgroundColor: dot.colorCode } : undefined}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex flex-row-reverse items-center gap-1.5", className)}>
+    <div className={cn("inline-flex items-center gap-1.5", className)}>
       {dots.map((dot) => {
-        const canSwap = swappable.has(dot.id);
         const isActive = dot.id === selected.id;
         return (
           <button
             key={dot.id}
             type="button"
+            title={dot.colorName}
             aria-label={dot.colorName}
             onClick={(e) => {
-              // dots live inside the card's <Link> — never navigate on swap
               e.preventDefault();
               e.stopPropagation();
               setSelectedId(dot.id);
               const v = variants.find((x) => x.id === dot.id);
-              if (v && canSwap) onSwap?.(v);
+              if (v) onSwap(v);
             }}
             className={cn(
-              "size-6 rounded-full border",
+              "size-4 shrink-0 rounded-full border-[1.5px] border-canvas transition-all sm:size-4.5 touch-manipulation cursor-pointer",
+              !dot.colorCode && "bg-plaster",
               isActive
-                ? "border-2 border-flame-700 ring-2 ring-flame-100"
-                : "border-fog hover:border-slate-line",
-              !canSwap && "opacity-40",
+                ? "ring-2 ring-ink/60"
+                : "ring-1 ring-ink/15 hover:ring-ink/40",
             )}
             style={dot.colorCode ? { backgroundColor: dot.colorCode } : undefined}
           />
@@ -81,7 +102,7 @@ export function ColorDots({
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="relative overflow-hidden rounded-card bg-canvas" style={{ height: imageSize }}>
         {selected.images[0] ? (
-          <Image
+          <ShimmerImage
             src={selected.images[0]}
             alt={selected.colorName}
             fill

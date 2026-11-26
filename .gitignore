@@ -45,3 +45,10 @@ out
 
 # Generated Prisma client (apps/api/src/generated)
 apps/api/src/generated
+
+# Local tool working directories. Untracked: they are written beside the surface a tool is
+# editing, with no supported way to relocate them, and they are not source.
+.impeccable
+
+# Synced production uploads for local dev
+apps/store/public/uploads

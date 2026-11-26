@@ -29,7 +29,7 @@ export default function MobileMenu({ tree }: { tree: NavNode[] }) {
   const active = (href: string) => isActive(pathname, href);
   return (
     <Drawer isOpen={open} onOpenChange={setOpen}>
-      <Drawer.Trigger aria-label={open ? "بستن منو" : "منو"} className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster lg:hidden">
+      <Drawer.Trigger aria-label={open ? "بستن منو" : "منو"} className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-flame-50 hover:text-flame-700 lg:hidden">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
           {open ? (
             <path d="M4 4l10 10M14 4L4 14" />

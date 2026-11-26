@@ -25,7 +25,7 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
   return (
     <div>
       <div className="border-b border-plaster bg-plaster/60">
-        <div className="mx-auto max-w-[1440px] px-4 py-10 sm:py-14">
+        <div className="mx-auto max-w-[1600px] px-4 py-10 sm:py-14">
           <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">{page.title}</h1>
         </div>
       </div>

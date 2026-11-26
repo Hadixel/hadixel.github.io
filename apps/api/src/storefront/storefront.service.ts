@@ -1,6 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { linkRefSchema, type LinkRef } from "@kmodern/contracts";
+import { sortBlackVariantFirst } from "../common/variant-order.js";
 import { normalizeLinkRef, resolveLinks } from "../content/links.js";
+import { detailDiscount, resolveProductDiscounts } from "../discounts/product-discounts.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { Prisma, PrismaClient } from "../prisma/index.js";
 import type {
@@ -13,6 +15,8 @@ import type {
   SitemapEntry,
   SitemapRead,
   StorefrontFooter,
+  TorobProductItem,
+  TorobProductsResponse,
 } from "./dto/storefront.dto.js";
 
 type Db = PrismaClient;
@@ -66,6 +70,8 @@ const STATIC_SITEMAP: SitemapEntry[] = [
   { path: "/products", lastModified: null, changeFrequency: "daily", priority: 0.9 },
   { path: "/blog", lastModified: null, changeFrequency: "weekly", priority: 0.6 },
 ];
+
+const DEFAULT_STORE_BASE_URL = "https://kmodern.ir";
 
 /**
  * The storefront's public reads: the chrome, the blog, and the sitemap.
@@ -267,6 +273,113 @@ export class StorefrontService {
     return { entries, complete: missing.length === 0, missing };
   }
 
+  /* ---------- the Torob product feed ---------- */
+
+  /**
+   * Paginated Torob product feed over published products and their variants.
+   *
+   * Products are ordered newest first (`createdAt desc, id asc`), and each product's variants
+   * are ordered black-first so the first emitted variant matches the product page's default
+   * variant.
+   */
+  async torobProducts(
+    page: number,
+    limit: number,
+    baseUrl: string = DEFAULT_STORE_BASE_URL,
+  ): Promise<TorobProductsResponse> {
+    const normalizedBase = baseUrl.replace(/\/+$/, "");
+    const products = await this.db.product.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        categoryId: true,
+        category: { select: { name: true } },
+        variants: {
+          orderBy: [{ colorName: "asc" }, { price: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            colorName: true,
+            colorCode: true,
+            price: true,
+            stock: true,
+            reserved: true,
+            allowBackorder: true,
+            images: true,
+          },
+        },
+      },
+    });
+
+    const discountTargets = products.map((product) => {
+      const sellablePrices = product.variants
+        .filter((variant) => variant.allowBackorder || variant.stock - variant.reserved > 0)
+        .map((variant) => variant.price);
+      const allPrices = product.variants.map((variant) => variant.price);
+      return {
+        id: product.id,
+        categoryId: product.categoryId,
+        price: sellablePrices.length
+          ? Math.min(...sellablePrices)
+          : allPrices.length
+            ? Math.min(...allPrices)
+            : 0,
+      };
+    });
+    const winners = await resolveProductDiscounts(this.db, discountTargets);
+
+    const items: TorobProductItem[] = [];
+    for (const product of products) {
+      const orderedVariants = sortBlackVariantFirst(
+        product.variants.map((variant) => ({
+          ...variant,
+          available: variant.allowBackorder || variant.stock - variant.reserved > 0,
+        })),
+      );
+      const variantPrices: Record<string, number> = {};
+      for (const variant of orderedVariants) variantPrices[variant.id] = variant.price;
+      const discount = detailDiscount(winners.get(product.id) ?? null, variantPrices);
+      const fallbackImage = orderedVariants.find((v) => v.images.length > 0)?.images[0] ?? null;
+      const pageUrl = `${normalizedBase}/product/${product.slug}`;
+
+      for (const variant of orderedVariants) {
+        const discounted = discount?.variantPrices[variant.id];
+        const hasDiscount = typeof discounted === "number" && discounted < variant.price;
+        const rawImage = variant.images[0] ?? fallbackImage;
+        const colorSuffix =
+          orderedVariants.length > 1 && variant.colorName.trim() !== ""
+            ? ` - رنگ ${variant.colorName}`
+            : "";
+
+        items.push({
+          title: `${product.name}${colorSuffix}`,
+          product_id: variant.id,
+          page_url: pageUrl,
+          price: hasDiscount ? discounted : variant.price,
+          old_price: hasDiscount ? variant.price : null,
+          availability: variant.available ? "instock" : "outofstock",
+          image_url: rawImage ? toAbsoluteUrl(rawImage, normalizedBase) : null,
+          category_name: product.category.name,
+        });
+      }
+    }
+
+    const count = items.length;
+    const offset = (page - 1) * limit;
+    const results = items.slice(offset, offset + limit);
+    const pageUrlFor = (targetPage: number) =>
+      `${normalizedBase}/torob/products?page=${targetPage}&limit=${limit}`;
+
+    return {
+      count,
+      next: offset + results.length < count ? pageUrlFor(page + 1) : null,
+      previous: page > 1 && count > 0 && offset - limit < count ? pageUrlFor(page - 1) : null,
+      results,
+    };
+  }
+
   /* ---------- the pieces the reads above share ---------- */
 
   /** Assemble the rows into trees, resolving every link in the whole set in one batched pass. */
@@ -349,9 +462,13 @@ export class StorefrontService {
         id: true,
         slug: true,
         name: true,
-        // The card shows one image: the cheapest variant's first. The same rule the home page's
-        // product grid uses, so a product looks the same wherever a shopper meets it.
-        variants: { orderBy: { price: "asc" }, take: 1, select: { images: true } },
+        // The card shows one image: the black variant's first (falling back to cheapest).
+        // The same rule the home page's product grid uses, so a product looks the same wherever a
+        // shopper meets it.
+        variants: {
+          orderBy: { price: "asc" },
+          select: { colorName: true, colorCode: true, images: true },
+        },
       },
     });
     const byId = new Map<string, ProductMention>(
@@ -360,7 +477,7 @@ export class StorefrontService {
         {
           name: product.name,
           href: `/product/${product.slug}`,
-          image: product.variants[0]?.images?.[0] ?? null,
+          image: sortBlackVariantFirst(product.variants)[0]?.images?.[0] ?? null,
         },
       ]),
     );
@@ -376,6 +493,12 @@ function entry(
   priority: number,
 ): SitemapEntry {
   return { path, lastModified: updatedAt?.toISOString() ?? null, changeFrequency, priority };
+}
+
+/** Resolve a relative asset path against `baseUrl`, leaving external absolute URLs unchanged. */
+function toAbsoluteUrl(url: string, baseUrl: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  return url.startsWith("/") ? `${baseUrl}${url}` : `${baseUrl}/${url}`;
 }
 
 /**

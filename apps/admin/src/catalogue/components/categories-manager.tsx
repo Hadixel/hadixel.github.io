@@ -1,5 +1,5 @@
 "use client";
-import { toFaDigits } from "@kmodern/contracts";
+import { sanitizeDecimalInput, sanitizeSignedIntInput, toFaDigits } from "@kmodern/contracts";
 
 // Category tree (004/011): 2-level hierarchy, weightKg required, inline
 // spec-field editor per category. One form per category (add or edit) plus
@@ -70,10 +70,28 @@ function AddCategoryForm({ roots }: { roots: CategorySeed[] }) {
             </Select>
           </Field>
           <Field label="وزن (kg)" required hint="الزامی">
-            <Input name="weightKg" type="number" step="0.1" min="0.1" dir="ltr" required />
+            <Input
+              name="weightKg"
+              type="text"
+              inputMode="decimal"
+              dir="ltr"
+              required
+              onChange={(e) => {
+                e.currentTarget.value = sanitizeDecimalInput(e.currentTarget.value);
+              }}
+            />
           </Field>
           <Field label="ترتیب">
-            <Input name="sortOrder" type="number" defaultValue={0} dir="ltr" />
+            <Input
+              name="sortOrder"
+              type="text"
+              inputMode="numeric"
+              defaultValue={0}
+              dir="ltr"
+              onChange={(e) => {
+                e.currentTarget.value = sanitizeSignedIntInput(e.currentTarget.value);
+              }}
+            />
           </Field>
           <div className="md:col-span-5 flex items-center justify-end gap-2">
             <input type="hidden" name="specFields" value="[]" />
@@ -151,8 +169,31 @@ function CategoryForm({ category, rootOptions }: { category: CategorySeed; rootO
             </Select>
           </Field>
         )}
-        <Field label="وزن (kg)" required><Input name="weightKg" type="number" step="0.1" defaultValue={category.weightKg} dir="ltr" required /></Field>
-        <Field label="ترتیب"><Input name="sortOrder" type="number" defaultValue={category.sortOrder} dir="ltr" /></Field>
+        <Field label="وزن (kg)" required>
+          <Input
+            name="weightKg"
+            type="text"
+            inputMode="decimal"
+            defaultValue={category.weightKg}
+            dir="ltr"
+            required
+            onChange={(e) => {
+              e.currentTarget.value = sanitizeDecimalInput(e.currentTarget.value);
+            }}
+          />
+        </Field>
+        <Field label="ترتیب">
+          <Input
+            name="sortOrder"
+            type="text"
+            inputMode="numeric"
+            defaultValue={category.sortOrder}
+            dir="ltr"
+            onChange={(e) => {
+              e.currentTarget.value = sanitizeSignedIntInput(e.currentTarget.value);
+            }}
+          />
+        </Field>
       </div>
 
       <div>

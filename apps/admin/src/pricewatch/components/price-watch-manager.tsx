@@ -32,7 +32,7 @@ import type {
   PriceWatchOverview,
 } from "@/pricewatch/lib/price-watch";
 import { idle, type ActionResult } from "@/lib/actions/result";
-import { formatJalaliDateTime, toFaDigits } from "@kmodern/contracts";
+import { digitsOnly, formatJalaliDateTime, toFaDigits } from "@kmodern/contracts";
 import { formatToman } from "@kmodern/contracts/format";
 import {
   Badge,
@@ -174,11 +174,13 @@ function ConfigCard({ overview }: { overview: PriceWatchOverview }) {
               <Field label="فاصلهٔ زمانی (ساعت)">
                 <Input
                   name="intervalHours"
-                  type="number"
-                  min={1}
-                  max={168}
+                  type="text"
+                  inputMode="numeric"
                   dir="ltr"
                   defaultValue={Math.round(overview.config.intervalMinutes / 60)}
+                  onChange={(e) => {
+                    e.currentTarget.value = digitsOnly(e.currentTarget.value);
+                  }}
                 />
               </Field>
             </div>

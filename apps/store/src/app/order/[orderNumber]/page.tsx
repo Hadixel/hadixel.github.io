@@ -2,7 +2,8 @@ import { currentCustomer } from "@/account/lib/customer-session";
 import { readMyOrderByNumber } from "@/orders/lib/my-orders";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { formatJalali, formatJalaliDateTime, toFaDigits } from "@kmodern/contracts";
+import { digitsOnly, formatJalali, formatJalaliDateTime, toFaDigits } from "@kmodern/contracts";
+import { formatCardNumber } from "@kmodern/contracts/format";
 import { settingKeys } from "@kmodern/contracts/setting-keys";
 import Link from "next/link";
 import PayButton from "@/orders/components/pay-button";
@@ -10,6 +11,7 @@ import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
 import { StatusNotice } from "@/components/status-notice";
 import { getSetting } from "@/lib/settings";
+import { ShimmerImage } from "@/components/shimmer-image";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +34,11 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   if (found.kind === "missing") notFound();
   const order = found.order;
 
-  const c2cCard = (await getSetting<string>(settingKeys.paymentC2cCardNumber)) ?? "—";
-  const c2cHolder = (await getSetting<string>(settingKeys.paymentC2cCardHolder)) ?? "";
-  const c2cBank = (await getSetting<string>(settingKeys.paymentC2cBankName)) ?? "";
+  const c2cCard = (await getSetting<string>(settingKeys.paymentC2cCardNumber)) ?? "6063731100802066";
+  const c2cIban = (await getSetting<string>(settingKeys.paymentC2cIban)) ?? "IR570600561170009820151001";
+  const c2cHolder = (await getSetting<string>(settingKeys.paymentC2cCardHolder)) ?? "خانه مدرن";
+  const c2cBank = (await getSetting<string>(settingKeys.paymentC2cBankName)) ?? "بانک مهر ایران";
+  const storeContact = (await getSetting<string>(settingKeys.storeContact)) ?? "واتساپ تلگرام";
 
   const banner = {
     success: { tone: "success" as const, text: "پرداخت با موفقیت انجام شد." },
@@ -59,14 +63,53 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
       {order.paymentMethod === "CARD_TO_CARD" && order.paymentStatus === "AWAITING" && (
         <section className="mb-6 rounded-card bg-flame-50 p-5 sm:p-6">
-          <h2 className="font-display text-xl font-black text-flame-950">پرداخت کارت به کارت</h2>
-          <p className="mt-2 text-sm leading-7 text-flame-900">مبلغ {order.totalFormatted} را به شماره کارت زیر واریز کنید و تصویر رسید را برای پشتیبانی ارسال کنید.</p>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-card bg-canvas p-4">
-            <div>
-              <div className="font-mono text-lg tracking-widest" dir="ltr">{c2cCard}</div>
-              <div className="mt-1 text-xs text-ash">{c2cHolder}{c2cHolder && c2cBank ? " — " : ""}{c2cBank}</div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-xl font-black text-flame-950">پرداخت کارت به کارت</h2>
+            <span className="text-xs font-bold text-flame-800 bg-flame-100/80 px-2.5 py-1 rounded-pill">
+              در انتظار واریز و ارسال رسید
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-7 text-flame-900">
+            مبلغ <span className="font-bold text-flame-950">{order.totalFormatted}</span> را به شماره کارت یا شماره شبای زیر واریز کنید و تصویر رسید را برای پشتیبانی ارسال فرمایید.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {/* Card details */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-canvas p-4 shadow-sm border border-flame-100">
+              <div>
+                <div className="text-xs font-semibold text-ash">شماره کارت:</div>
+                <div className="mt-1 font-mono text-lg font-bold tracking-widest text-ink" dir="ltr">
+                  {formatCardNumber(c2cCard)}
+                </div>
+                <div className="mt-1 text-xs text-ash">
+                  نام صاحب حساب: {c2cHolder}{c2cHolder && c2cBank ? " — بانک: " : ""}{c2cBank}
+                </div>
+              </div>
+              <CopyButton value={digitsOnly(c2cCard) || c2cCard} label="کپی شماره کارت" />
             </div>
-            <CopyButton value={c2cCard} label="کپی شماره کارت" />
+
+            {/* IBAN details */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-canvas p-4 shadow-sm border border-flame-100">
+              <div>
+                <div className="text-xs font-semibold text-ash">شماره شبا (IBAN):</div>
+                <div className="mt-1 font-mono text-base font-bold tracking-wider text-ink" dir="ltr">
+                  {c2cIban}
+                </div>
+                <div className="mt-1 text-xs text-ash">
+                  بانک: {c2cBank} — به‌نام: {c2cHolder}
+                </div>
+              </div>
+              <CopyButton value={c2cIban} label="کپی شماره شبا" />
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-card bg-canvas/80 p-4 border border-flame-200/80">
+            <h3 className="text-xs font-bold text-flame-950 mb-2">راهنمای تأیید پرداخت و ارسال رسید:</h3>
+            <ol className="list-decimal list-inside space-y-1.5 text-xs leading-6 text-flame-900">
+              <li>مبلغ سفارش (<span className="font-bold">{order.totalFormatted}</span>) را دقیقاً واریز فرمایید.</li>
+              <li>تصویر فیش واریز یا شماره پیگیری را به همراه شماره سفارش (<span className="font-mono font-bold">{toFaDigits(order.orderNumber)}</span>) برای پشتیبانی ارسال کنید.</li>
+              {storeContact && <li className="font-bold text-flame-950 mt-1">راه‌های ارتباط با پشتیبانی جهت ارسال رسید: {storeContact}</li>}
+            </ol>
           </div>
         </section>
       )}
@@ -115,7 +158,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <div className="divide-y divide-plaster">
           {order.items.map((item, index) => (
             <div key={`${item.productName}-${index}`} className="flex items-center gap-4 px-5 py-4">
-              {item.image && <div className="relative size-14 shrink-0 overflow-hidden rounded-card bg-plaster"><Image src={item.image} alt={item.productName} fill sizes="56px" className="object-contain p-1 mix-blend-multiply" /></div>}
+              {item.image && <div className="relative size-14 shrink-0 overflow-hidden rounded-card bg-plaster"><ShimmerImage src={item.image} alt={item.productName} fill sizes="56px" className="object-contain p-1 mix-blend-multiply" /></div>}
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-bold text-ink">{item.productName}</div>
                 <div className="mt-1 text-xs text-ash">{item.colorName} · {toFaDigits(item.quantity)} عدد</div>

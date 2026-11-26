@@ -51,9 +51,11 @@ describe("the public settings read", () => {
     await store("paymentC2cCardNumber", "6037-9999-8888-7777");
     await store("paymentC2cCardHolder", "خانه مدرن");
     await store("paymentC2cBankName", "ملی");
+    await store("paymentC2cIban", "IR570600561170009820151001");
     const answer = await controller().publicValues();
     expect(answer.paymentC2cCardNumber).toBe("6037-9999-8888-7777");
     expect(answer.paymentC2cBankName).toBe("ملی");
+    expect(answer.paymentC2cIban).toBe("IR570600561170009820151001");
   });
 
   it("does not serve the reserve windows or the low-stock line", async () => {
@@ -117,6 +119,7 @@ describe("the public settings read", () => {
     // published, and one without the flag never is, however it was added.
     expect(PUBLIC_SETTING_FIELDS).toContain("storeName");
     expect(PUBLIC_SETTING_FIELDS).toContain("paymentC2cCardNumber");
+    expect(PUBLIC_SETTING_FIELDS).toContain("paymentC2cIban");
     expect(PUBLIC_SETTING_FIELDS).not.toContain("smsProviderConfigured");
     expect(PUBLIC_SETTING_FIELDS).not.toContain(LOW_STOCK_FIELD);
     expect(PUBLIC_SETTING_FIELDS).not.toContain("checkoutOnlineReserveMinutes");

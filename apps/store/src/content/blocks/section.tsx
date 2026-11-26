@@ -20,7 +20,7 @@ export function Section({
   id?: string;
 }) {
   const pad = padding === "none" ? "" : padding === "sm" ? "py-7 sm:py-8 md:py-10" : padding === "lg" ? "py-12 md:py-24" : "py-7 sm:py-10 md:py-16";
-  const classes = `mx-auto max-w-[1440px] px-4 ${pad} ${className ?? ""}`;
+  const classes = `mx-auto max-w-[1600px] px-4 ${pad} ${className ?? ""}`;
   return (
     <section id={id} className={classes}>
       {children}

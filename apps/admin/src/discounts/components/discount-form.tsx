@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveDiscount } from "@/discounts/lib/discount-actions";
 import { idle, type ActionResult } from "@/lib/actions/result";
+import { digitsOnly } from "@kmodern/contracts";
 import { Button, Card, CardContent, CardHeader, Input } from "@kmodern/ui";
 import { Field, Select } from "@/components/panel-ui";
 import { fromDateTimeLocal } from "@/lib/date";
@@ -85,17 +86,19 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
             )}
             <Field label={d.type === "PERCENT" ? "درصد تخفیف" : d.type === "FIXED" ? "مبلغ (تومان)" : "مقدار"}>
               <Input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 dir="ltr"
-                min={d.type === "PERCENT" ? 1 : 0}
-                max={d.type === "PERCENT" ? 100 : undefined}
                 disabled={d.type === "FREE_DELIVERY"}
                 value={d.type === "FREE_DELIVERY" ? 0 : d.value}
-                onChange={(e) => set({ value: Number(e.target.value) })}
+                onChange={(e) => {
+                  const digits = digitsOnly(e.target.value);
+                  set({ value: digits === "" ? 0 : Number(digits) });
+                }}
               />
             </Field>
             <Field label="سقف تخفیف (درصدی، اختیاری)">
-              <Input type="number" dir="ltr" value={d.maxAmount ?? ""} onChange={(e) => set({ maxAmount: e.target.value === "" ? null : Number(e.target.value) })} />
+              <Input type="text" inputMode="numeric" dir="ltr" value={d.maxAmount ?? ""} onChange={(e) => { const digits = digitsOnly(e.target.value); set({ maxAmount: digits === "" ? null : Number(digits) }); }} />
             </Field>
             <Field label="دامنه" required>
               <Select value={d.scope} onChange={(e) => set({ scope: e.target.value as DiscountSeed["scope"] })}>
@@ -127,13 +130,13 @@ export function DiscountForm({ seed }: { seed: DiscountSeed }) {
               <Input type="datetime-local" dir="ltr" value={d.endsAt} onChange={(e) => set({ endsAt: e.target.value })} />
             </Field>
             <Field label="حداقل مبلغ سبد (اختیاری)">
-              <Input type="number" dir="ltr" value={d.minOrderSubtotal ?? ""} onChange={(e) => set({ minOrderSubtotal: e.target.value === "" ? null : Number(e.target.value) })} />
+              <Input type="text" inputMode="numeric" dir="ltr" value={d.minOrderSubtotal ?? ""} onChange={(e) => { const digits = digitsOnly(e.target.value); set({ minOrderSubtotal: digits === "" ? null : Number(digits) }); }} />
             </Field>
             <Field label="سقف استفاده کل (اختیاری)">
-              <Input type="number" dir="ltr" value={d.maxUsesTotal ?? ""} onChange={(e) => set({ maxUsesTotal: e.target.value === "" ? null : Number(e.target.value) })} />
+              <Input type="text" inputMode="numeric" dir="ltr" value={d.maxUsesTotal ?? ""} onChange={(e) => { const digits = digitsOnly(e.target.value); set({ maxUsesTotal: digits === "" ? null : Number(digits) }); }} />
             </Field>
             <Field label="سقف استفاده هر مشتری (اختیاری)">
-              <Input type="number" dir="ltr" value={d.maxUsesPerCustomer ?? ""} onChange={(e) => set({ maxUsesPerCustomer: e.target.value === "" ? null : Number(e.target.value) })} />
+              <Input type="text" inputMode="numeric" dir="ltr" value={d.maxUsesPerCustomer ?? ""} onChange={(e) => { const digits = digitsOnly(e.target.value); set({ maxUsesPerCustomer: digits === "" ? null : Number(digits) }); }} />
             </Field>
             <Field label="وضعیت">
               <Select value={d.status} onChange={(e) => set({ status: e.target.value as DiscountSeed["status"] })}>

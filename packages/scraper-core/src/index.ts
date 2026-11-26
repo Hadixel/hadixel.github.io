@@ -45,6 +45,20 @@ export {
   type ImageDownloadResult,
 } from "./images";
 export {
+  collectImageUrls,
+  type ImageCollectOptions,
+} from "./product-images";
+export {
+  extractFromUrl,
+  parseGenericProductHtml,
+  isProductPage,
+  extractProductLinks,
+  inferCategory,
+  parsePriceToman,
+  type UniversalScrapeOptions,
+  type UniversalScrapeResult,
+} from "./universal-scraper";
+export {
   DATEES_SHOP_CATALOG_URL,
   DATEES_SHOP_ORIGIN,
   DATEES_SHOP_PRODUCTS_URL,
@@ -63,16 +77,32 @@ export {
 export {
   applyPriceList,
   applyPriceListReportToProducts,
-  type ApplyPriceListOptions,
-  type PriceListCandidate,
-  type PriceListMatch,
-  type PriceListMatchStatus,
   type PriceListProductTarget,
-  type PriceListReport,
-  type PriceListRow,
-  type PriceListUpdate,
-  type PriceUnit,
 } from "./price-list";
+export type {
+  ApplyPriceListOptions,
+  PriceListCandidate,
+  PriceListMatch,
+  PriceListMatchStatus,
+  PriceListReport,
+  PriceListRow,
+  PriceListUpdate,
+  PriceUnit,
+} from "./price-list-types";
+// The second step: prices for the scraped products an operator selected, fetched from the shop's
+// own API after the run is over. The scrape itself never carries one, so this is the only path a
+// fetched price reaches the review snapshot by.
+export {
+  readPdfRows,
+  parsePdfTextToRows,
+  cleanPdfPrice,
+  type ParsedPdfRows,
+} from "./pdf-price-list";
+export {
+  fetchDateesShopPrices,
+  type DateesPriceFetchReport,
+  type FetchDateesPricesOptions,
+} from "./price-fetch";
 export {
   SCRAPER_SOURCE_OPTIONS,
   type ScraperSourceOption,
@@ -88,5 +118,4 @@ export type {
   ScrapePriceFilter,
   ScrapeContentFilter,
   ScrapeSort,
-  PriceLookupReport,
 } from "./types";

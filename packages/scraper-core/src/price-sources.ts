@@ -216,7 +216,10 @@ export async function fetchDateesShopPriceIndex(
 
 /** Find a price using model first, then normalized product name. */
 export function matchDateesShopPrice(
-  record: ScrapeRecord,
+  // A name and a spec sheet, not a whole `ScrapeRecord`: the review snapshot is a product after
+  // refinement — no url, no source, no image urls — and the price step asks this question about
+  // one. The two fields it reads are the whole contract.
+  record: Pick<ScrapeRecord, "name" | "specs">,
   index: Map<string, PriceQuote>,
 ): PriceQuote | undefined {
   const model = extractModel(record.name, record.specs);

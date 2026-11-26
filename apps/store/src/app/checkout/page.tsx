@@ -19,6 +19,12 @@ export default async function CheckoutPage() {
     <CheckoutClient
       onlineEnabled={settings.onlinePaymentEnabled === true}
       c2cConfigured={settings.c2cPaymentConfigured === true}
+      c2cDetails={{
+        cardNumber: (settings.paymentC2cCardNumber as string) || "6063731100802066",
+        iban: (settings.paymentC2cIban as string) || "IR570600561170009820151001",
+        cardHolder: (settings.paymentC2cCardHolder as string) || "خانه مدرن",
+        bankName: (settings.paymentC2cBankName as string) || "بانک مهر ایران",
+      }}
     />
   );
 }

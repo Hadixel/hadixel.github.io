@@ -9,37 +9,84 @@
 //
 // So: normalise at the boundary, once, and let the contract downstream be simple.
 
-const PERSIAN_TO_LATIN: Record<string, string> = {
-  "۰": "0",
-  "۱": "1",
-  "۲": "2",
-  "۳": "3",
-  "۴": "4",
-  "۵": "5",
-  "۶": "6",
-  "۷": "7",
-  "۸": "8",
-  "۹": "9",
-  "٠": "0",
-  "١": "1",
-  "٢": "2",
-  "٣": "3",
-  "٤": "4",
-  "٥": "5",
-  "٦": "6",
-  "٧": "7",
-  "٨": "8",
-  "٩": "9",
-};
+const DIGIT_ZERO_BASES = [
+  0x0660, // Arabic-Indic (٠-٩)
+  0x06f0, // Extended Arabic-Indic / Persian / Urdu (۰-۹)
+  0x0966, // Devanagari (०-९)
+  0x09e6, // Bengali (০-৯)
+  0x0a66, // Gurmukhi (੦-੯)
+  0x0ae6, // Gujarati (૦-૯)
+  0x0b66, // Oriya (୦-୯)
+  0x0be6, // Tamil (௦-௯)
+  0x0c66, // Telugu (౦-౯)
+  0x0ce6, // Kannada (೦-೯)
+  0x0d66, // Malayalam (൦-൯)
+  0x0e50, // Thai (๐-๙)
+  0x0ed0, // Lao (໐-໙)
+  0x0f20, // Tibetan (༠-༩)
+  0x1040, // Myanmar (၀-၉)
+  0x17e0, // Khmer (០-៩)
+  0x1810, // Mongolian (᠐-᠙)
+  0xff10, // Fullwidth (０-９)
+  0x1d7ce, // Mathematical Bold
+  0x1d7d8, // Mathematical Double-Struck
+  0x1d7e2, // Mathematical Sans-Serif
+  0x1d7ec, // Mathematical Sans-Serif Bold
+  0x1d7f6, // Mathematical Monospace
+];
 
-/** Latin digits, from either Persian or Arabic-Indic ones, with the human separators removed. */
-export function latinDigits(input: string): string {
-  return input.replace(/[۰-۹٠-٩]/g, (digit) => PERSIAN_TO_LATIN[digit] ?? digit);
+const UNICODE_TO_LATIN = new Map<string, string>();
+for (const base of DIGIT_ZERO_BASES) {
+  for (let d = 0; d < 10; d++) {
+    UNICODE_TO_LATIN.set(String.fromCodePoint(base + d), String(d));
+  }
 }
 
-/** Only digits, in Latin form. The starting point for both normalisers below. */
+/** Latin digits, converting Persian, Arabic-Indic, and other Unicode decimal digits to ASCII 0-9. */
+export function latinDigits(input: string): string {
+  return input.replace(/\p{Nd}/gu, (digit) => UNICODE_TO_LATIN.get(digit) ?? digit);
+}
+
+/** Only digits, in Latin form. The starting point for numeric and identifier normalisers. */
 export function digitsOnly(input: string): string {
   return latinDigits(input).replace(/\D/g, "");
+}
+
+/**
+ * Sanitize an Iranian mobile input as the user types or pastes.
+ * Converts any language digits to ASCII, converts pasted `+98`/`0098` country prefixes to `0`,
+ * and caps at 11 digits.
+ */
+export function sanitizePhoneInput(input: string): string {
+  const digits = digitsOnly(input);
+  if (digits.startsWith("0098") && digits.length >= 14) {
+    return `0${digits.slice(4, 14)}`;
+  }
+  if (digits.startsWith("98") && digits.length >= 12) {
+    return `0${digits.slice(2, 12)}`;
+  }
+  return digits.slice(0, 11);
+}
+
+/** Sanitize a 10-digit postal code input, converting any language digits to ASCII. */
+export function sanitizePostalCodeInput(input: string): string {
+  return digitsOnly(input).slice(0, 10);
+}
+
+/** Sanitize a non-negative decimal input, converting any language digits and Arabic `٫` to ASCII. */
+export function sanitizeDecimalInput(input: string): string {
+  const normalized = latinDigits(input).replace(/\u066B/g, ".").replace(/[^0-9.]/g, "");
+  const dot = normalized.indexOf(".");
+  if (dot === -1) return normalized;
+  return normalized.slice(0, dot + 1) + normalized.slice(dot + 1).replace(/\./g, "");
+}
+
+/** Sanitize a signed integer input, converting any language digits to ASCII and preserving a leading `+` or `-`. */
+export function sanitizeSignedIntInput(input: string): string {
+  const trimmed = latinDigits(input).trim();
+  const sign = trimmed.startsWith("-") ? "-" : trimmed.startsWith("+") ? "+" : "";
+  const body = (sign ? trimmed.slice(1) : trimmed).replace(/\D/g, "");
+  return `${sign}${body}`;
 }
 
 /**

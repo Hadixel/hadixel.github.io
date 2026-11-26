@@ -4,16 +4,20 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { cn } from "@kmodern/ui";
 import { RankNumeral } from "@kmodern/ui";
 import type { PublishedProduct } from "@/lib/queries";
-import { AnimatedContent } from "@/components/reactbits/index";
 import { EmptyState } from "@/components/empty-state";
 import { ShowcaseCard } from "@/home/components/showcase-card";
+import { ShowcaseRowCard } from "@/home/components/showcase-row-card";
 
 export function ProductCard({
   product,
   imageSizes,
+  priority = false,
+  quality = 65,
 }: {
   product: PublishedProduct;
   imageSizes?: string;
+  priority?: boolean;
+  quality?: number;
 }) {
   return (
     <ShowcaseCard
@@ -26,13 +30,15 @@ export function ProductCard({
       variants={product.dots}
       discount={product.discount}
       imageSizes={imageSizes}
+      priority={priority}
+      quality={quality}
     />
   );
 }
 
-/* ---------- Mobile view modes (opt-in; the product page and homepage keep one card per row) ---------- */
+/* ---------- Mobile view modes (opt-in; single row or two-up grid) ---------- */
 
-export type MobileViewMode = "grid" | "rail";
+export type MobileViewMode = "row" | "grid";
 
 const VIEW_STORAGE_KEY = "kmodern:listing-mobile-view";
 
@@ -42,13 +48,14 @@ const MobileViewContext = createContext<{
 } | null>(null);
 
 export function ListingMobileViewProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<MobileViewMode>("grid");
+  const [mode, setMode] = useState<MobileViewMode>("row");
 
   /* sessionStorage is client-only, so it is read after mount: the server HTML and
-     the first client render both start on the two-up grid instead of mismatching. */
+     the first client render both start on the row view instead of mismatching. */
   useEffect(() => {
     const stored = window.sessionStorage.getItem(VIEW_STORAGE_KEY);
-    if (stored === "grid" || stored === "rail") setMode(stored);
+    if (stored === "grid" || stored === "row") setMode(stored);
+    else if (stored === "rail") setMode("row");
   }, []);
 
   const value = useMemo(
@@ -69,11 +76,6 @@ export function ListingMobileViewProvider({ children }: { children: ReactNode })
   return <MobileViewContext value={value}>{children}</MobileViewContext>;
 }
 
-const VIEW_OPTIONS = [
-  { mode: "grid", label: "نمایش دوتایی", icon: "two-up" },
-  { mode: "rail", label: "نمایش تکی", icon: "one-up" },
-] as const;
-
 export function ListingMobileViewToggle() {
   const view = useContext(MobileViewContext);
   if (!view) return null;
@@ -82,56 +84,67 @@ export function ListingMobileViewToggle() {
     <div
       role="group"
       aria-label="نوع نمایش محصولات"
-      className="flex shrink-0 items-center gap-1 rounded-card border border-fog bg-canvas p-1 sm:hidden"
+      dir="ltr"
+      className="inline-flex shrink-0 items-center rounded-2xl border border-flame-200/70 bg-canvas p-1 shadow-2xs sm:hidden"
     >
-      {VIEW_OPTIONS.map((option) => {
-        const active = view.mode === option.mode;
-        return (
-          <button
-            key={option.mode}
-            type="button"
-            aria-pressed={active}
-            aria-label={option.label}
-            title={option.label}
-            onClick={() => view.setMode(option.mode)}
-            className={cn(
-              "flex size-9 items-center justify-center rounded-card transition-[color,background-color,transform,scale] active:scale-[0.97] motion-reduce:active:scale-100",
-              active ? "bg-flame-700 text-white" : "text-ash hover:bg-plaster hover:text-ink",
-            )}
-          >
-            {option.icon === "two-up" ? (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <rect x="3.5" y="5" width="7" height="14" rx="2" />
-                <rect x="13.5" y="5" width="7" height="14" rx="2" />
-              </svg>
-            ) : (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <rect x="3" y="6" width="18" height="12" rx="3" />
-              </svg>
-            )}
-          </button>
-        );
-      })}
+      <button
+        type="button"
+        aria-pressed={view.mode === "row"}
+        aria-label="نمایش ردیفی (تکی)"
+        title="نمایش ردیفی"
+        onClick={() => view.setMode("row")}
+        className={cn(
+          "flex h-8 w-10 items-center justify-center rounded-xl transition-all",
+          view.mode === "row"
+            ? "bg-flame-600 text-white shadow-xs"
+            : "text-ash hover:text-flame-700",
+        )}
+      >
+        {/* Horizontal single row rectangle matching Image 3 */}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <rect x="3.5" y="6.5" width="17" height="11" rx="3.5" />
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        aria-pressed={view.mode === "grid"}
+        aria-label="نمایش شبکه‌ای (دوتایی)"
+        title="نمایش شبکه‌ای"
+        onClick={() => view.setMode("grid")}
+        className={cn(
+          "flex h-8 w-10 items-center justify-center rounded-xl transition-all",
+          view.mode === "grid"
+            ? "bg-flame-600 text-white shadow-xs"
+            : "text-ash hover:text-flame-700",
+        )}
+      >
+        {/* Two vertical rectangles matching Image 3 */}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <rect x="4.5" y="5.5" width="6" height="13" rx="2" />
+          <rect x="13.5" y="5.5" width="6" height="13" rx="2" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -164,21 +177,7 @@ export function ProductGrid({
   }
 
   const Heading = titleLevel;
-
-  /* Both mobile modes fall back to the same 2/3/4 column grid from `sm` up, so
-     desktop is identical whichever mode is active. */
-  const rail = mobileViews && view?.mode === "rail";
-  const containerClass = !mobileViews
-    ? "grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-    : rail
-      ? "flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto overscroll-x-contain scrollbar-none pb-1 [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-3 xl:grid-cols-4"
-      : "grid grid-cols-2 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4";
-  const itemClass = rail ? "h-full w-[84%] shrink-0 snap-start sm:w-auto sm:shrink" : "h-full";
-  const imageSizes = !mobileViews
-    ? undefined
-    : rail
-      ? "(max-width:640px) 84vw, (max-width:1024px) 50vw, 25vw"
-      : "(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw";
+  const isRowMode = mobileViews && (!view || view.mode === "row");
 
   return (
     <section className={cn("w-full", className)} aria-label={ariaLabel ?? title ?? "محصولات"}>
@@ -187,16 +186,59 @@ export function ProductGrid({
           {title}
         </Heading>
       )}
-      <div className={containerClass}>
+
+      {/* Mobile rendering: Single Row view (Image 1) or 2-up Grid */}
+      {mobileViews && (
+        <div className="sm:hidden">
+          {isRowMode ? (
+            <div className="flex flex-col">
+              {products.map((product, index) => (
+                <ShowcaseRowCard
+                  key={product.id}
+                  href={`/product/${product.slug}`}
+                  name={product.name}
+                  model={product.model}
+                  price={product.price}
+                  maxPrice={product.maxPrice}
+                  available={product.available}
+                  variants={product.dots}
+                  discount={product.discount}
+                  priority={index < 4}
+                  quality={65}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 items-stretch gap-3">
+              {products.map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  priority={index < 4}
+                  quality={65}
+                  imageSizes="(max-width:640px) 50vw, 25vw"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Desktop / Tablet rendering (sm and up) */}
+      <div
+        className={cn(
+          "grid-cols-2 items-stretch gap-4 sm:grid lg:grid-cols-3 xl:grid-cols-4",
+          mobileViews ? "hidden sm:grid" : "grid",
+        )}
+      >
         {products.map((product, index) => (
-          <AnimatedContent
+          <ProductCard
             key={product.id}
-            delay={Math.min(index, 7) * 45}
-            distance={22}
-            className={itemClass}
-          >
-            <ProductCard product={product} imageSizes={imageSizes} />
-          </AnimatedContent>
+            product={product}
+            priority={index < 4}
+            quality={65}
+            imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          />
         ))}
       </div>
     </section>

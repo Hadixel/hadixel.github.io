@@ -176,7 +176,7 @@ else
 fi
 
 n=$(ls .env.example apps/*/.env.example 2>/dev/null | wc -l)
-[ "$n" -ge 4 ] && ok "an example environment file per surface, the root and all three apps ($n)" \
+[ "$n" -ge 4 ] && ok "an example environment file per surface, the root and every app ($n)" \
   || bad "expected an example environment file at the root and in each of the three apps, found $n — every variable and its tier must be documented (§12)"
 
 # §12's tier line, enforced as a boolean rather than counted: `apps/api/.env.example` says of
@@ -200,9 +200,12 @@ fi
 # Blueprint §12 puts the audit scripts' own tests before every other tool, so a broken check is
 # reported before a broken tree is blamed on it. This repo ran no `scripts/*.test.js` at all until
 # the structure gates landed — four suites, 69 assertions, now first in the section that owns them.
+# The gateway's dev script tests ride along on the same runner: its reclamation logic is what
+# stops a stale watcher from squatting :3102, and a rule that nothing runs is a rule that has
+# already drifted by the time somebody needs it.
 # Gated on the runner's exit code, not on its summary text: a check that greps for the word "pass"
 # in a report it does not own is a check that reports whatever the report says.
-if out=$(node --test scripts/*.test.js 2>&1); then
+if out=$(node --test scripts/*.test.js apps/api/scripts/*.test.js 2>&1); then
   ok "the audit scripts' own tests pass ($(printf '%s' "$out" | grep -c '^✔ ' || true) assertions)"
 else
   bad "the audit scripts' own tests fail:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
@@ -225,6 +228,19 @@ if out=$(node scripts/audit-structure.js 2>&1); then
   ok "$out"
 else
   bad "the gateway structure gate failed:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
+fi
+
+head_ "Docs"
+# §15.1's two documentation invariants, as a command: every surface root carries exactly one docs
+# entry point — AGENTS.md or CLAUDE.md, not zero and not both — and every document under docs/ is
+# linked from the index. A document reachable only by knowing its path is a document nobody reads,
+# and a surface with two index files is two answers to "where do I start". The check walks the
+# docs tree skipping `docs/blueprint`, the vendored kit, which is another repo's artefacts and is
+# excluded from this repo's gates everywhere else for the same reason.
+if out=$(node scripts/audit-docs-index.js 2>&1); then
+  ok "$out"
+else
+  bad "the docs gate failed:"; printf '%s\n' "$out" | sed 's/^/        /' >&2
 fi
 
 head_ "Data tier"

@@ -10,95 +10,31 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import * as XLSXModule from "xlsx";
 import { extractModelForSource, normalizeFa } from "./refine";
+import { readPdfRows } from "./pdf-price-list";
 import type { RawSpec, ScrapeRecord } from "./types";
+import type {
+  ApplyPriceListOptions,
+  PriceListCandidate,
+  PriceListMatch,
+  PriceListMatchStatus,
+  PriceListReport,
+  PriceListRow,
+  PriceListUpdate,
+  PriceUnit,
+} from "./price-list-types";
+
+export type {
+  ApplyPriceListOptions,
+  PriceListCandidate,
+  PriceListMatch,
+  PriceListMatchStatus,
+  PriceListReport,
+  PriceListRow,
+  PriceListUpdate,
+  PriceUnit,
+};
 
 const XLSX = (XLSXModule as typeof XLSXModule & { default?: typeof XLSXModule }).default ?? XLSXModule;
-
-export type PriceUnit = "toman" | "rial";
-export type PriceListMatchStatus = "matched" | "raw-only" | "unmatched" | "ambiguous" | "duplicate" | "invalid";
-
-export interface PriceListRow {
-  /** Canonical model key used for matching (for example, `DG-587`). */
-  model: string;
-  /** Model text as it appeared in the workbook. */
-  sourceModel: string;
-  /** All model keys extracted from the source cell. */
-  aliases: string[];
-  priceToman: number;
-  sourceRow: number;
-  sourceSheet: string;
-  sourceUnit: PriceUnit;
-  unitConflict: boolean;
-  invalidReason?: "model" | "price" | "unit" | "multiple-models";
-}
-
-export interface PriceListCandidate {
-  kind: "catalog" | "raw";
-  slug?: string;
-  url?: string;
-  sourceId: string;
-  name: string;
-  brand: string;
-  matchedOn?: string;
-}
-
-export interface PriceListMatch {
-  row: PriceListRow;
-  status: PriceListMatchStatus;
-  reason?: string;
-  candidates?: PriceListCandidate[];
-}
-
-export interface PriceListUpdate {
-  model: string;
-  sourceModel: string;
-  slug: string;
-  previousPrice: number;
-  priceToman: number;
-  sourceRow: number;
-  changed: boolean;
-}
-
-export interface PriceListReport {
-  sourceFile: string;
-  brand?: string;
-  /** Currency of the values after conversion. */
-  unit: "toman";
-  /** Units detected in the source workbook. */
-  sourceUnits: PriceUnit[];
-  /** Number of non-empty data rows below the detected header. */
-  totalRows: number;
-  /** Rows with a usable model, price, and non-conflicting unit. */
-  validRows: number;
-  /** Rows retained in the report but not eligible for automatic matching. */
-  invalidRows: number;
-  matchedCatalog: number;
-  rawOnly: number;
-  unmatched: number;
-  ambiguous: number;
-  duplicate: number;
-  rawAvailable: boolean;
-  warnings: string[];
-  updates: PriceListUpdate[];
-  matches: PriceListMatch[];
-  fetchedAt: number;
-  /** True only when the catalog was changed. */
-  written: boolean;
-  /** True when price-list-report.json was persisted (including dry runs). */
-  reportWritten: boolean;
-}
-
-export interface ApplyPriceListOptions {
-  filePath: string;
-  outDir: string;
-  unit?: PriceUnit;
-  brand?: string;
-  dryRun?: boolean;
-  /** Original upload name, used in reports/provenance instead of a temp name. */
-  sourceName?: string;
-  /** Optional optimistic hash of catalog.fragment.json. */
-  expectedRevision?: string;
-}
 
 export interface PriceListProductTarget {
   slug: string;
@@ -342,6 +278,16 @@ function findHeaderInRows(rows: unknown[][]): HeaderMatch | null {
 }
 
 async function readRows(filePath: string, fallbackUnit: PriceUnit, unitOverride?: PriceUnit): Promise<ParsedRows> {
+  if (filePath.toLowerCase().endsWith(".pdf")) {
+    const pdfResult = await readPdfRows(filePath, fallbackUnit, unitOverride);
+    return {
+      rows: pdfResult.rows,
+      totalRows: pdfResult.totalRows,
+      invalidRows: pdfResult.invalidRows,
+      sourceUnits: Array.from(pdfResult.sourceUnits),
+    };
+  }
+
   // Read the bytes in Node and pass a buffer to SheetJS. Its `readFile`
   // helper relies on a runtime `fs` binding that Next's server bundler does
   // not preserve, which otherwise fails with `Cannot access file`.
@@ -486,6 +432,13 @@ async function writeJsonAtomic(filePath: string, value: unknown): Promise<void> 
   await writeFile(temporaryPath, JSON.stringify(value, null, 2));
   await rename(temporaryPath, filePath);
 }
+
+/**
+ * Exported for the price step, which applies a different source of prices to the same snapshot
+ * and writes it the same way: a reader that finds the file half-written because a fetch was
+ * cancelled mid-run would reprice the catalogue from a truncated array.
+ */
+export { writeJsonAtomic };
 
 function catalogCandidate(product: CatalogProduct): ProductCandidate {
   return {

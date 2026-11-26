@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatJalali, toFaDigits } from "@kmodern/contracts";
 import { cn } from "@kmodern/ui";
+import { ShimmerImage } from "@/components/shimmer-image";
 
 /* The teaser card reads the same Prisma row the /blog listing reads, and takes
    the fields it needs rather than the rest (body, seo, tags). It is not shared
@@ -74,7 +75,7 @@ export function PostCard({
           ends on the same line. */}
       <div className="relative aspect-[16/9] overflow-hidden bg-plaster">
         {post.coverImage ? (
-          <Image
+          <ShimmerImage
             src={post.coverImage}
             alt={post.title}
             fill

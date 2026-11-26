@@ -1,4 +1,5 @@
 import type {
+  DateesPriceFetchReport,
   PriceListReport,
   ScrapeFilters,
   ScraperCatalogEdit,
@@ -68,7 +69,6 @@ export interface StartScraperJobRequest {
   limit: number | null;
   cache: boolean;
   downloadImages: boolean;
-  priceLookup: boolean;
   filters: ScrapeFilters;
 }
 
@@ -78,6 +78,16 @@ export interface PriceListRequest {
   catalogRevision: string;
   brand: string;
   unit: "auto" | "toman" | "rial";
+}
+
+export interface PriceFetchRequest {
+  slugs: string[];
+  catalogRevision: string;
+}
+
+export interface PriceFetchResponse {
+  mode: "fetch";
+  report: DateesPriceFetchReport;
 }
 
 export interface ImportScraperRequest {
@@ -121,6 +131,14 @@ export function submitScraperPriceList(request: PriceListRequest): Promise<Price
   if (request.brand.trim()) form.set("brand", request.brand.trim());
   if (request.unit !== "auto") form.set("unit", request.unit);
   return apiRequest<PriceListResponse>(`${BASE_PATH}/prices`, { method: "POST", body: form });
+}
+
+/** `POST /api/admin/scraper/prices/fetch` — the second step: prices for the selected products. */
+export function fetchScraperPrices(request: PriceFetchRequest): Promise<PriceFetchResponse> {
+  return apiRequest<PriceFetchResponse>(`${BASE_PATH}/prices/fetch`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 }
 
 /** `POST /api/admin/scraper/import` — write the selected products into the store. */

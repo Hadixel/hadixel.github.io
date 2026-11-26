@@ -32,3 +32,11 @@ export function tomanToRial(amountToman: number): number {
 export function formatPrice(value: number): string {
   return formatToman(value);
 }
+
+export function formatCardNumber(card: string): string {
+  const digits = card.replace(/\D/g, "");
+  if (digits.length === 16) {
+    return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}-${digits.slice(12, 16)}`;
+  }
+  return card;
+}

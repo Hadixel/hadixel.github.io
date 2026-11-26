@@ -25,7 +25,7 @@ export default function MobileSearchButton() {
         type="button"
         aria-label="جستجو"
         onClick={() => setOpen(true)}
-        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster md:hidden"
+        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-flame-50 hover:text-flame-700 md:hidden"
       >
         <SearchIcon />
       </button>

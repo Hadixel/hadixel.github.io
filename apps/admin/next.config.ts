@@ -10,7 +10,14 @@ import type { NextConfig } from "next";
 // directory it was run from, and nothing said so.
 const nextConfig: NextConfig = {
   transpilePackages: ["@kmodern/contracts", "@kmodern/scraper-core", "@kmodern/ui"],
-  allowedDevOrigins: [process.env.ADMIN_DEV_ORIGIN ?? "192.168.70.176", "localhost", "127.0.0.1"],
+  // Same shape as the storefront's, commas included: one origin is what a machine on one network
+  // needs, and a phone on the tailnet plus a laptop on the LAN is two. Not splitting made a
+  // comma-joined value a single bogus origin that matched nothing.
+  allowedDevOrigins: (process.env.ADMIN_DEV_ORIGIN ?? "192.168.70.176")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .concat("localhost", "127.0.0.1"),
   // Every panel page now serves the same three headers the storefront serves.
   //
   // They used to apply to `/media/:path*` alone, which is the one route where they matter least: the

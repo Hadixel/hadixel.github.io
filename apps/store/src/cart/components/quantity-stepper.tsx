@@ -3,14 +3,12 @@
 import { useState } from "react";
 import { cn } from "@kmodern/ui";
 import { toFaDigits } from "@kmodern/contracts/format";
-import { latinDigits } from "@kmodern/contracts";
+import { digitsOnly } from "@kmodern/contracts";
 
 
 /** Field accepts Persian, Arabic or Latin digits; returns null while the field is empty or mid-edit. */
 function parseQuantity(raw: string): number | null {
-  // `latinDigits` is the kernel's one Persian-and-Arabic-to-Latin rule; this file
-  // used to carry its own two digit tables and its own index arithmetic beside it.
-  const digits = latinDigits(raw).replace(/[^0-9]/g, "");
+  const digits = digitsOnly(raw);
   return digits ? Number(digits) : null;
 }
 
@@ -29,9 +27,16 @@ export function QuantityStepper({
   label?: string;
   compact?: boolean;
 }) {
+  const safeMin = typeof min === "number" && Number.isFinite(min) && min >= 1 ? Math.floor(min) : 1;
+  const safeMax = typeof max === "number" && Number.isFinite(max) && max >= safeMin ? Math.floor(max) : 99;
+  const safeValue = typeof value === "number" && Number.isFinite(value) && value >= safeMin ? Math.floor(value) : safeMin;
+
   // Draft keeps the raw keystrokes so typing does not fight the formatted value; blur restores it.
   const [draft, setDraft] = useState<string | null>(null);
-  const clamp = (next: number) => Math.max(min, Math.min(max, next));
+  const clamp = (next: number) => {
+    const n = typeof next === "number" && Number.isFinite(next) ? Math.floor(next) : safeMin;
+    return Math.max(safeMin, Math.min(safeMax, n));
+  };
 
   return (
     <div
@@ -46,8 +51,11 @@ export function QuantityStepper({
       <button
         type="button"
         aria-label="افزایش تعداد"
-        disabled={value >= max}
-        onClick={() => onChange(clamp(value + 1))}
+        disabled={safeValue >= safeMax}
+        onClick={(e) => {
+          e.preventDefault();
+          onChange(clamp(safeValue + 1));
+        }}
         className={cn(
           "flex shrink-0 items-center justify-center text-ink transition-colors focus-visible:outline-none",
           compact ? "w-11" : "w-12",
@@ -71,24 +79,27 @@ export function QuantityStepper({
           inputMode="numeric"
           autoComplete="off"
           spellCheck={false}
-          value={draft ?? toFaDigits(value)}
+          value={draft ?? toFaDigits(safeValue)}
           onChange={(event) => {
-            const raw = event.target.value;
-            setDraft(raw);
-            const parsed = parseQuantity(raw);
+            const digits = digitsOnly(event.target.value);
+            setDraft(digits);
+            const parsed = parseQuantity(digits);
             if (parsed !== null) onChange(clamp(parsed));
           }}
           onFocus={(event) => event.currentTarget.select()}
           onBlur={() => setDraft(null)}
           onKeyDown={(event) => {
-            if (event.key === "Enter") event.currentTarget.blur();
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
             if (event.key === "ArrowUp") {
               event.preventDefault();
-              onChange(clamp(value + 1));
+              onChange(clamp(safeValue + 1));
             }
             if (event.key === "ArrowDown") {
               event.preventDefault();
-              onChange(clamp(value - 1));
+              onChange(clamp(safeValue - 1));
             }
           }}
           className="w-full min-w-0 bg-transparent text-center font-display text-base font-black tabular-nums text-ink outline-none"
@@ -98,8 +109,11 @@ export function QuantityStepper({
       <button
         type="button"
         aria-label="کاهش تعداد"
-        disabled={value <= min}
-        onClick={() => onChange(clamp(value - 1))}
+        disabled={safeValue <= safeMin}
+        onClick={(e) => {
+          e.preventDefault();
+          onChange(clamp(safeValue - 1));
+        }}
         className={cn(
           "flex shrink-0 items-center justify-center text-ink transition-colors focus-visible:outline-none",
           compact ? "w-11" : "w-12",
@@ -112,7 +126,7 @@ export function QuantityStepper({
         </svg>
       </button>
 
-      <span className="sr-only" aria-live="polite">{toFaDigits(value)}</span>
+      <span className="sr-only" aria-live="polite">{toFaDigits(safeValue)}</span>
     </div>
   );
 }

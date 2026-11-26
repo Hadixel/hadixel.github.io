@@ -24,13 +24,13 @@ export function CartButton() {
     <Link
       href="/cart"
       aria-label="سبد خرید"
-      className="relative flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster"
+      className="relative flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-flame-50 hover:text-flame-700"
     >
       <CartIcon />
       {count > 0 && (
         <span
           key={count}
-          className="absolute -top-0.5 -left-0.5 flex h-5 min-w-5 animate-badge-pop items-center justify-center rounded-pill bg-flame-700 px-1 text-xs font-bold text-white"
+          className="absolute -top-0.5 -left-0.5 flex h-5 min-w-5 animate-badge-pop items-center justify-center rounded-pill bg-flame-600 px-1 text-xs font-bold text-white shadow-xs"
         >
           {toFaDigits(count)}
         </span>

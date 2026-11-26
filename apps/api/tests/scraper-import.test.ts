@@ -355,7 +355,7 @@ describe("a scraper action is recorded", () => {
     });
   });
 
-  it("refuses an action that is not one of the three", async () => {
+  it("refuses an action the gateway does not know", async () => {
     // A free string here would be a route that writes whatever it is told into the audit trail, and
     // the only thing keeping that from being an invented history would be that nobody thought of it.
     await expect(
@@ -364,5 +364,41 @@ describe("a scraper action is recorded", () => {
         { type: "body", metatype: RecordScraperActionDto, data: "" } as ArgumentMetadata,
       ),
     ).rejects.toThrow(/رویداد/);
+  });
+
+  it("accepts the price-step action the panel posts", async () => {
+    // The fourth name is the one an operator's price fetch spends, and the pipe is what refuses it:
+    // the gateway runs every request body through the same validation options this suite uses, so a
+    // set that omits the name rejects the whole step with a 500 — and by then the prices are already
+    // on disk, because the write happens before the line that records it. The operator is told it
+    // failed, and the review list is never refreshed, so nothing appears to have happened. Which is
+    // what it did, once.
+    const accepted = await pipe.transform(
+      { action: "SCRAPER_PRICES_FETCHED", meta: { requested: 2, matched: 2, unmatched: 0, skipped: 0 } },
+      { type: "body", metatype: RecordScraperActionDto, data: "" } as ArgumentMetadata,
+    );
+    expect((accepted as RecordScraperActionDto).action).toBe("SCRAPER_PRICES_FETCHED");
+
+    // And the action the panel posts is one the gateway will then write, so the line is not merely
+    // accepted and dropped.
+    const operator = await makeOperator("owner@kmodern.ir");
+    const auth = {
+      adminForToken: async () => ({ admin: { id: operator.id, email: operator.email } }),
+    } as never;
+
+    const result = await new ScraperController(auth, db() as never).recordAction(
+      {
+        headers: { cookie: "kmodern_admin=good", "x-forwarded-for": "198.51.100.4", "user-agent": "panel" },
+      } as never,
+      accepted as never,
+    );
+
+    expect(result.recorded).toBe(true);
+    expect(await db().adminAuditLog.findUniqueOrThrow({ where: { id: result.id } })).toMatchObject({
+      action: "SCRAPER_PRICES_FETCHED",
+      entityType: "SCRAPER",
+      entityId: null,
+      ip: "198.51.100.4",
+    });
   });
 });

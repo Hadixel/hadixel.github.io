@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@heroui/react";
 import { Badge, ProductGallery, cn } from "@kmodern/ui";
 import { formatToman, toFaDigits } from "@kmodern/contracts/format";
@@ -88,7 +89,11 @@ export function ProductBuyBox({
     <>
       <div className="product-layout">
         <div className="product-media">
-          <ProductGallery images={allImages} initialImage={selected?.images[0]} alt={productName} />
+          <ProductGallery
+            images={allImages}
+            initialImage={selected?.images[0]}
+            alt={productName}
+          />
         </div>
 
         <aside className="product-purchase store-sticky" aria-label="خرید محصول">
@@ -144,7 +149,23 @@ export function ProductBuyBox({
             )}
             {variants.length > 1 && (
               <fieldset className="mt-7">
-                <legend className="text-sm font-bold text-ink">رنگ: <span className="font-normal text-ash">{selected?.colorName}</span></legend>
+                <div className="flex items-center justify-between">
+                  <legend className="text-sm font-bold text-ink">
+                    رنگ: <span className="font-normal text-ash">{selected?.colorName}</span>
+                  </legend>
+                  {selected?.images[0] && (
+                    <div className="relative size-9 overflow-hidden rounded-md border border-plaster bg-canvas shadow-2xs lg:hidden">
+                      <Image
+                        key={selected.id}
+                        src={selected.images[0]}
+                        alt={selected.colorName}
+                        fill
+                        sizes="36px"
+                        className="object-contain p-0.5"
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="mt-3 flex flex-row-reverse flex-wrap gap-3">
                   {variants.map((variant) => {
                     const active = variant.id === selected?.id;
@@ -161,8 +182,8 @@ export function ProductBuyBox({
                           setAdded(false);
                         }}
                         className={cn(
-                          "relative size-11 rounded-pill border p-1 transition",
-                          active ? "border-2 border-flame-700 ring-2 ring-flame-100" : "border-fog hover:border-slate-line",
+                          "relative size-11 rounded-pill border p-1 transition-all touch-manipulation cursor-pointer",
+                          active ? "border-2 border-flame-700 ring-2 ring-flame-100 scale-105" : "border-fog hover:border-slate-line",
                           !variant.available && "cursor-not-allowed opacity-35",
                         )}
                       >
@@ -190,12 +211,12 @@ export function ProductBuyBox({
                           from is struck beside it, and the label carries its own sign. */}
                       {variantDiscount ? (
                         <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
-                          <span className="font-display text-3xl font-black tabular-nums text-ink">{formatToman(variantDiscount.price)}</span>
-                          <s className="text-sm tabular-nums text-slate-line">{formatToman(selected.price)}</s>
+                          <span className="font-display text-2xl sm:text-3xl font-semibold tabular-nums text-ink">{formatToman(variantDiscount.price)}</span>
+                          <s className="text-sm sm:text-base tabular-nums text-slate-line">{formatToman(selected.price)}</s>
                           <Badge variant="flame">{variantDiscount.label}</Badge>
                         </div>
                       ) : (
-                        <div className="mt-1 font-display text-3xl font-black tabular-nums text-ink">{formatToman(selected.price)}</div>
+                        <div className="mt-1 font-display text-2xl sm:text-3xl font-semibold tabular-nums text-ink">{formatToman(selected.price)}</div>
                       )}
                     </div>
                     {lowStock && <span className="text-xs font-semibold text-flame-800">تنها {toFaDigits(selected.stock - selected.reserved)} عدد باقی مانده</span>}
@@ -260,12 +281,12 @@ export function ProductBuyBox({
               <span className="min-w-0 truncate text-xs text-ash">{productName}</span>
               {variantDiscount ? (
                 <span className="flex shrink-0 flex-wrap items-baseline justify-end gap-x-2 gap-y-1">
-                  <span className="font-black tabular-nums text-ink">{formatToman(variantDiscount.price)}</span>
+                  <span className="text-base sm:text-lg font-semibold tabular-nums text-ink">{formatToman(variantDiscount.price)}</span>
                   <s className="text-xs tabular-nums text-slate-line">{formatToman(selected.price)}</s>
                   <Badge variant="flame">{variantDiscount.label}</Badge>
                 </span>
               ) : (
-                <span className="shrink-0 font-black tabular-nums text-ink">{formatToman(selected.price)}</span>
+                <span className="shrink-0 text-base sm:text-lg font-semibold tabular-nums text-ink">{formatToman(selected.price)}</span>
               )}
             </div>
             <div className="flex items-center gap-2.5">

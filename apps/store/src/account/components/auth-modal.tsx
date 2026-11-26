@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Modal, Input, Button } from "@heroui/react";
+import { sanitizePhoneInput } from "@kmodern/contracts";
 import OtpModal from "@/account/components/otp-modal";
 
 const PHONE_RE = /^09\d{9}$/;
@@ -147,7 +148,7 @@ export default function AuthModal({
                     <Input
                       autoFocus
                       value={phone}
-                      onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 11)); setError(null); }}
+                      onChange={(e) => { setPhone(sanitizePhoneInput(e.target.value)); setError(null); }}
                       inputMode="numeric"
                       dir="ltr"
                       type="text"

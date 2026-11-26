@@ -19,6 +19,26 @@ export class PostListQueryDto {
   limit: number = 12;
 }
 
+/** Default and maximum page sizes for the Torob product feed. */
+export const TOROB_DEFAULT_PAGE_SIZE = 100;
+export const TOROB_MAX_PAGE_SIZE = 200;
+
+/** Pagination parameters for the Torob products feed. */
+export class TorobProductsQueryDto {
+  @IsOptional()
+  @IsInt({ message: "شماره صفحه باید عدد صحیح باشد." })
+  @Min(1, { message: "شماره صفحه باید بزرگ‌تر از صفر باشد." })
+  @Type(() => Number)
+  page: number = 1;
+
+  @IsOptional()
+  @IsInt({ message: "تعداد محصولات در هر صفحه باید عدد صحیح باشد." })
+  @Min(1, { message: "تعداد محصولات باید بزرگ‌تر از صفر باشد." })
+  @Max(TOROB_MAX_PAGE_SIZE, { message: "تعداد محصولات در هر صفحه بیش از حد مجاز است." })
+  @Type(() => Number)
+  limit: number = TOROB_DEFAULT_PAGE_SIZE;
+}
+
 /** The slug identifying one post. A slug is a slug, and nothing else is a post read. */
 export class PostSlugParamDto {
   @Matches(/^[a-z0-9][a-z0-9-]{0,79}$/i, { message: "شناسه مطلب معتبر نیست." })
@@ -138,4 +158,24 @@ export interface SitemapRead {
    */
   complete: boolean;
   missing: string[];
+}
+
+/* ---------- the Torob product feed ---------- */
+
+export interface TorobProductItem {
+  title: string;
+  product_id: string;
+  page_url: string;
+  price: number;
+  old_price: number | null;
+  availability: "instock" | "outofstock";
+  image_url: string | null;
+  category_name: string;
+}
+
+export interface TorobProductsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: TorobProductItem[];
 }

@@ -122,4 +122,4 @@ function fieldDirection(field: { key: string; type: string }): "ltr" | "auto" {
 }
 
 /** The `text` fields whose values are never Persian: a card number, a phone number, a handle. */
-const LTR_TEXT_FIELDS = new Set(["paymentC2cCardNumber", "adminAlertMobile"]);
+const LTR_TEXT_FIELDS = new Set(["paymentC2cCardNumber", "paymentC2cIban", "adminAlertMobile"]);

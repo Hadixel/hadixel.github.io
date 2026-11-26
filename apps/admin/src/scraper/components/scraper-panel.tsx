@@ -7,13 +7,15 @@ import { RunStatusCard } from "@/scraper/components/run-status-card";
 import { LiveProductsCard } from "@/scraper/components/live-products-card";
 import { OutputFilesCard } from "@/scraper/components/output-files-card";
 import { PriceListCard } from "@/scraper/components/price-list-card";
+import { PriceFetchCard } from "@/scraper/components/price-fetch-card";
 import { CatalogResultsCard } from "@/scraper/components/catalog-results-card";
+import { SmartWizard } from "@/scraper/components/wizard/smart-wizard";
 import { PanelSection } from "@/scraper/components/panel-section";
 import { isJobStatusActive } from "@/scraper/lib/scraper-job-status";
 import { JOB_STATUS_LABELS } from "@/scraper/lib/scraper-labels";
 
 /**
- * The scraper panel: one hook, six cards, and the conditions that decide which of them exist.
+ * The scraper panel: one hook, seven cards, and the conditions that decide which of them exist.
  *
  * Every piece of state the panel has lives in `useScraperJob`, called once here and unconditionally.
  * Nothing below this line owns state except the components that owned it before the split — the
@@ -30,7 +32,7 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     filtersActive, allFilteredSelected, clearFilters, toggleAll, toggleSelected,
     updateItemEdit, resetItemEdit,
     publish, setPublish, importing, importMessage, importSelected,
-    source, setSource, limit, setLimit, cache, setCache, downloadImages, setDownloadImages, priceLookup, setPriceLookup,
+    source, setSource, limit, setLimit, cache, setCache, downloadImages, setDownloadImages,
     scrapeSearch, setScrapeSearch, scrapeManufacturer, setScrapeManufacturer,
     scrapeWebsite, setScrapeWebsite, scrapeCategory, setScrapeCategory,
     scrapeSubCategory, setScrapeSubCategory, scrapeColor, setScrapeColor,
@@ -39,8 +41,10 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
     query, setQuery, manufacturerFilter, setManufacturerFilter, websiteFilter, setWebsiteFilter,
     rootFilter, setRootFilter, subFilter, setSubFilter, colorFilter, setColorFilter,
     priceFilter, setPriceFilter, contentFilter, setContentFilter, sortOrder, setSortOrder,
+    stockFilter, setStockFilter,
     priceListFile, priceListBrand, priceListUnit, priceListBusy, priceListReport, priceListNotice,
     choosePriceList, changePriceListBrand, changePriceListUnit, submitPriceList,
+    priceFetchBusy, priceFetchReport, priceFetchNotice, fetchPricesForSelected,
   } = panel;
 
   const status = job ? JOB_STATUS_LABELS[job.status] : JOB_STATUS_LABELS.idle;
@@ -56,6 +60,8 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
         </div>
         <Badge className={status.badgeClass}>{status.label}</Badge>
       </div>
+
+      <SmartWizard onRefreshCatalog={refresh} />
 
       <PanelSection
         step={1}
@@ -76,8 +82,6 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
             setCache={setCache}
             downloadImages={downloadImages}
             setDownloadImages={setDownloadImages}
-            priceLookup={priceLookup}
-            setPriceLookup={setPriceLookup}
             scrapeSearch={scrapeSearch}
             setScrapeSearch={setScrapeSearch}
             scrapeManufacturer={scrapeManufacturer}
@@ -129,8 +133,8 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
       {job?.status === "completed" || catalog.length > 0 ? (
         <PanelSection
           step={3}
-          title="بررسی و ورود به فروشگاه"
-          description="خروجی اجرا را بردارید، در صورت نیاز لیست قیمت را اعمال کنید و سپس محصولات انتخاب‌شده را وارد کنید."
+          title="بررسی، قیمت‌گذاری و ورود به فروشگاه"
+          description="خروجی اجرا را بردارید، برای محصولات انتخاب‌شده قیمت بگیرید، در صورت نیاز لیست قیمت را اعمال کنید و آن‌ها را وارد کنید."
         >
           <div className="space-y-6">
             <OutputFilesCard job={job} />
@@ -170,6 +174,8 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
               setColorFilter={setColorFilter}
               priceFilter={priceFilter}
               setPriceFilter={setPriceFilter}
+              stockFilter={stockFilter}
+              setStockFilter={setStockFilter}
               contentFilter={contentFilter}
               setContentFilter={setContentFilter}
               sortOrder={sortOrder}
@@ -191,6 +197,16 @@ export function ScraperPanel({ sources }: { sources: SourceOption[] }) {
               notice={notice}
               onSaveEdit={updateItemEdit}
               onResetEdit={resetItemEdit}
+            />
+
+            {/* After the list, not before it: this card acts on the ticks made in the table above,
+                so the operator scrolls down to it having just made the selection it spends. */}
+            <PriceFetchCard
+              selectedCount={selected.size}
+              busy={priceFetchBusy}
+              report={priceFetchReport}
+              notice={priceFetchNotice}
+              onFetch={() => void fetchPricesForSelected()}
             />
           </div>
         </PanelSection>

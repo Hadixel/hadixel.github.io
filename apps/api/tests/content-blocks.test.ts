@@ -116,6 +116,31 @@ describe("content block resolution", () => {
       expect(blocks[0].data.products?.[0].price).toBe(100_000);
     });
 
+    it("puts the black variant first in home product grid dots and image", async () => {
+      const product = await makeProduct({ price: 100_000 });
+      await db().variant.updateMany({
+        where: { productId: product.id },
+        data: { colorCode: "#FFFFFF", images: ["/white.jpg"] },
+      });
+      await db().variant.create({
+        data: {
+          productId: product.id,
+          colorName: "مشکی",
+          colorCode: "#1C1917",
+          sku: `sku-black-${product.id}`,
+          price: 250_000,
+          stock: 2,
+          images: ["/black.jpg"],
+        },
+      });
+
+      const blocks = await service().resolveBlocks([block("b1", "productGrid")]);
+      const card = blocks[0].data.products?.[0];
+
+      expect(card?.image).toBe("/black.jpg");
+      expect(card?.dots.map((d) => d.colorName)).toEqual(["مشکی", "سفید"]);
+    });
+
     it("respects a category source, including the whole subtree", async () => {
       const parent = await makeCategory("mobin", "مبلین");
       const child = await makeCategory("sofa", "مبل راحتی");

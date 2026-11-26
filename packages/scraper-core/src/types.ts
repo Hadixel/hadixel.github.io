@@ -63,14 +63,6 @@ export interface MergeReport {
   conflicts: Conflict[];
 }
 
-export interface PriceLookupReport {
-  sourceId: string;
-  sourceUrl: string;
-  matched: number;
-  unmatched: number;
-  error?: string;
-}
-
 export interface Conflict {
   slug: string;
   field: string;

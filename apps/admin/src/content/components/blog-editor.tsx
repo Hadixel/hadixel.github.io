@@ -11,6 +11,7 @@ import { savePost } from "@/content/lib/post-actions";
 import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardContent, CardHeader, Checkbox, Input, Textarea } from "@kmodern/ui";
 import { Field, Select } from "@/components/panel-ui";
+import { ImageUploadInput } from "@/media/components/image-upload-input";
 import { MediaPickerButton } from "@/media/components/media-picker-button";
 
 
@@ -248,10 +249,11 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
             <Field label="اسلاگ" required><Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required /></Field>
             <Field label="خلاصه (اکسرپت)"><Textarea name="excerpt" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} /></Field>
             <Field label="تصویر کاور">
-              <div className="flex items-center gap-2">
-                <Input name="coverImage" value={coverImage} dir="ltr" onChange={(e) => setCoverImage(e.target.value)} />
-                <MediaPickerButton onPick={setCoverImage} />
-              </div>
+              <ImageUploadInput
+                name="coverImage"
+                value={coverImage}
+                onChange={setCoverImage}
+              />
             </Field>
             <Field label="نویسنده/امضا"><Input name="byline" value={byline} onChange={(e) => setByline(e.target.value)} /></Field>
             <Field label="وضعیت">
@@ -321,7 +323,7 @@ export function BlogEditor({ post, products, collections }: { post: PostSeed; pr
           <div className="form-grid">
             <Field label="عنوان"><Input value={seo.title} maxLength={70} onChange={(e) => setSeo({ ...seo, title: e.target.value })} /></Field>
             <Field label="توضیح"><Input value={seo.description} maxLength={160} onChange={(e) => setSeo({ ...seo, description: e.target.value })} /></Field>
-            <Field label="تصویر OG"><Input value={seo.ogImage} dir="ltr" onChange={(e) => setSeo({ ...seo, ogImage: e.target.value })} /></Field>
+            <Field label="تصویر OG"><ImageUploadInput value={seo.ogImage} onChange={(url) => setSeo({ ...seo, ogImage: url })} /></Field>
             <Field label="URL متعارف"><Input value={seo.canonical} dir="ltr" onChange={(e) => setSeo({ ...seo, canonical: e.target.value })} /></Field>
             <Field label="robots"><Input value={seo.robots} dir="ltr" onChange={(e) => setSeo({ ...seo, robots: e.target.value })} /></Field>
             <div className="flex items-end pb-2"><label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink"><Checkbox checked={seo.noindex} onCheckedChange={(c) => setSeo({ ...seo, noindex: c === true })} />noindex</label></div>
@@ -391,8 +393,12 @@ function NodeCard({
       )}
       {node.kind === "quote" && <Textarea value={node.text} onChange={(e) => onChange({ text: e.target.value })} />}
       {node.kind === "image" && (
-        <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="آدرس تصویر" dir="ltr" value={node.src} onChange={(e) => onChange({ src: e.target.value })} />
+        <div className="space-y-2">
+          <ImageUploadInput
+            value={node.src}
+            placeholder="آدرس تصویر"
+            onChange={(src) => onChange({ src })}
+          />
           <Input placeholder="متن جایگزین" value={node.alt} onChange={(e) => onChange({ alt: e.target.value })} />
         </div>
       )}
@@ -425,12 +431,38 @@ function NodeCard({
         </div>
       )}
       {node.kind === "imageGallery" && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {node.images.map((im, k) => (
-            <div key={k} className="flex gap-1.5">
-              <Input placeholder="آدرس تصویر" dir="ltr" value={im.src} onChange={(e) => onChange({ images: node.images.map((x, xk) => (xk === k ? { ...x, src: e.target.value } : x)) })} />
-              <Input placeholder="متن جایگزین" value={im.alt} onChange={(e) => onChange({ images: node.images.map((x, xk) => (xk === k ? { ...x, alt: e.target.value } : x)) })} />
-              <button type="button" aria-label="حذف تصویر" onClick={() => onChange({ images: node.images.filter((_, xk) => xk !== k) })} className="text-sm text-red-600">−</button>
+            <div key={k} className="flex flex-col gap-2 rounded-card border border-plaster bg-white/50 p-2 sm:flex-row sm:items-center">
+              <div className="flex-1">
+                <ImageUploadInput
+                  value={im.src}
+                  placeholder="آدرس تصویر"
+                  onChange={(src) =>
+                    onChange({
+                      images: node.images.map((x, xk) => (xk === k ? { ...x, src } : x)),
+                    })
+                  }
+                />
+              </div>
+              <Input
+                placeholder="متن جایگزین"
+                className="sm:w-48"
+                value={im.alt}
+                onChange={(e) =>
+                  onChange({
+                    images: node.images.map((x, xk) => (xk === k ? { ...x, alt: e.target.value } : x)),
+                  })
+                }
+              />
+              <button
+                type="button"
+                aria-label="حذف تصویر"
+                onClick={() => onChange({ images: node.images.filter((_, xk) => xk !== k) })}
+                className="self-end rounded p-1 text-sm text-red-600 hover:bg-red-50 sm:self-center"
+              >
+                −
+              </button>
             </div>
           ))}
           <Button type="button" variant="outline" size="sm" onClick={() => onChange({ images: [...node.images, { src: "", alt: "" }] })}>+ تصویر</Button>

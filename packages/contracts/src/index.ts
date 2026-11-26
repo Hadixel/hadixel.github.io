@@ -444,6 +444,10 @@ export { toFaDigits, formatToman, formatPrice, tomanToRial } from "./format";
 export {
   latinDigits,
   digitsOnly,
+  sanitizePhoneInput,
+  sanitizePostalCodeInput,
+  sanitizeDecimalInput,
+  sanitizeSignedIntInput,
   normalizeIranPhone,
   isIranPhone,
   normalizePostalCode,

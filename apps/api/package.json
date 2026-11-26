@@ -20,6 +20,7 @@
     "db:seed": "tsx seed/seed.ts",
     "db:images": "tsx seed/images.ts",
     "db:bootstrap": "tsx seed/bootstrap.ts",
+    "db:reset-admin": "tsx seed/reset-admin-password.ts",
     "db:home-manufacturers": "tsx seed/update-home-manufacturers.ts",
     "db:blog": "tsx seed/blog-import.ts",
     "db:home-deals": "tsx seed/update-home-deals.ts",

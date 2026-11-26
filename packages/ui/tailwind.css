@@ -217,14 +217,17 @@
     box-shadow: var(--surface-shadow);
     transition: box-shadow 200ms var(--ease-out, ease-out), transform 200ms var(--ease-smooth, ease-out);
   }
-  .card-lift:hover {
-    box-shadow: var(--overlay-shadow);
-    transform: translateY(-2px);
-  }
-  /* Tap feedback on every card surface: press flattens the lift and squeezes
-     the card — phones get the pressed state desktop gets from hover. */
-  .card-lift:active {
-    transform: translateY(0) scale(0.985);
+  @media (hover: hover) {
+    .card-lift:hover {
+      box-shadow: var(--overlay-shadow);
+      transform: translateY(-2px);
+    }
+    /* Tap feedback on desktop / devices with fine pointer: press flattens the lift.
+       On touch devices without hover, we avoid transform on active so scrolling gestures
+       over cards are never interrupted or dropped. */
+    .card-lift:active {
+      transform: translateY(0) scale(0.985);
+    }
   }
 }
 
@@ -288,6 +291,7 @@
   /* Persian-digit prices: tabular so totals align */
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 @utility text-code {
@@ -307,6 +311,26 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-badge-pop { animation: none; }
+}
+
+/* Image holder shimmer skeleton sweep */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@utility animate-shimmer-sweep {
+  animation: shimmer-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-sweep { animation: none; }
+}
+
+@utility shimmer-placeholder {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--color-plaster);
+  pointer-events: none;
 }
 
 /* ---------- ShinyText accent (accents/shiny-text.tsx) ---------- */

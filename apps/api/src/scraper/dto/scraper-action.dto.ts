@@ -1,10 +1,11 @@
 // What the gateway accepts when an operator does something to a scrape that changes no row.
 //
-// Starting a scrape, cancelling one, and applying a manufacturer's price list to the review snapshot
-// are three actions with nothing to write and something to remember. The panel wrote each of those
-// audit lines itself, inline, after the fact, inside a `try/catch` whose whole purpose was to make
-// sure a failure could not reach the operator — which is to say that the trail could be silently
-// incomplete and the operator would be told the work was done.
+// Starting a scrape, cancelling one, applying a manufacturer's price list to the review snapshot,
+// and fetching prices for the selected products are four actions with nothing to write and
+// something to remember. The panel wrote each of those audit lines itself, inline, after the fact,
+// inside a `try/catch` whose whole purpose was to make sure a failure could not reach the operator —
+// which is to say that the trail could be silently incomplete and the operator would be told the
+// work was done.
 //
 // The action is therefore a closed set rather than a free string. A route that accepted any action
 // name would be a route that writes whatever it is told, and the only thing standing between that and
@@ -18,6 +19,9 @@ export const SCRAPER_ACTIONS = [
   "SCRAPER_STARTED",
   "SCRAPER_CANCEL_REQUESTED",
   "SCRAPER_PRICE_LIST_APPLIED",
+  // The price step: a scrape carries no price, so this is the line that says an operator asked the
+  // shop what the selected products cost. Four names, not three, since the second step exists.
+  "SCRAPER_PRICES_FETCHED",
 ] as const;
 
 export type ScraperAction = (typeof SCRAPER_ACTIONS)[number];

@@ -10,7 +10,7 @@ const { isArbitraryLength, isArbitraryValue, isArbitraryVariable } = validators;
    `text-<colour>` beside it. Teaching the merger the two scales is what keeps
    `cn`'s override promise true for the tokens the design system declares —
    without it a `className` override silently loses. */
-const twMerge = extendTailwindMerge({
+const twMerge = extendTailwindMerge<"custom-typography">({
   extend: {
     theme: {
       radius: ["pill"],
@@ -18,6 +18,7 @@ const twMerge = extendTailwindMerge({
     },
     classGroups: {
       rounded: [{ rounded: ["card", "pill", isArbitraryVariable, isArbitraryValue] }],
+      "custom-typography": ["text-price", "text-code"],
       "font-size": [
         {
           text: [

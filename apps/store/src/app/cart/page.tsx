@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/cart/components/cart-provider";
@@ -9,43 +9,70 @@ import { PageHeader } from "@/components/page-header";
 import { QuantityStepper } from "@/cart/components/quantity-stepper";
 import { StatusNotice } from "@/components/status-notice";
 import { formatToman } from "@kmodern/contracts/format";
+import { ShimmerImage, AppliancePlaceholder } from "@/components/shimmer-image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@kmodern/ui";
 
 interface Line {
   variantId: string;
   qty: number;
-  sku: string;
-  colorName: string;
+  sku: string | null;
+  colorName: string | null;
   price: number;
-  allowBackorder: boolean;
+  allowBackorder?: boolean;
   productName: string;
-  productSlug: string;
+  slug?: string;
+  productSlug?: string;
   image: string | null;
   lineTotal: number;
-  stock: number;
-  reserved: number;
+  stock?: number;
+  reserved?: number;
   available: boolean;
+  maxAddable?: number;
 }
 
 export default function CartPage() {
-  const { lines, setQty, remove, add } = useCart();
+  const { lines, setQty, remove, add, hydrated } = useCart();
   const [data, setData] = useState<{ lines: Line[]; subtotal: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [lastRemoved, setLastRemoved] = useState<{ line: Line; qty: number } | null>(null);
+  const [pendingDeleteLine, setPendingDeleteLine] = useState<Line | null>(null);
+  const [retryIndex, setRetryIndex] = useState(0);
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   useEffect(() => {
+    if (!hydrated) return;
+
     if (lines.length === 0) {
       setData({ lines: [], subtotal: 0 });
       setLoading(false);
+      setValidating(false);
       setError(null);
       setNotice(null);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
+    // Only show full-page skeleton on initial load when data === null.
+    // When data is already present, do NOT set loading=true. Keep the cart UI mounted smoothly.
+    if (dataRef.current === null) {
+      setLoading(true);
+    } else {
+      setValidating(true);
+    }
     setError(null);
+
     fetch("/api/cart/enrich", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -67,13 +94,64 @@ export default function CartPage() {
         if (!cancelled) setError("سبد خرید در این لحظه بارگذاری نشد. دوباره تلاش کنید.");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setValidating(false);
+        }
       });
 
-    return () => { cancelled = true; };
-  }, [lines, remove]);
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, lines, remove, retryIndex]);
 
-  if (loading) {
+  const handleQuantityChange = (variantId: string, value: number) => {
+    setQty(variantId, value);
+    // Optimistically update data.lines quantity and lineTotal immediately:
+    setData((prev) => {
+      if (!prev) return prev;
+      const nextLines = prev.lines.map((l) => {
+        if (l.variantId !== variantId) return l;
+        const qty = value;
+        const lineTotal = l.price * qty;
+        return { ...l, qty, lineTotal };
+      });
+      const subtotal = nextLines.reduce((acc, l) => acc + l.lineTotal, 0);
+      return { ...prev, lines: nextLines, subtotal };
+    });
+  };
+
+  const handleRemove = (line: Line) => {
+    setLastRemoved({ line, qty: line.qty });
+    remove(line.variantId);
+    // Optimistically update data immediately:
+    setData((prev) => {
+      if (!prev) return prev;
+      const nextLines = prev.lines.filter((l) => l.variantId !== line.variantId);
+      const subtotal = nextLines.reduce((acc, l) => acc + l.lineTotal, 0);
+      return { ...prev, lines: nextLines, subtotal };
+    });
+  };
+
+  const handleRestore = () => {
+    if (!lastRemoved) return;
+    add(lastRemoved.line.variantId, lastRemoved.qty);
+    setData((prev) => {
+      if (!prev) return prev;
+      const restored: Line = {
+        ...lastRemoved.line,
+        qty: lastRemoved.qty,
+        lineTotal: lastRemoved.line.price * lastRemoved.qty,
+      };
+      const nextLines = [...prev.lines, restored];
+      const subtotal = nextLines.reduce((acc, l) => acc + l.lineTotal, 0);
+      return { ...prev, lines: nextLines, subtotal };
+    });
+    setLastRemoved(null);
+  };
+
+  // Only show full-page skeleton on initial load when data === null
+  if (loading && data === null) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8 h-10 w-40 animate-pulse rounded-card bg-plaster" />
@@ -96,12 +174,16 @@ export default function CartPage() {
     );
   }
 
-  if (error) {
+  if (error && data === null) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
         <StatusNotice tone="danger" title="بارگذاری سبد خرید ناموفق بود" role="alert">
           {error}
-          <button type="button" onClick={() => setQty(lines[0]?.variantId ?? "", lines[0]?.qty ?? 1)} className="mr-2 font-bold underline underline-offset-4">
+          <button
+            type="button"
+            onClick={() => setRetryIndex((i) => i + 1)}
+            className="mr-2 font-bold underline underline-offset-4"
+          >
             تلاش دوباره
           </button>
         </StatusNotice>
@@ -123,6 +205,21 @@ export default function CartPage() {
             </svg>
           }
         />
+        {lastRemoved && (
+          <div className="fixed inset-x-0 bottom-5 z-40 mx-auto flex w-[min(92vw,560px)] items-center justify-between gap-4 rounded-card bg-ink px-4 py-3 text-sm text-white shadow-[var(--overlay-shadow)]" role="status">
+            <span className="min-w-0 truncate">«{lastRemoved.line.productName}» از سبد حذف شد</span>
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={handleRestore}
+                className="font-bold text-flame-300 hover:text-flame-200"
+              >
+                بازگرداندن
+              </button>
+              <button type="button" onClick={() => setLastRemoved(null)} aria-label="بستن" className="text-white/60 hover:text-white">×</button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -131,69 +228,111 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
-      <PageHeader title="سبد خرید" description="پیش از ادامه، تعداد و مشخصات کالاهای انتخاب‌شده را مرور کنید." />
+      <PageHeader
+        title="سبد خرید"
+        description="پیش از ادامه، تعداد و مشخصات کالاهای انتخاب‌شده را مرور کنید."
+        actions={
+          validating ? (
+            <span className="inline-flex items-center gap-2 rounded-card bg-plaster/90 px-3 py-1.5 text-xs font-medium text-ash" role="status">
+              <span className="size-2 rounded-full bg-flame-700 animate-pulse" />
+              در حال به‌روزرسانی سبد...
+            </span>
+          ) : null
+        }
+      />
+      {error && <div className="mb-5"><StatusNotice tone="danger" role="alert">{error}</StatusNotice></div>}
       {notice && <div className="mb-5"><StatusNotice tone="warning" role="status">{notice}</StatusNotice></div>}
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
-          {data.lines.map((line) => (
-            <article key={line.variantId} className="rounded-card bg-plaster/70 p-4 transition-colors hover:bg-plaster">
-              <div className="flex gap-4">
-                <Link href={`/product/${line.productSlug}`} className="relative size-24 shrink-0 overflow-hidden rounded-card bg-canvas sm:size-28" aria-label={`مشاهده ${line.productName}`}>
-                  {line.image ? (
-                    <Image src={line.image} alt={line.productName} fill sizes="112px" className="object-contain p-2 mix-blend-multiply" />
-                  ) : (
-                    <span className="flex h-full items-center justify-center text-xs text-slate-line">بدون تصویر</span>
-                  )}
-                </Link>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link href={`/product/${line.productSlug}`} className="line-clamp-2 font-bold leading-7 text-ink transition-colors hover:text-flame-800">
-                        {line.productName}
-                      </Link>
-                      <div className="mt-1 text-xs text-ash">
-                        {line.colorName}
-                        <span className="mx-1.5 text-fog" aria-hidden>·</span>
-                        <span className="text-code">{line.sku}</span>
+          {data.lines.map((line) => {
+            const productHref = `/product/${line.slug || line.productSlug || ""}`;
+            const itemMax =
+              typeof line.maxAddable === "number" && Number.isFinite(line.maxAddable) && line.maxAddable > 0
+                ? line.maxAddable
+                : line.allowBackorder
+                ? 99
+                : Math.max(1, (line.stock ?? 0) - (line.reserved ?? 0));
+
+            return (
+              <article key={line.variantId} className="rounded-card bg-plaster/70 p-4 transition-colors hover:bg-plaster">
+                <div className="flex gap-4">
+                  <Link href={productHref} className="relative size-24 shrink-0 overflow-hidden rounded-card bg-canvas sm:size-28" aria-label={`مشاهده ${line.productName}`}>
+                    {line.image ? (
+                      <ShimmerImage src={line.image} alt={line.productName} fill sizes="(max-width: 640px) 96px, 112px" className="object-contain p-2 mix-blend-multiply" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <AppliancePlaceholder className="size-8 text-ash/40" />
                       </div>
+                    )}
+                  </Link>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link href={productHref} className="line-clamp-2 font-bold leading-7 text-ink transition-colors hover:text-flame-800">
+                          {line.productName}
+                        </Link>
+                        <div className="mt-1 text-xs text-ash">
+                          {line.colorName}
+                          {line.sku && (
+                            <>
+                              <span className="mx-1.5 text-fog" aria-hidden>·</span>
+                              <span className="text-code">{line.sku}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteLine(line)}
+                        className="flex size-9 shrink-0 items-center justify-center rounded-card text-ash transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30 focus-visible:text-red-600"
+                        aria-label={`حذف ${line.productName} از سبد خرید`}
+                        title="حذف از سبد خرید"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          <line x1="10" x2="10" y1="11" y2="17" />
+                          <line x1="14" x2="14" y1="11" y2="17" />
+                        </svg>
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => { setLastRemoved({ line, qty: line.qty }); remove(line.variantId); }}
-                      className="flex size-9 shrink-0 items-center justify-center rounded-card text-ash transition-colors hover:bg-canvas hover:text-red-700"
-                      aria-label={`حذف ${line.productName}`}
-                    >
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M4 7h16M9 7V4h6v3M8 10v8M12 10v8M16 10v8M6 7l1 14h10l1-14" />
-                      </svg>
-                    </button>
-                  </div>
 
-                  {!line.available && (
-                    <div className="mt-3">
-                      <StatusNotice tone="warning">موجودی کافی نیست؛ تعداد یا رنگ این کالا را بازبینی کنید.</StatusNotice>
-                    </div>
-                  )}
+                    {!line.available && (
+                      <div className="mt-3">
+                        <StatusNotice tone="warning">موجودی کافی نیست؛ تعداد یا رنگ این کالا را بازبینی کنید.</StatusNotice>
+                      </div>
+                    )}
 
-                  <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">
-                    <QuantityStepper value={line.qty} onChange={(value) => setQty(line.variantId, value)} max={line.allowBackorder ? 99 : Math.max(1, line.stock - line.reserved)} compact />
-                    <div className="text-left">
-                      {line.qty > 1 && <div className="mb-1 text-xs text-ash">قیمت واحد: {formatToman(line.price)}</div>}
-                      <div className="font-bold tabular-nums text-ink">{formatToman(line.lineTotal)}</div>
+                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">
+                      <QuantityStepper
+                        value={line.qty}
+                        onChange={(value) => handleQuantityChange(line.variantId, value)}
+                        max={itemMax}
+                        compact
+                      />
+                      <div className="text-left">
+                        {line.qty > 1 && <div className="mb-1 text-xs text-ash">قیمت واحد: {formatToman(line.price)}</div>}
+                        <div className={`text-base sm:text-lg font-bold tabular-nums text-ink transition-opacity ${validating ? "opacity-75" : "opacity-100"}`}>
+                          {formatToman(line.lineTotal)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         <aside className="store-sticky rounded-card bg-canvas p-6 shadow-[var(--overlay-shadow)]">
           <h2 className="font-display text-xl font-black text-ink">خلاصه سفارش</h2>
           <div className="mt-5 flex items-center justify-between gap-3 border-b border-plaster pb-4 text-sm">
             <span className="text-ash">جمع کالاها</span>
-            <span className="font-bold tabular-nums text-ink">{formatToman(data.subtotal)}</span>
+            <span className={`text-base sm:text-lg font-bold tabular-nums text-ink transition-opacity ${validating ? "opacity-75" : "opacity-100"}`}>
+              {formatToman(data.subtotal)}
+            </span>
           </div>
           {!canCheckout && <div className="mt-4"><StatusNotice tone="warning">برای ادامه، تعداد یا موجودی کالاهای مشخص‌شده را اصلاح کنید.</StatusNotice></div>}
           <p className="mt-4 text-xs leading-6 text-ash">هزینه ارسال پس از ثبت آدرس در گام تسویه حساب محاسبه می‌شود.</p>
@@ -212,10 +351,7 @@ export default function CartPage() {
           <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => {
-                add(lastRemoved.line.variantId, lastRemoved.qty);
-                setLastRemoved(null);
-              }}
+              onClick={handleRestore}
               className="font-bold text-flame-300 hover:text-flame-200"
             >
               بازگرداندن
@@ -224,6 +360,87 @@ export default function CartPage() {
           </div>
         </div>
       )}
+
+      <Dialog
+        open={Boolean(pendingDeleteLine)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteLine(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>حذف کالا از سبد خرید</DialogTitle>
+            <DialogDescription>
+              آیا از حذف «{pendingDeleteLine?.productName}» از سبد خرید مطمئن هستید؟
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingDeleteLine && (
+            <div className="flex items-center gap-3.5 rounded-card border border-plaster bg-plaster/60 p-3.5">
+              <div className="relative size-16 shrink-0 overflow-hidden rounded-card bg-canvas border border-plaster">
+                {pendingDeleteLine.image ? (
+                  <ShimmerImage
+                    src={pendingDeleteLine.image}
+                    alt={pendingDeleteLine.productName}
+                    fill
+                    sizes="64px"
+                    className="object-contain p-1.5 mix-blend-multiply"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <AppliancePlaceholder className="size-6 text-ash/40" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-sm font-bold text-ink">
+                  {pendingDeleteLine.productName}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ash">
+                  {pendingDeleteLine.colorName && (
+                    <span>رنگ: {pendingDeleteLine.colorName}</span>
+                  )}
+                  {pendingDeleteLine.colorName && pendingDeleteLine.sku && (
+                    <span className="text-fog">·</span>
+                  )}
+                  {pendingDeleteLine.sku && (
+                    <span className="text-code">{pendingDeleteLine.sku}</span>
+                  )}
+                  <span className="text-fog">·</span>
+                  <span>تعداد: {pendingDeleteLine.qty} عدد</span>
+                </div>
+                <div className="mt-1.5 text-xs font-bold tabular-nums text-ink">
+                  {formatToman(pendingDeleteLine.lineTotal)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="rounded-card border border-plaster bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-plaster focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flame-200"
+              >
+                انصراف
+              </button>
+            </DialogClose>
+            <button
+              type="button"
+              onClick={() => {
+                if (pendingDeleteLine) {
+                  const lineToRemove = pendingDeleteLine;
+                  setPendingDeleteLine(null);
+                  handleRemove(lineToRemove);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-card px-4 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30 text-sm"
+            >
+              حذف از سبد خرید
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

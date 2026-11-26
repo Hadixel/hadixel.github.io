@@ -2,11 +2,13 @@ import { Controller, Get, Param, Query } from "@nestjs/common";
 import {
   PostListQueryDto,
   PostSlugParamDto,
+  TorobProductsQueryDto,
   type PostDetail,
   type PostListRead,
   type SitemapRead,
   type StorefrontFooter,
   type StorefrontNav,
+  type TorobProductsResponse,
 } from "./dto/storefront.dto.js";
 import { PostNotFoundException } from "./exceptions/storefront.exception.js";
 import { StorefrontService } from "./storefront.service.js";
@@ -82,5 +84,13 @@ export class StorefrontController {
   @Get("sitemap")
   sitemap(): Promise<SitemapRead> {
     return this.storefront.sitemap();
+  }
+
+  /**
+   * The paginated Torob product feed for published products and their variants.
+   */
+  @Get("torob/products")
+  torobProducts(@Query() query: TorobProductsQueryDto): Promise<TorobProductsResponse> {
+    return this.storefront.torobProducts(query.page, query.limit);
   }
 }

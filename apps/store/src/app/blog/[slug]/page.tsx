@@ -4,6 +4,7 @@ import { formatJalali } from "@kmodern/contracts";
 import { notFound } from "next/navigation";
 import { getPublishedPost } from "@/lib/queries";
 import PostBody from "@/content/components/post-body";
+import { ShimmerImage } from "@/components/shimmer-image";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       </header>
       {post.coverImage && (
         <div className="relative mt-8 aspect-[16/8] overflow-hidden rounded-card bg-plaster">
-          <Image src={post.coverImage} alt={post.title} fill sizes="(max-width:768px) 100vw, 768px" className="object-cover" />
+          <ShimmerImage src={post.coverImage} alt={post.title} fill priority sizes="(max-width:768px) 100vw, 768px" className="object-cover" />
         </div>
       )}
       <div className="mt-10">

@@ -9,6 +9,7 @@ import { createManualOrder } from "@/orders/lib/orders";
 import { idle, type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardContent, CardHeader, Input, Textarea } from "@kmodern/ui";
 import { Field } from "@/components/panel-ui";
+import { digitsOnly, sanitizePhoneInput, sanitizePostalCodeInput } from "@kmodern/contracts";
 import { formatToman } from "@kmodern/contracts/format";
 
 interface CustomerLite {
@@ -71,13 +72,13 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
           </Field>
           <div className="form-grid">
             <Field label="نام گیرنده" required><Input name="address.recipientName" value={address.recipientName} onChange={(e) => setAddress({ ...address, recipientName: e.target.value })} required /></Field>
-            <Field label="موبایل گیرنده" required><Input name="address.recipientPhone" dir="ltr" inputMode="tel" pattern="09[0-9]{9}" value={address.recipientPhone} onChange={(e) => setAddress({ ...address, recipientPhone: e.target.value })} required /></Field>
+            <Field label="موبایل گیرنده" required><Input name="address.recipientPhone" dir="ltr" inputMode="tel" pattern="09[0-9]{9}" value={address.recipientPhone} onChange={(e) => setAddress({ ...address, recipientPhone: sanitizePhoneInput(e.target.value) })} required /></Field>
             <Field label="استان" required><Input name="address.province" value={address.province} onChange={(e) => setAddress({ ...address, province: e.target.value })} required /></Field>
             <Field label="شهر" required><Input name="address.city" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} required /></Field>
             <div className="md:col-span-2">
               <Field label="آدرس" required><Textarea name="address.addressLine" value={address.addressLine} onChange={(e) => setAddress({ ...address, addressLine: e.target.value })} required minLength={5} /></Field>
             </div>
-            <Field label="کد پستی" required><Input name="address.postalCode" dir="ltr" inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} required /></Field>
+            <Field label="کد پستی" required><Input name="address.postalCode" dir="ltr" inputMode="numeric" pattern="[0-9]{10}" maxLength={10} value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: sanitizePostalCodeInput(e.target.value) })} required /></Field>
           </div>
         </CardContent>
       </Card>
@@ -105,8 +106,8 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
                     ))}
                   </select>
                   <input
-                    type="number" min={1} aria-label={`تعداد ردیف ${i + 1}`} className="w-20 rounded-card border border-fog px-2 py-2 text-sm"
-                    value={l.qty} onChange={(e) => updateLine(i, { qty: Number(e.target.value) || 1 })}
+                    type="text" inputMode="numeric" aria-label={`تعداد ردیف ${i + 1}`} className="w-20 rounded-card border border-fog px-2 py-2 text-sm"
+                    value={l.qty} onChange={(e) => updateLine(i, { qty: Math.max(1, Number(digitsOnly(e.target.value)) || 1) })}
                   />
                   <span className="text-sm text-ash">{v ? formatToman(v.price * l.qty) : ""}</span>
                   <button type="button" onClick={() => removeLine(i)} className="rounded-card px-2 py-1 text-sm text-red-700 hover:bg-red-50">حذف</button>
@@ -153,7 +154,7 @@ export function ManualOrderForm({ customers, variants }: { customers: CustomerLi
               </select>
             </Field>
             <Field label="هزینه ارسال (تومان)">
-              <Input name="deliveryFee" dir="ltr" type="number" min={0} disabled={deliveryFeeMode === "FREE"} value={deliveryFeeMode === "FREE" ? "0" : deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)} />
+              <Input name="deliveryFee" dir="ltr" type="text" inputMode="numeric" disabled={deliveryFeeMode === "FREE"} value={deliveryFeeMode === "FREE" ? "0" : deliveryFee} onChange={(e) => setDeliveryFee(digitsOnly(e.target.value))} />
             </Field>
             <div className="md:col-span-2">
               <Field label="یادداشت ادمین"><Textarea name="adminNote" /></Field>

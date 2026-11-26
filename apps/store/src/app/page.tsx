@@ -27,7 +27,7 @@ export default async function HomePage() {
 
   if (home.failure) {
     return (
-      <div className="mx-auto max-w-[1440px] px-4 py-16" role="alert">
+      <div className="mx-auto max-w-[1600px] px-4 py-16" role="alert">
         <h1 className="font-display text-2xl font-extrabold text-ink">فروشگاه در دسترس نیست</h1>
         <p className="mt-3 text-sm leading-7 text-ash">
           اطلاعات این صفحه از درگاه خوانده می‌شود و در حال حاضر در دسترس نیست. لطفاً کمی بعد دوباره
@@ -44,7 +44,7 @@ export default async function HomePage() {
   // The CMS home page has no published blocks yet. Falling back to the newest products keeps the
   // storefront from rendering blank; the data still comes from the gateway.
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-10">
+    <div className="mx-auto max-w-[1600px] px-4 py-10">
       <ProductGrid products={home.products} title="محصولات" titleLevel="h1" />
     </div>
   );

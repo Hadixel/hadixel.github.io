@@ -43,11 +43,32 @@ const nextConfig: NextConfig = {
     .concat("localhost", "127.0.0.1"),
   transpilePackages: ["@kmodern/contracts", "@kmodern/ui"],
   images: {
+    contentDispositionType: "inline",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    dangerouslyAllowSVG: true,
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2592000,
+    qualities: [25, 50, 60, 65, 70, 75, 80, 85, 90, 100],
+    deviceSizes: [360, 480, 640, 750, 828, 1080],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "kmodern.ir",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "kmodern.ir",
+        port: "",
+        pathname: "/**",
+      },
       {
         protocol: "https",
         hostname: "datees.ir",
         port: "",
+        pathname: "/**",
       },
       {
         protocol: "https",

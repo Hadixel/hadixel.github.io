@@ -1,5 +1,5 @@
 "use client";
-import { toFaDigits } from "@kmodern/contracts";
+import { sanitizeSignedIntInput, toFaDigits } from "@kmodern/contracts";
 
 // Collections CRUD (004): name/slug/sortOrder + ordered product membership.
 
@@ -105,7 +105,7 @@ function CollectionForm({ seed, products, title }: { seed: CollectionSeed; produ
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Field label="نام" required><Input name="name" value={name} onChange={(e) => setName(e.target.value)} required /></Field>
         <Field label="اسلاگ" required><Input name="slug" value={slug} dir="ltr" onChange={(e) => setSlug(e.target.value)} required /></Field>
-        <Field label="ترتیب"><Input name="sortOrder" type="number" value={sortOrder} dir="ltr" onChange={(e) => setSortOrder(Number(e.target.value) || 0)} /></Field>
+        <Field label="ترتیب"><Input name="sortOrder" type="text" inputMode="numeric" value={sortOrder} dir="ltr" onChange={(e) => setSortOrder(Number(sanitizeSignedIntInput(e.target.value)) || 0)} /></Field>
       </div>
 
       <div>

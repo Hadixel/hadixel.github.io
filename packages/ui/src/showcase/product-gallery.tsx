@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import { cn } from "../cn";
 import { toFaDigits } from "@kmodern/contracts";
+import { ShimmerImage } from "../components/shimmer-image";
 
 /* Zoom affordance — one glyph, reused by the stage chip and the caption action. */
 function ZoomGlyph() {
@@ -43,10 +44,11 @@ function FrameCounter({ index, count, className }: { index: number; count: numbe
  * lightbox: RTL-mirrored arrows and arrow keys, click-to-zoom, Esc/backdrop
  * close, Persian counter.
  */
-export function ProductGallery({ images, alt, initialImage, className }: {
+export function ProductGallery({ images, alt, initialImage, initialIndex, className }: {
   images: string[];
   alt: string;
   initialImage?: string;
+  initialIndex?: number;
   className?: string;
 }) {
   const [index, setIndex] = useState(0);
@@ -57,25 +59,86 @@ export function ProductGallery({ images, alt, initialImage, className }: {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const tabListRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const hasMountedRef = useRef(false);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
-  // Re-sync when the selected variant changes (its first shot becomes the stage);
-  // deliberately NOT keyed on `index`, so a thumbnail the shopper tapped stays
-  // until the color actually changes.
+  // Re-sync when the selected variant changes (its shot becomes the stage if present);
+  // Never cycle through arbitrary angles of a shared shot!
   useEffect(() => {
-    if (!initialImage) return;
-    const i = images.indexOf(initialImage);
-    if (i >= 0) setIndex(i);
-  }, [initialImage, images]);
+    if (initialImage) {
+      const i = images.indexOf(initialImage);
+      if (i >= 0) {
+        setIndex(i);
+        return;
+      }
+    }
+    if (typeof initialIndex === "number" && initialIndex >= 0 && initialIndex < images.length) {
+      setIndex(initialIndex);
+    }
+  }, [initialImage, initialIndex, images]);
 
   const safeIndex = images.length ? Math.min(index, images.length - 1) : 0;
   const count = images.length;
+
+  // Keep the active thumbnail centered in the horizontal strip without scrolling
+  // the outer page vertically (and skip on initial mount).
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    const strip = tabListRef.current;
+    const tab = tabRefs.current[safeIndex];
+    if (!strip || !tab || typeof strip.scrollTo !== "function") return;
+    const stripRect = strip.getBoundingClientRect();
+    const tabRect = tab.getBoundingClientRect();
+    const deltaX = tabRect.left + tabRect.width / 2 - (stripRect.left + stripRect.width / 2);
+    if (Math.abs(deltaX) < 1) return;
+    strip.scrollTo({
+      left: strip.scrollLeft + deltaX,
+      behavior: "smooth",
+    });
+  }, [safeIndex]);
 
   const close = useCallback(() => { setOpen(false); setZoomed(false); }, []);
   const step = useCallback(
     (dir: 1 | -1) => { setZoomed(false); setIndex((i) => (count ? (i + dir + count) % count : 0)); },
     [count],
   );
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now(),
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, onShortTap?: () => void) => {
+    if (!touchStartRef.current) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const deltaTime = Date.now() - start.time;
+
+    // Horizontal swipe: threshold 35px, horizontal dominance
+    if (Math.abs(deltaX) > 35 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      if (count > 1) {
+        // Persian RTL: Swipe left (deltaX < 0) advances to next image (step(1))
+        // Swipe right (deltaX > 0) goes back to previous image (step(-1))
+        step(deltaX < 0 ? 1 : -1);
+      }
+    } else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && deltaTime < 350) {
+      onShortTap?.();
+    }
+  };
 
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tabIndex: number) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -183,40 +246,46 @@ export function ProductGallery({ images, alt, initialImage, className }: {
         className="min-w-0"
       >
         <div className="mx-auto w-full max-w-[560px] overflow-hidden rounded-card bg-canvas shadow-sm ring-1 ring-plaster">
-          {/* The whole stage is the zoom control: the chip is a visual cue, not
-              a separate target, so a click anywhere on the shot opens the
-              lightbox. It stays a span — a button inside a button is invalid. */}
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="مشاهده تصویر بزرگتر"
-            className="group relative block aspect-square w-full cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700"
+          {/* The whole stage is the zoom control and supports touch swipe:
+              swipe left/right advances/rewinds in RTL, while tap opens lightbox. */}
+          <div
+            className="group relative block aspect-square w-full select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => handleTouchEnd(e, () => setOpen(true))}
           >
-            <Image
-              src={images[safeIndex]}
-              alt={alt}
-              fill
-              preload
-              loading="eager"
-              sizes="(max-width: 640px) 92vw, 560px"
-              className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none sm:p-3"
-            />
-            {count > 1 && (
-              <FrameCounter
-                index={safeIndex}
-                count={count}
-                className="pointer-events-none absolute bottom-4 end-4 rounded-card bg-plaster px-2.5 py-1 text-xs font-semibold text-graphite"
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="مشاهده تصویر بزرگتر"
+              className="relative block h-full w-full cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700"
+            >
+              <ShimmerImage
+                key={safeIndex}
+                src={images[safeIndex]}
+                alt={alt}
+                fill
+                priority
+                loading="eager"
+                sizes="(max-width: 640px) 92vw, 560px"
+                className="object-contain p-2 transition-all duration-300 group-hover:scale-[1.03] motion-reduce:transform-none sm:p-3"
               />
-            )}
-            {count > 1 && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute bottom-3 start-3 flex size-11 items-center justify-center rounded-pill bg-plaster text-ink transition group-hover:bg-fog"
-              >
-                <ZoomGlyph />
-              </span>
-            )}
-          </button>
+              {count > 1 && (
+                <FrameCounter
+                  index={safeIndex}
+                  count={count}
+                  className="pointer-events-none absolute bottom-4 end-4 rounded-card bg-plaster px-2.5 py-1 text-xs font-semibold text-graphite"
+                />
+              )}
+              {count > 1 && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute bottom-3 start-3 flex size-11 items-center justify-center rounded-pill bg-plaster text-ink transition group-hover:bg-fog"
+                >
+                  <ZoomGlyph />
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* A lone shot needs no counter and no chip row — the caption action is
@@ -236,10 +305,12 @@ export function ProductGallery({ images, alt, initialImage, className }: {
       </div>
 
       {/* RTL filmstrip under the stage: the first frame sits on the start edge
-          (the right), so the rail grows away from it as images are added. */}
+          (the right), so the rail grows away from it as images are added.
+          Extra spacing placed here so it sits comfortably beneath the main stage. */}
       {count > 1 && (
-        <div className="mx-auto w-full max-w-[560px]">
+        <div className="mx-auto mt-4 w-full max-w-[560px] sm:mt-6">
           <div
+            ref={tabListRef}
             role="tablist"
             aria-label="تصاویر محصول"
             aria-orientation="horizontal"
@@ -265,7 +336,7 @@ export function ProductGallery({ images, alt, initialImage, className }: {
                     active ? "border-flame-700 ring-2 ring-flame-200" : "border-plaster hover:border-fog",
                   )}
                 >
-                  <Image src={src} alt="" fill sizes="(max-width: 640px) 80px, 112px" className="object-contain p-1" />
+                  <ShimmerImage src={src} alt="" fill sizes="(max-width: 640px) 80px, 112px" className="object-contain p-1" />
                   {/* shape cue beside the hue: the active frame is also marked,
                       so it survives a colour-blind or washed-out read */}
                   {active && <span aria-hidden className="absolute inset-x-2 bottom-1.5 h-1 rounded-full bg-flame-700" />}
@@ -284,7 +355,7 @@ export function ProductGallery({ images, alt, initialImage, className }: {
           aria-label={`گالری تصاویر ${alt}`}
           tabIndex={-1}
           onClick={close}
-          className="fixed inset-0 z-[100] flex flex-col bg-canvas"
+          className="fixed inset-0 z-[100] flex flex-col bg-canvas lightbox-animate-in"
         >
           {/* header: counter + close */}
           <div className="flex items-center justify-between px-5 py-4 text-ink">
@@ -302,7 +373,7 @@ export function ProductGallery({ images, alt, initialImage, className }: {
             </button>
           </div>
 
-          {/* stage */}
+          {/* stage with swipe gesture support */}
           <div className="relative flex min-w-0 flex-1 items-center justify-between gap-2 px-2 pb-6 sm:px-6">
             {/* RTL: "previous" is the start-edge (right) control, so its chevron
                 points back toward the right; "next" mirrors it on the left. */}
@@ -318,27 +389,34 @@ export function ProductGallery({ images, alt, initialImage, className }: {
                 </svg>
               </button>
             )}
-            <button
-              type="button"
-              onClick={(event) => { event.stopPropagation(); setZoomed((value) => !value); }}
-              aria-label={zoomed ? "کوچک‌نمایی تصویر" : "بزرگ‌نمایی تصویر"}
-              aria-pressed={zoomed}
-              className={cn(
-                "relative h-full w-full min-w-0 flex-1 overflow-hidden text-start",
-                zoomed ? "cursor-zoom-out" : "cursor-zoom-in",
-              )}
+            <div
+              className="relative h-full w-full min-w-0 flex-1 select-none"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={(e) => handleTouchEnd(e, () => setZoomed((value) => !value))}
             >
-              <Image
-                src={images[safeIndex]}
-                alt=""
-                fill
-                sizes="100vw"
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); setZoomed((value) => !value); }}
+                aria-label={zoomed ? "کوچک‌نمایی تصویر" : "بزرگ‌نمایی تصویر"}
+                aria-pressed={zoomed}
                 className={cn(
-                  "object-contain p-2 transition-transform duration-300 motion-reduce:transition-none",
-                  zoomed ? "[transform:scale(1.7)] motion-reduce:[transform:scale(1)]" : "[transform:scale(1)]",
+                  "relative h-full w-full min-w-0 flex-1 overflow-hidden text-start",
+                  zoomed ? "cursor-zoom-out" : "cursor-zoom-in",
                 )}
-              />
-            </button>
+              >
+                <ShimmerImage
+                  key={safeIndex}
+                  src={images[safeIndex]}
+                  alt=""
+                  fill
+                  sizes="100vw"
+                  className={cn(
+                    "object-contain p-2 transition-transform duration-300 motion-reduce:transition-none",
+                    zoomed ? "[transform:scale(1.7)] motion-reduce:[transform:scale(1)]" : "[transform:scale(1)]",
+                  )}
+                />
+              </button>
+            </div>
             {count > 1 && (
               <button
                 type="button"

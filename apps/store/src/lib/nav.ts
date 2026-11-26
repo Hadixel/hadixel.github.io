@@ -133,9 +133,15 @@ export async function loadFooter(): Promise<FooterView> {
  * data tier, and this module no longer has one.
  */
 export async function hrefFor(link: unknown): Promise<{ href: string; newTab: boolean }> {
-  if (link && typeof link === "object" && "href" in link && typeof link.href === "string") {
-    const newTab = "newTab" in link ? link.newTab : false;
-    return { href: link.href, newTab: newTab === true };
+  if (link && typeof link === "object") {
+    const candidate = link as Record<string, unknown>;
+    const newTab = candidate.newTab === true;
+    if (typeof candidate.href === "string" && candidate.href.trim().length > 0) {
+      return { href: candidate.href, newTab };
+    }
+    if (typeof candidate.url === "string" && candidate.url.trim().length > 0) {
+      return { href: candidate.url, newTab };
+    }
   }
   return { href: "#", newTab: false };
 }

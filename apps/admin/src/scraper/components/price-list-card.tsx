@@ -44,17 +44,17 @@ export function PriceListCard({
       <CardHeader className="items-start justify-between gap-3 border-b border-plaster px-5 py-4 sm:flex-row sm:gap-4">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-ink">لیست قیمت جدید</h3>
-          <p className="mt-0.5 text-sm text-ash">فایل XLSX یا CSV را با ستون‌های مدل و قیمت مصرف‌کننده بدهید؛ فقط تطبیق‌های قطعی روی خروجی بررسی اعمال می‌شوند.</p>
+          <p className="mt-0.5 text-sm text-ash">فایل PDF، XLSX یا CSV را با ستون‌های مدل و قیمت مصرف‌کننده بدهید؛ فقط تطبیق‌های قطعی روی خروجی بررسی اعمال می‌شوند.</p>
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)]">
-          <Field label="فایل قیمت" hint="حداکثر ۱۰ مگابایت" className="mb-0">
+          <Field label="فایل قیمت" hint="حداکثر ۱۰ مگابایت (PDF / اکسل)" className="mb-0">
             <div className="flex min-w-0 items-center gap-2">
               <input
                 id="scraper-price-list-file"
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".xlsx,.xls,.csv,.pdf"
                 className="peer sr-only"
                 onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
                 disabled={Boolean(busy)}

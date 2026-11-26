@@ -53,16 +53,16 @@ export function CategoryTree({
         const panelId = `category-tree-${item.value}`;
 
         return (
-          <div key={item.value} className="border-b border-plaster/70 last:border-b-0">
-            <div className="flex items-stretch">
+          <div key={item.value} className="border-b border-flame-100/70 py-0.5 last:border-b-0">
+            <div className="flex items-stretch gap-1">
               <Link
                 href={item.href}
                 aria-current={item.value === activeValue ? "page" : undefined}
                 className={cn(
-                  "flex-1 truncate py-2.5 text-start text-sm transition-colors",
+                  "flex-1 truncate rounded-card px-2.5 py-2 text-start text-sm transition-colors",
                   item.value === activeValue
-                    ? "font-bold text-flame-700"
-                    : "font-semibold text-ink hover:text-flame-700",
+                    ? "bg-flame-50 font-bold text-flame-700 ring-1 ring-flame-200"
+                    : "font-semibold text-ink hover:bg-flame-50/50 hover:text-flame-700",
                 )}
               >
                 {item.label}
@@ -74,7 +74,7 @@ export function CategoryTree({
                   aria-controls={panelId}
                   aria-label={`${open ? "بستن" : "باز کردن"} زیردسته‌های ${item.label}`}
                   onClick={() => setOpened((prev) => ({ ...prev, [item.value]: !open }))}
-                  className="flex w-8 shrink-0 items-center justify-center text-ash transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700"
+                  className="flex w-8 shrink-0 items-center justify-center rounded-card text-ash transition-colors hover:bg-flame-50/60 hover:text-flame-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700"
                 >
                   <svg
                     width="14"
@@ -109,17 +109,17 @@ export function CategoryTree({
                 )}
               >
                 <ul className="min-h-0 overflow-hidden">
-                  <li className="border-s border-fog/70 ps-3">
+                  <li className="space-y-0.5 border-s border-flame-200/80 pb-1 ps-2.5">
                     {kids.map((kid) => (
                       <Link
                         key={kid.value}
                         href={kid.href}
                         aria-current={kid.value === activeValue ? "page" : undefined}
                         className={cn(
-                          "block truncate py-2 text-sm transition-colors",
+                          "block truncate rounded-card px-2.5 py-1.5 text-sm transition-colors",
                           kid.value === activeValue
-                            ? "font-bold text-flame-700"
-                            : "text-ash hover:text-ink",
+                            ? "bg-flame-50 font-bold text-flame-700 ring-1 ring-flame-200"
+                            : "text-ash hover:bg-flame-50/50 hover:text-flame-700",
                         )}
                       >
                         {kid.label}

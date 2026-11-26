@@ -12,14 +12,29 @@ export type ContentFilter = "all" | "with-images" | "without-images" | "with-spe
 export type SortOrder = "newest" | "name" | "price-high" | "price-low";
 export type ScrapeSortFilter = "all" | SortOrder;
 
+/**
+ * Availability, as the price step records it.
+ *
+ * Three answers rather than two, because the catalogue really has three: the shop said this ships,
+ * the shop said it does not, and the shop has not been asked yet. A scrape carries no price and
+ * therefore no availability, so every product of a fresh run is `unspecified` until the operator
+ * runs the price step — folding that into `available` would report 107 products as in stock when 73
+ * are, and folding it into `unavailable` would report 82 as sold out when 48 are. `unspecified` is
+ * the queue of products whose stock question is still open, which is the thing worth filtering for.
+ */
+export type StockFilter = "all" | "available" | "unavailable" | "unspecified";
+
 export interface CatalogReviewFilters {
   query: string;
   manufacturer: string;
   website: string;
-  root: string;
-  sub: string;
+  /** Root categories, OR'd. Empty means "all of them", matching the multi-select's own "همه". */
+  root: string[];
+  /** Sub-categories, OR'd across the chosen roots. Empty means all of them. */
+  sub: string[];
   color: string;
   price: PriceFilter;
+  stock: StockFilter;
   content: ContentFilter;
   sort: SortOrder;
 }
@@ -47,9 +62,9 @@ export function websiteLabel(item: ScraperCatalogItem): string {
   return item.sourceId || "نامشخص";
 }
 
-export function catalogSubcategoryOptions(items: ScraperCatalogItem[], rootFilter: string): string[] {
+export function catalogSubcategoryOptions(items: ScraperCatalogItem[], rootFilter: string[]): string[] {
   const values = items
-    .filter((item) => rootFilter === "all" || item.category === rootFilter)
+    .filter((item) => !rootFilter.length || rootFilter.includes(item.category))
     .map((item) => item.subCategory);
   return [...new Set(values)].sort((a, b) => (SUB_LABELS[a] ?? a).localeCompare(SUB_LABELS[b] ?? b, "fa"));
 }
@@ -85,11 +100,17 @@ export function filterCatalog(items: ScraperCatalogItem[], filters: CatalogRevie
     if (normalizedQuery && !searchable.includes(normalizedQuery)) return false;
     if (filters.manufacturer !== "all" && item.brand !== filters.manufacturer) return false;
     if (filters.website !== "all" && websiteKey(item) !== filters.website) return false;
-    if (filters.root !== "all" && item.category !== filters.root) return false;
-    if (filters.sub !== "all" && item.subCategory !== filters.sub) return false;
+    // Several categories at once, OR'd within the dimension — the same rule the scrape filters
+    // use, because an operator narrowing a 155-product list to "ovens and hoods" is asking for the
+    // union, not the intersection of two appliance families.
+    if (filters.root.length && !filters.root.includes(item.category)) return false;
+    if (filters.sub.length && !filters.sub.includes(item.subCategory)) return false;
     if (filters.color !== "all" && !item.colors.includes(filters.color)) return false;
     if (filters.price === "priced" && item.price <= 0) return false;
     if (filters.price === "missing" && item.price > 0) return false;
+    if (filters.stock === "available" && item.priceInStock !== true) return false;
+    if (filters.stock === "unavailable" && item.priceInStock !== false) return false;
+    if (filters.stock === "unspecified" && item.priceInStock !== undefined) return false;
     if (filters.content === "with-images" && item.image.length === 0) return false;
     if (filters.content === "without-images" && item.image.length > 0) return false;
     if (filters.content === "with-specs" && item.specs.length === 0) return false;

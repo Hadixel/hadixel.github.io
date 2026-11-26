@@ -18,6 +18,14 @@ export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectI
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "./components/table";
 export { Skeleton, Separator } from "./components/skeleton";
+export {
+  ShimmerImage,
+  shimmerSvg,
+  shimmerBlurDataUrl,
+  AppliancePlaceholder,
+  ImagePlaceholder,
+  type ShimmerImageProps,
+} from "./components/shimmer-image";
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./components/tooltip";
 export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "./components/dropdown-menu";
 export { Checkbox, Switch } from "./components/checkbox";

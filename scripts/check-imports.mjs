@@ -42,7 +42,7 @@ const SKIP_AT_ROOT = new Set(["docs"]);
 // Every extension this repo writes or runs. .mjs and .cjs are here because the root config files
 // are .mjs — the header's claim that nothing can fall outside the walk is false without them.
 const SOURCE = /\.(ts|tsx|mts|cts|mjs|cjs|js|jsx)$/;
-const EXT = [".ts", ".tsx", ".mts", ".js"];
+const EXT = [".ts", ".tsx", ".mts", ".js", ".mjs", ".cjs"];
 
 function* sourceFiles(dir, depth) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

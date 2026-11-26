@@ -3,10 +3,28 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
-export default function Error({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+export default function Error({
+  error,
+  reset,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  reset?: () => void;
+  retry?: () => void;
+}) {
   useEffect(() => {
     console.error(error);
   }, [error]);
+
+  const handleRetry = () => {
+    if (typeof reset === "function") {
+      reset();
+    } else if (typeof retry === "function") {
+      retry();
+    } else {
+      window.location.reload();
+    }
+  };
 
   return (
     <div className="mx-auto flex min-h-[55vh] max-w-2xl flex-col items-center justify-center px-4 py-16 text-center">
@@ -16,7 +34,13 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
       <h1 className="mt-6 font-display text-2xl font-black text-ink">بارگذاری این بخش انجام نشد</h1>
       <p className="mt-3 max-w-md text-sm leading-7 text-ash">می‌توانید دوباره تلاش کنید؛ اگر مشکل ادامه داشت، بعداً به فروشگاه برگردید.</p>
       <div className="mt-7 flex flex-wrap justify-center gap-3">
-        <button type="button" onClick={() => retry()} className="min-h-11 rounded-card bg-flame-700 px-6 text-sm font-bold text-white transition-colors hover:bg-flame-600">تلاش دوباره</button>
+        <button
+          type="button"
+          onClick={handleRetry}
+          className="min-h-11 rounded-card bg-flame-700 px-6 text-sm font-bold text-white transition-colors hover:bg-flame-600"
+        >
+          تلاش دوباره
+        </button>
         <Link href="/" className="inline-flex min-h-11 items-center rounded-card border border-fog px-6 text-sm font-bold text-ink transition-colors hover:bg-plaster">بازگشت به خانه</Link>
       </div>
     </div>

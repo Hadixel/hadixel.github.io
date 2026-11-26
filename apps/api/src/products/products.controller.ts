@@ -26,6 +26,7 @@ import { requireAdmin } from "../auth/identity.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { PrismaClient } from "../prisma/index.js";
 import { SaveProductDto } from "./dto/product.dto.js";
+import { BatchPriceUpdateDto } from "./dto/batch-price.dto.js";
 import { MAX_PRODUCT_PAGE_SIZE, ProductListQueryDto } from "./dto/product-query.dto.js";
 import type { ProductDetail, ProductListRow, ProductPage } from "./dto/product-read.dto.js";
 import { ProductNotFoundException, ProductRuleException } from "./exceptions/product.exception.js";
@@ -240,6 +241,54 @@ export class ProductsController {
       });
 
       return { id: product.id, slug: product.slug };
+    });
+  }
+
+  /**
+   * Apply batch price updates matched by model code to products in the store.
+   */
+  @Patch("batch-prices")
+  async updateBatchPrices(
+    @Req() req: Request,
+    @Body() body: BatchPriceUpdateDto,
+  ): Promise<{ updated: number }> {
+    const admin = await requireAdmin(this.auth, req);
+
+    return this.db.$transaction(async (tx) => {
+      let updatedCount = 0;
+
+      for (const item of body.updates) {
+        const whereClause: { model: { equals: string; mode: "insensitive" }; brand?: { equals: string; mode: "insensitive" } } = {
+          model: { equals: item.model, mode: "insensitive" },
+        };
+        if (item.brand) {
+          whereClause.brand = { equals: item.brand, mode: "insensitive" };
+        }
+
+        const products = await tx.product.findMany({
+          where: whereClause,
+          select: { id: true, model: true },
+        });
+
+        for (const product of products) {
+          await tx.variant.updateMany({
+            where: { productId: product.id },
+            data: { price: item.priceToman },
+          });
+
+          await writeAudit(tx, {
+            adminUserId: admin.id,
+            action: "BATCH_PRICE_UPDATE",
+            entityType: "PRODUCT",
+            entityId: product.id,
+            meta: { model: item.model, priceToman: item.priceToman },
+          });
+
+          updatedCount += 1;
+        }
+      }
+
+      return { updated: updatedCount };
     });
   }
 

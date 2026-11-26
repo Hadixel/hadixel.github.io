@@ -10,7 +10,12 @@
 
 const CLIENT_APPS = ['apps/admin', 'apps/store'];
 const GATEWAY_APP = 'apps/api';
-const APP_WORKSPACES = [...CLIENT_APPS, GATEWAY_APP];
+// The scraper is an application (§5.1) with no HTTP surface of its own: three executables, no
+// server port. It joins the app-workspace list so the app-root gate and the entry-point gate
+// reach it — an app the gates have never heard of is where a second architecture grows (§4) —
+// and it joins nothing the client-structure gate reads, because it is not a client.
+const SCRAPER_APP = 'apps/scraper';
+const APP_WORKSPACES = [...CLIENT_APPS, GATEWAY_APP, SCRAPER_APP];
 
 const CLIENT_SRC_SUBDIR = 'src';
 const CLIENT_ROUTE_SUBDIR = 'src/app';
@@ -43,19 +48,40 @@ const APP_ROOT_UNTRACKED_DIR_NAMES = ['node_modules', '.turbo'];
 
 const APP_ROOT_EXTRAS = {
   // The gateway carries what its framework and its ORM require at the workspace root, and it is
-  // the only workspace allowed to carry them: its own README (both clients' documentation lives
-  // in docs/ rather than at a root), the Nest CLI config, the Prisma CLI config that resolves the
-  // database URL from the environment, the build-only compiler pass, and the five directories a
-  // backend owns — its ORM schema, its seed, its suites, its own scripts and its build output.
+  // the only workspace allowed to carry them: the Nest CLI config, the Prisma CLI config that
+  // resolves the database URL from the environment, the build-only compiler pass, and the five
+  // directories a backend owns — its ORM schema, its seed, its suites, its own scripts and its
+  // build output. Its documentation lives in AGENTS.md, the same name every other surface uses
+  // (§13): an app root holds exactly one docs entry point and no second docs home beside it.
   // Note `tests/`: the plural spelling is this repo's, and `test/` would be an allowance for a
   // directory that does not exist.
   [GATEWAY_APP]: {
-    fileNames: ['README.md', 'nest-cli.json', 'prisma.config.ts', 'tsconfig.build.json'],
+    fileNames: ['nest-cli.json', 'prisma.config.ts', 'tsconfig.build.json'],
     dirNames: ['prisma', 'seed', 'tests', 'scripts', 'dist'],
   },
   ...Object.fromEntries(
-    CLIENT_APPS.map((client) => [client, { fileNames: [], dirNames: ['public', '.next'] }]),
+    CLIENT_APPS.map((client) => [
+      client,
+      {
+        fileNames: [],
+        // `public` is the client's static assets (§5.1). `.next` is the framework's build output.
+        // `.impeccable` is a local design tool's working directory: untracked, gitignored at the
+        // root, and written beside the surface the tool is editing with no supported way to put
+        // it anywhere else — the same class of artefact §5.1 allows, named for the archetype
+        // whose toolchain produces it. Without the entry the app-root gate is green on a clean
+        // checkout and red on a working one, which is the flap that teaches a developer to skip
+        // the audit.
+        dirNames: ['public', '.next', '.impeccable'],
+      },
+    ]),
   ),
+  // The scraper carries what its own tools require at the root: the three executables, its
+  // suites, and the two untracked artefacts a run writes — its output directory and the
+  // SCRAPE_CACHE disk cache. Neither is written by its build step, and both are gitignored.
+  [SCRAPER_APP]: {
+    fileNames: [],
+    dirNames: ['bin', 'tests', 'out', '.scrape-cache'],
+  },
 };
 
 const CLIENT_SRC_ROOT_FRAMEWORK_FILES = ['middleware.ts', 'instrumentation.ts'];
@@ -106,6 +132,7 @@ const FEATURE_EXEMPT_DIR_NAMES = ['components', 'lib', 'hooks', 'state'];
 module.exports = {
   CLIENT_APPS,
   GATEWAY_APP,
+  SCRAPER_APP,
   APP_WORKSPACES,
   CLIENT_SRC_SUBDIR,
   CLIENT_ROUTE_SUBDIR,

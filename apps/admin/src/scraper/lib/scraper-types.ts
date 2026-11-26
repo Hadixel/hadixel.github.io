@@ -2,6 +2,7 @@ import type { ScrapeFilters } from "@kmodern/scraper-core";
 
 export type { ScrapeFilters } from "@kmodern/scraper-core";
 export type { PriceListReport } from "@kmodern/scraper-core";
+export type { DateesPriceFetchReport } from "@kmodern/scraper-core";
 
 export type ScraperJobStatus =
   | "idle"
@@ -18,7 +19,6 @@ export interface ScraperJobOptions {
   limit?: number;
   cache: boolean;
   downloadImages?: boolean;
-  priceLookup?: boolean;
   filters?: ScrapeFilters;
 }
 
@@ -91,10 +91,6 @@ export interface ScraperJobSnapshot {
   limit: number | null;
   cache: boolean;
   downloadImages: boolean;
-  priceLookup: boolean;
-  priceMatched: number;
-  priceUnmatched: number;
-  priceError: string | null;
   filters: ScrapeFilters;
   startedAt: string | null;
   finishedAt: string | null;

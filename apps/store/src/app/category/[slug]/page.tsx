@@ -5,6 +5,25 @@ import { normalizeListingSort, ProductListing } from "@/catalogue/components/pro
 
 export const dynamic = "force-dynamic";
 
+function formatCategoryTitle(
+  category: { name: string; parentId?: string | null },
+  all: { id: string; name: string }[],
+): string {
+  const name = category.name.trim();
+  if (name === "فر") return "فر توکار";
+  if (name === "توکار") {
+    const parent = category.parentId ? all.find((c) => c.id === category.parentId) : null;
+    return parent ? `${parent.name} توکار` : "فر توکار";
+  }
+  if (category.parentId) {
+    const parent = all.find((c) => c.id === category.parentId);
+    if (parent && !name.includes(parent.name) && !name.startsWith("فر ") && !name.startsWith("اجاق ") && !name.startsWith("هود ") && !name.startsWith("سینک ")) {
+      return `${parent.name} ${name}`;
+    }
+  }
+  return name;
+}
+
 // A category's products, and the category itself.
 //
 // The row is read through the gateway rather than from a database this app does not own, and the
@@ -33,12 +52,14 @@ export default async function CategoryPage({
   const sort = normalizeListingSort(sp.sort);
   const products = await getPublishedProducts({ categoryId: category.id, sort, limit: 60 });
 
+  const title = formatCategoryTitle(category, all);
+
   return (
     <ProductListing
       products={products}
       categories={all}
       activeSlug={category.slug}
-      title={category.name}
+      title={title}
       sort={sort}
       action={`/category/${slug}`}
       description="محصولات این دسته را با جزئیات فنی، رنگ‌های موجود و قیمت مقایسه کنید."

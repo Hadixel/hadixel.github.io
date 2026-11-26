@@ -1,5 +1,8 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProductBySlug, getPublishedProducts } from "@/lib/queries";
+import { buildProductJsonLd, buildProductMetadata } from "@/catalogue/lib/torob";
 import { SectionHeader } from "@kmodern/ui";
 import { toFaDigits } from "@kmodern/contracts/format";
 import { ProductBuyBox } from "@/catalogue/components/product-buy-box";
@@ -8,9 +11,22 @@ import Breadcrumbs from "@/catalogue/components/breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
+const loadProduct = cache(getProductBySlug);
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await loadProduct(slug);
+  if (!product) return {};
+  return buildProductMetadata(product);
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await loadProduct(slug);
   if (!product) notFound();
 
   const related = (await getPublishedProducts({ categoryId: product.categoryId, limit: 8 }))
@@ -31,9 +47,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   }));
 
   const hasTechnicalDetails = product.specValues.length > 0 || product.features.length > 0;
+  const jsonLd = buildProductJsonLd(product);
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 py-6 sm:py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <Breadcrumbs category={product.category.slug} categoryName={product.category.name} productName={product.name} />
 
       <ProductBuyBox

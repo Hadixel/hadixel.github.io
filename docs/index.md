@@ -19,6 +19,8 @@ own, which reaches its surface's documents from there.
 |---|---|
 | [blueprint/ARCHITECTURE-BLUEPRINT.md](blueprint/ARCHITECTURE-BLUEPRINT.md) | The portable architecture this repo adopts. Prescriptive, not specific to us |
 | [RANKS.md](RANKS.md) | Which workspace sits on which, and what fails when it does not (§4) |
+| [COMPANION.md](COMPANION.md) | This repo's instance of the blueprint: the concrete choices — ports, module list, archetype assignment — each one hop from its enforced home (§13) |
+| [shared-behaviour.md](shared-behaviour.md) | The need → canonical implementation index, consulted before writing a hook or helper (§11.3) |
 | [DEVIATION-REGISTER.md](DEVIATION-REGISTER.md) | Every place this repo knowingly departs from the blueprint, with a reason and an answer about copying (§18) |
 
 ## Decisions (ADRs)
@@ -37,9 +39,19 @@ own, which reaches its surface's documents from there.
 | Surface | Entry point | Notes |
 |---|---|---|
 | Repo root | [`CLAUDE.md`](../CLAUDE.md) | Working rules plus links into this index |
-| Gateway | [`apps/api/README.md`](../apps/api/README.md) | The one process that touches the database |
+| Gateway | [`apps/api/AGENTS.md`](../apps/api/AGENTS.md) | The one process that touches the database |
 | Storefront | [`apps/store/AGENTS.md`](../apps/store/AGENTS.md) | Public, SEO audience, Persian RTL |
 | Panel | [`apps/admin/AGENTS.md`](../apps/admin/AGENTS.md) | Internal operators |
+| Scraper | [`apps/scraper/AGENTS.md`](../apps/scraper/AGENTS.md) | The catalogue pipeline: three executables, no database, no port |
+
+## Surface documentation
+
+The entry points above are indexes (§13). These are the documents they hand off to.
+
+| Document | What it covers |
+|---|---|
+| [gateway.md](gateway.md) | The gateway's data tier: the schema, the one generated-client index, migrations and their two checks, the destructive test suite, the data scripts |
+| [scraper.md](scraper.md) | The scraper's operational reference: the TUI, CLI filters, run outputs, the price-list command, admin review and import |
 
 ## Agents
 

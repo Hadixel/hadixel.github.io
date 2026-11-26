@@ -38,8 +38,8 @@ export function SortFieldset({
               className={cn(
                 "flex cursor-pointer items-center gap-2.5 rounded-card px-3 py-2.5 text-sm font-semibold transition-colors",
                 active
-                  ? "bg-flame-50 text-flame-800 ring-1 ring-flame-200"
-                  : "text-ash hover:bg-plaster hover:text-ink",
+                  ? "bg-flame-50 text-flame-700 ring-1 ring-flame-200"
+                  : "text-ash hover:bg-flame-50/50 hover:text-flame-700",
               )}
             >
               <input
@@ -53,7 +53,7 @@ export function SortFieldset({
                 aria-hidden
                 className={cn(
                   "size-4 shrink-0 rounded-full border",
-                  active ? "border-[5px] border-flame-700" : "border-fog",
+                  active ? "border-[5px] border-flame-600" : "border-flame-200",
                 )}
               />
               {s.label}
@@ -106,13 +106,15 @@ export function ListingFilterRail({
 
   return (
     <aside className="store-sticky hidden h-[calc(100dvh-var(--store-header-offset)-2.5rem)] w-full overflow-y-auto self-start me-4 lg:block">
-      <div className="flex h-full flex-col rounded-card border border-fog bg-canvas p-4 shadow-sm">
+      <div className="flex h-full flex-col rounded-card border border-flame-100 bg-canvas p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-black text-ink">فیلتر و مرتب‌سازی</span>
-          <span className="text-micro font-semibold text-ash">{toFaDigits(count)} محصول</span>
+          <span className="rounded-pill bg-flame-50 px-2.5 py-0.5 text-micro font-bold text-flame-700 ring-1 ring-flame-200/70">
+            {toFaDigits(count)} محصول
+          </span>
         </div>
         <SortFieldset action={action} sort={sort} query={query} />
-        <div className="my-4 border-t border-plaster" />
+        <div className="my-4 border-t border-flame-100" />
         <div className="mb-2 text-sm font-black text-ink">دسته‌بندی‌ها</div>
         <div className="min-h-0 flex-1">
           <CategoryTree items={items} activeValue={activeSlug} />

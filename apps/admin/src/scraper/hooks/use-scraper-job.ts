@@ -8,6 +8,7 @@ import {
   fetchScraperCatalog,
   fetchScraperJob,
   fetchScraperLiveView,
+  fetchScraperPrices,
   importScraperCatalog,
   startScraperJob,
   submitScraperPriceList,
@@ -22,9 +23,11 @@ import {
   type PriceFilter,
   type ScrapeSortFilter,
   type SortOrder,
+  type StockFilter,
 } from "@/scraper/lib/scraper-catalog";
 import { isJobStatusActive } from "@/scraper/lib/scraper-job-status";
 import type {
+  DateesPriceFetchReport,
   PriceListReport,
   ScrapeFilters,
   ScraperCatalogEdit,
@@ -62,17 +65,17 @@ export function useScraperJob() {
   const [query, setQuery] = useState("");
   const [manufacturerFilter, setManufacturerFilter] = useState("all");
   const [websiteFilter, setWebsiteFilter] = useState("all");
-  const [rootFilter, setRootFilter] = useState("all");
-  const [subFilter, setSubFilter] = useState("all");
+  const [rootFilter, setRootFilter] = useState<string[]>([]);
+  const [subFilter, setSubFilter] = useState<string[]>([]);
   const [colorFilter, setColorFilter] = useState("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [source, setSource] = useState("all");
   const [limit, setLimit] = useState("");
   const [cache, setCache] = useState(true);
   const [downloadImages, setDownloadImages] = useState(true);
-  const [priceLookup, setPriceLookup] = useState(true);
   const [scrapeSearch, setScrapeSearch] = useState("");
   const [scrapeManufacturer, setScrapeManufacturer] = useState<string[]>([]);
   const [scrapeWebsite, setScrapeWebsite] = useState<string[]>([]);
@@ -94,6 +97,9 @@ export function useScraperJob() {
   const [priceListBusy, setPriceListBusy] = useState<"preview" | "apply" | null>(null);
   const [priceListReport, setPriceListReport] = useState<PriceListReport | null>(null);
   const [priceListNotice, setPriceListNotice] = useState<string | null>(null);
+  const [priceFetchBusy, setPriceFetchBusy] = useState(false);
+  const [priceFetchReport, setPriceFetchReport] = useState<DateesPriceFetchReport | null>(null);
+  const [priceFetchNotice, setPriceFetchNotice] = useState<string | null>(null);
   const [notice, setNotice] = useState<ScraperNotice | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
@@ -120,7 +126,6 @@ export function useScraperJob() {
     () => catalogSubcategoryOptions(reviewCatalog, rootFilter),
     [reviewCatalog, rootFilter],
   );
-
   const scrapeSubcategoryOptions = useMemo(
     () => availableScrapeSubcategories(scrapeCategory),
     [scrapeCategory],
@@ -145,16 +150,17 @@ export function useScraperJob() {
       sub: subFilter,
       color: colorFilter,
       price: priceFilter,
+      stock: stockFilter,
       content: contentFilter,
       sort: sortOrder,
     }),
-    [reviewCatalog, colorFilter, contentFilter, manufacturerFilter, priceFilter, query, rootFilter, sortOrder, subFilter, websiteFilter],
+    [reviewCatalog, colorFilter, contentFilter, manufacturerFilter, priceFilter, query, rootFilter, sortOrder, stockFilter, subFilter, websiteFilter],
   );
 
   const filtersActive = Boolean(
-    query || manufacturerFilter !== "all" || websiteFilter !== "all" || rootFilter !== "all" ||
-    subFilter !== "all" || colorFilter !== "all" || priceFilter !== "all" ||
-    contentFilter !== "all" || sortOrder !== "newest",
+    query || manufacturerFilter !== "all" || websiteFilter !== "all" || rootFilter.length > 0 ||
+    subFilter.length > 0 || colorFilter !== "all" || priceFilter !== "all" ||
+    stockFilter !== "all" || contentFilter !== "all" || sortOrder !== "newest",
   );
   const allFilteredSelected = filteredCatalog.length > 0 && filteredCatalog.every((item) => selected.has(item.slug));
 
@@ -224,6 +230,8 @@ export function useScraperJob() {
     setPriceListRevision("");
     setPriceListReport(null);
     setPriceListNotice(null);
+    setPriceFetchReport(null);
+    setPriceFetchNotice(null);
     setCatalog([]);
     setEdits({});
     setCatalogRevision("");
@@ -232,10 +240,11 @@ export function useScraperJob() {
     setQuery("");
     setManufacturerFilter("all");
     setWebsiteFilter("all");
-    setRootFilter("all");
-    setSubFilter("all");
+    setRootFilter([]);
+    setSubFilter([]);
     setColorFilter("all");
     setPriceFilter("all");
+    setStockFilter("all");
     setContentFilter("all");
     setSortOrder("newest");
     setJob(null);
@@ -258,7 +267,6 @@ export function useScraperJob() {
         limit: limit.trim() ? Number(limit) : null,
         cache,
         downloadImages,
-        priceLookup,
         filters,
       }));
     } catch (error) {
@@ -344,6 +352,45 @@ export function useScraperJob() {
     setPriceListNotice(null);
   }
 
+  /**
+   * The second step: fetch prices for the ticked products, from the shop's own API.
+   *
+   * The snapshot is re-read afterwards the same way an applied price list forces it — the fetch
+   * rewrote `catalog.fragment.json`, so the rows on screen are now describing a file that has
+   * moved, and the revision the selection was made against is gone. Edits go with it: a price that
+   * arrives for a product the operator had already priced by hand is one they should see arrive,
+   * not have quietly overwritten underneath a draft.
+   */
+  async function fetchPricesForSelected() {
+    if (!selected.size || priceFetchBusy) return;
+    if (!catalogRevision) {
+      setPriceFetchNotice("ابتدا خروجی بررسی را بارگذاری کنید و سپس دوباره تلاش کنید.");
+      return;
+    }
+    setPriceFetchBusy(true);
+    setPriceFetchNotice(null);
+    try {
+      const result = await fetchScraperPrices({ slugs: [...selected], catalogRevision });
+      setPriceFetchReport(result.report);
+      const fetched = result.report.matched;
+      const missing = result.report.unmatched;
+      setPriceFetchNotice(
+        result.report.error
+          ? `دریافت قیمت انجام نشد: ${result.report.error}`
+          : `قیمت ${toFaDigits(fetched)} محصول دریافت شد${missing ? `؛ ${toFaDigits(missing)} محصول قیمتی در داتیس‌شاپ نداشت` : ""}.`,
+      );
+      setCatalogJobId("");
+      setCatalogRevision("");
+      setEdits({});
+      setSelected(new Set());
+      setDetail(null);
+    } catch (error) {
+      setPriceFetchNotice(errorText(error));
+    } finally {
+      setPriceFetchBusy(false);
+    }
+  }
+
   function toggleSelected(slug: string) {
     setSelected((current) => {
       const next = new Set(current);
@@ -380,8 +427,10 @@ export function useScraperJob() {
     setScrapeSearch(query);
     setScrapeManufacturer(manufacturerFilter === "all" ? [] : [manufacturerFilter]);
     setScrapeWebsite(websiteFilter === "all" ? [] : [websiteFilter]);
-    setScrapeCategory(rootFilter === "all" ? [] : [rootFilter]);
-    setScrapeSubCategory(subFilter === "all" ? [] : [subFilter]);
+    // The review list's category filters are already multi-valued, and the scrape's own category
+    // filter takes a list — so the copy is a rename, not a wrap.
+    setScrapeCategory(rootFilter);
+    setScrapeSubCategory(subFilter);
     setScrapeColor(colorFilter === "all" ? [] : [colorFilter]);
     setScrapePrice(priceFilter);
     setScrapeContent(contentFilter);
@@ -392,10 +441,11 @@ export function useScraperJob() {
     setQuery("");
     setManufacturerFilter("all");
     setWebsiteFilter("all");
-    setRootFilter("all");
-    setSubFilter("all");
+    setRootFilter([]);
+    setSubFilter([]);
     setColorFilter("all");
     setPriceFilter("all");
+    setStockFilter("all");
     setContentFilter("all");
     setSortOrder("newest");
   }
@@ -470,14 +520,13 @@ export function useScraperJob() {
     catalog, catalogRevision, catalogLoading, edits, selected, detail,
     setDetail,
     query, manufacturerFilter, websiteFilter, rootFilter, subFilter, colorFilter, priceFilter,
-    contentFilter, sortOrder,
+    stockFilter, contentFilter, sortOrder,
     setQuery, setManufacturerFilter, setWebsiteFilter, setRootFilter, setSubFilter,
-    setColorFilter, setPriceFilter, setContentFilter, setSortOrder,
+    setColorFilter, setPriceFilter, setStockFilter, setContentFilter, setSortOrder,
     subcategoryOptions, manufacturerOptions, websiteOptions, filteredCatalog,
     filtersActive, allFilteredSelected, clearFilters, toggleAll, toggleSelected,
     updateItemEdit, resetItemEdit, publish, setPublish, importing, importMessage, importSelected,
     source, setSource, limit, setLimit, cache, setCache, downloadImages, setDownloadImages,
-    priceLookup, setPriceLookup,
     scrapeSearch, setScrapeSearch, scrapeManufacturer, setScrapeManufacturer,
     scrapeWebsite, setScrapeWebsite, scrapeCategory, setScrapeCategory,
     scrapeSubCategory, setScrapeSubCategory, scrapeColor, setScrapeColor,
@@ -485,5 +534,6 @@ export function useScraperJob() {
     scrapeSubcategoryOptions, clearScrapeFilters, copyReviewFiltersToScrape,
     priceListFile, priceListBrand, priceListUnit, priceListBusy, priceListReport, priceListNotice,
     choosePriceList, changePriceListBrand, changePriceListUnit, submitPriceList,
+    priceFetchBusy, priceFetchReport, priceFetchNotice, fetchPricesForSelected,
   };
 }

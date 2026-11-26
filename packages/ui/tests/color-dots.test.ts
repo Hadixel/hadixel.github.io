@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ColorDotSwatches } from "../src/showcase/color-dots";
 import { deriveColorDots, type DotVariant } from "../src/showcase/color-dots-logic";
 
 /*
@@ -50,5 +53,42 @@ describe("deriveColorDots", () => {
     const r = deriveColorDots([], undefined);
     expect(r.dots).toHaveLength(0);
     expect(r.selected).toBeUndefined();
+  });
+});
+
+describe("ColorDotSwatches", () => {
+  it("renders passive span swatches without buttons or active blue ring when onSwap is omitted", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ColorDotSwatches, {
+        variants: [
+          v({ id: "a", colorName: "مشکی", colorCode: "#111111" }),
+          v({ id: "b", colorName: "سفید", colorCode: "#ffffff" }),
+          v({ id: "c", colorName: "مشکی", colorCode: "#111111" }),
+        ],
+      }),
+    );
+
+    expect(html).not.toContain("<button");
+    expect(html).toContain("<span");
+    expect(html).toContain('role="img"');
+    expect(html).toContain('title="مشکی"');
+    expect(html).toContain('aria-label="مشکی"');
+    expect(html).toContain('title="سفید"');
+    expect(html).toContain('aria-label="سفید"');
+    expect(html).toContain("background-color:#111111");
+    expect(html).toContain("background-color:#ffffff");
+    expect(html).not.toContain("border-flame-700");
+    expect(html).not.toContain("ring-flame-100");
+    expect(html).not.toContain("scale-110");
+    expect(html).not.toContain("cursor-pointer");
+  });
+
+  it("renders nothing when fewer than two unique colors are present", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ColorDotSwatches, {
+        variants: [v({ id: "a" }), v({ id: "b" })],
+      }),
+    );
+    expect(html).toBe("");
   });
 });

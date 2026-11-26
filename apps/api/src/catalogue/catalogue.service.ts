@@ -18,6 +18,7 @@
 // a client that has to unpack a row is a client that can unpack it wrongly.
 
 import { Inject, Injectable } from "@nestjs/common";
+import { sortBlackVariantFirst } from "../common/variant-order.js";
 import {
   cardDiscount,
   detailDiscount,
@@ -294,10 +295,12 @@ export class CatalogueService {
       categoryId: row.categoryId,
       category: row.category,
       discount: detailDiscount(winners.get(row.id) ?? null, variantPrices),
-      variants: row.variants.map((variant) => ({
-        ...variant,
-        available: variant.allowBackorder || variant.stock - variant.reserved > 0,
-      })),
+      variants: sortBlackVariantFirst(
+        row.variants.map((variant) => ({
+          ...variant,
+          available: variant.allowBackorder || variant.stock - variant.reserved > 0,
+        })),
+      ),
       specValues: row.specValues.map((specValue) => ({
         specFieldId: specValue.specFieldId,
         value: specValue.value,
@@ -318,7 +321,8 @@ export class CatalogueService {
    * batch in one query (`cardDiscounts` below) and attached after, never per row.
    */
   private toCard(row: CardRow): Omit<CatalogueProduct, "discount"> {
-    const prices = row.variants.map((variant) => variant.price);
+    const variants = sortBlackVariantFirst(row.variants);
+    const prices = variants.map((variant) => variant.price);
     return {
       id: row.id,
       slug: row.slug,
@@ -328,10 +332,10 @@ export class CatalogueService {
       category: row.category,
       price: prices.length ? Math.min(...prices) : 0,
       maxPrice: prices.length ? Math.max(...prices) : 0,
-      available: row.variants.length > 0,
-      image: row.variants[0]?.images[0] ?? null,
-      variantCount: row.variants.length,
-      dots: row.variants.map((variant) => ({
+      available: variants.length > 0,
+      image: variants[0]?.images[0] ?? null,
+      variantCount: variants.length,
+      dots: variants.map((variant) => ({
         id: variant.id,
         colorName: variant.colorName,
         colorCode: variant.colorCode,

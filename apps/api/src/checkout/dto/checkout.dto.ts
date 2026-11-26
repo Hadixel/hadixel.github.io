@@ -135,6 +135,7 @@ export interface EnrichedLine {
   variantId: string;
   productId: string;
   slug: string;
+  productSlug?: string;
   productName: string;
   colorName: string | null;
   sku: string | null;
@@ -145,6 +146,9 @@ export interface EnrichedLine {
   available: boolean;
   /** What the shopper may still add: free stock, or nothing for a sold-out line. */
   maxAddable: number;
+  allowBackorder?: boolean;
+  stock?: number;
+  reserved?: number;
 }
 
 export interface EnrichedCart {

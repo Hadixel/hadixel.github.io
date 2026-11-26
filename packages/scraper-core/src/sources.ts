@@ -6,6 +6,7 @@ import * as cheerio from "cheerio";
 import type { RawSpec } from "./types";
 import { fetchHtml } from "./http";
 import { schuffel } from "./schuffel";
+import { collectImageUrls } from "./product-images";
 import type { SourceAdapter, SourceTaxonomy } from "./source-types";
 
 
@@ -30,10 +31,10 @@ const DATEES_CATEGORIES: Record<string, DateesTaxonomy> = {
   "\u0641\u0631-\u062A\u0648\u06A9\u0627\u0631": { category: "oven", sub: "built-in" }, // فر-توکار
   "\u0647\u0648\u062F": { category: "hood", sub: "chimney" }, // هود
   "\u0633\u06CC\u0646\u06A9": { category: "sink", sub: "steel" }, // سینک
-  "\u0641\u0631-\u0628\u0631\u0642\u06CC-\u0631\u0648\u0645\u06CC\u0632\u06CC": { category: "oven", sub: "steel" }, // فر-برقی-رومیزی
-  "\u0645\u0627\u06CC\u06A9\u0631\u0648\u0648\u06CC\u0648": { category: "oven", sub: "glass" }, // مایکروویو
-  "\u062C\u0627\u0631\u0648-\u0628\u0631\u0642\u06CC": { category: "hood", sub: "glass" }, // جارو-برقی — no vacuum root yet; park under closest
-  "\u0686\u0627\u06CC\u0633\u0627\u0632": { category: "air-fryer", sub: "dual-basket" }, // چایساز
+  "\u0641\u0631-\u0628\u0631\u0642\u06CC-\u0631\u0648\u0645\u06CC\u0632\u06CC": { category: "oven", sub: "freestanding" }, // فر-برقی-رومیزی — a tabletop oven is not a steel one; `steel` is a material, not a place to put it
+  "\u0645\u0627\u06CC\u06A9\u0631\u0648\u0648\u06CC\u0648": { category: "microwave", sub: "built-in" }, // مایکروویو — its own root, not a kind of oven
+  "\u062C\u0627\u0631\u0648-\u0628\u0631\u0642\u06CC": { category: "vacuum", sub: "corded" }, // جارو-برقی — nine models scraped, and "park it under hood" was never a home for them
+  "\u0686\u0627\u06CC\u0633\u0627\u0632": { category: "kettle", sub: "electric" }, // چایساز — the site's tea category holds both tea makers and samovars
 };
 
 const dateesProductTaxonomies = new Map<string, SourceTaxonomy>();
@@ -115,18 +116,10 @@ export const datees: SourceAdapter = {
       $('meta[name="description"]').attr("content") ??
       "";
 
-    // images: full-size /uploads/*.webp excluding thumbs; dedupe by basename
-    const imageUrls: string[] = [];
-    const seenBase = new Set<string>();
-    $("img[src]").each((_i, el) => {
-      const src = $(el).attr("src") ?? "";
-      if (!src.startsWith("/uploads/") || src.includes("/thumb/")) return;
-      const abs = new URL(src, DATEES_ORIGIN).toString();
-      const base = abs.split("/").pop()!;
-      if (seenBase.has(base)) return;
-      seenBase.add(base);
-      imageUrls.push(abs);
-    });
+    // images: every full-size /uploads/* file the gallery ships, in the gallery's own order.
+    // Thumbnails are the same files one size down and are skipped; the Nuxt data payload's
+    // category icons and related-product rows are not <img> tags and never reach this walk.
+    const imageUrls = collectImageUrls($, { origin: DATEES_ORIGIN, pathPrefix: "/uploads/" });
 
     // Features live in the product card's "مشخصات" list, not in the site nav.
     const features: string[] = [];

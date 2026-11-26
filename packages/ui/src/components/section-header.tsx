@@ -35,17 +35,12 @@ export function SectionHeader({
           {title}
         </h2>
         <span aria-hidden className="mt-2 flex items-center gap-2 md:mt-3">
-          <span className="h-px w-10 bg-fog" />
-          <span className="size-1.5 rounded-pill bg-flame-700" />
-          <span className="h-px w-10 bg-fog" />
+          <span className="h-px w-10 bg-flame-200" />
+          <span className="size-1.5 rounded-pill bg-flame-600" />
+          <span className="h-px w-10 bg-flame-200" />
         </span>
         {description && (
           <p className={cn("mt-2 max-w-2xl text-sm leading-7 text-ash md:mt-3 hidden sm:block", centered && "mx-auto")}>{description}</p>
-        )}
-        {centered && seeAllHref && (
-          <div className="order-first mb-1 self-end sm:hidden">
-            <SeeAll href={seeAllHref} />
-          </div>
         )}
         {centered && seeAllHref && (
           <div className="mt-3 hidden sm:block md:mt-4">
@@ -53,37 +48,39 @@ export function SectionHeader({
           </div>
         )}
       </div>
-      {!centered && seeAllHref && <SeeAll href={seeAllHref} />}
+      {!centered && seeAllHref && <div className="hidden sm:block"><SeeAll href={seeAllHref} /></div>}
     </div>
   );
 }
 
 function SeeAll({ href, className }: { href: string; className?: string }) {
   return (
-    <a href={href} className={cn("group inline-flex min-h-11 items-center gap-2 text-sm font-bold text-ink", className)}>
-      <span className="relative">
-        مشاهده همه
-        <span
+    <a
+      href={href}
+      className={cn(
+        "group inline-flex min-h-11 items-center gap-2 rounded-pill bg-flame-50 px-4 py-1.5 text-sm font-bold text-flame-700 ring-1 ring-flame-200/80 transition-all duration-200 hover:bg-flame-100 hover:ring-flame-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flame-700",
+        className,
+      )}
+    >
+      <span>مشاهده همه</span>
+      {/* Circle-styled forward arrow */}
+      <span className="flex size-6 items-center justify-center rounded-full bg-flame-600 text-white shadow-2xs transition-all duration-200 group-hover:scale-105 group-hover:bg-flame-700 motion-reduce:transform-none">
+        <svg
           aria-hidden
-          className="absolute inset-x-0 -bottom-1 h-px bg-fog transition-colors duration-200 group-hover:bg-flame-700 motion-reduce:transition-none"
-        />
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="transition-transform duration-200 group-hover:-translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none"
+        >
+          <path d="M19 12H5" />
+          <path d="m12 19-7-7 7-7" />
+        </svg>
       </span>
-      {/* Fixed leftward arrow: "forward" in RTL, not a mirrored glyph. */}
-      <svg
-        aria-hidden
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="transition-transform duration-200 group-hover:-translate-x-1 motion-reduce:transform-none motion-reduce:transition-none"
-      >
-        <path d="M19 12H5" />
-        <path d="m12 19-7-7 7-7" />
-      </svg>
     </a>
   );
 }

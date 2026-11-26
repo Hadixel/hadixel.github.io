@@ -48,6 +48,10 @@ export type PublicSettings = Record<string, string | number | boolean> & {
   onlinePaymentEnabled?: boolean;
   /** Whether a card number has been entered for card-to-card. Computed by the gateway. */
   c2cPaymentConfigured?: boolean;
+  paymentC2cCardNumber?: string;
+  paymentC2cIban?: string;
+  paymentC2cCardHolder?: string;
+  paymentC2cBankName?: string;
 };
 
 /**
@@ -72,8 +76,13 @@ export async function getSetting<T = unknown>(key: SettingKey): Promise<T | null
 }
 
 export async function getSettingOrDefault<T>(key: SettingKey, fallback: T): Promise<T> {
-  const value = await getSetting<T>(key);
-  return value === null || value === undefined ? fallback : value;
+  try {
+    const value = await getSetting<T>(key);
+    return value === null || value === undefined ? fallback : value;
+  } catch (error) {
+    console.error(`[store] Failed to read setting ${key}; using fallback`, error);
+    return fallback;
+  }
 }
 
 export { settingKeys, GatewayError };

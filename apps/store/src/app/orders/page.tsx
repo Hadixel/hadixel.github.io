@@ -2,12 +2,18 @@ import { currentCustomer } from "@/account/lib/customer-session";
 import { orderRows, readMyOrders } from "@/orders/lib/my-orders";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { OrderRow } from "@/orders/components/order-row";
+import { OrderRow, type OrderRowData } from "@/orders/components/order-row";
 
 export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
-  const me = await currentCustomer();
+  let me = null;
+  try {
+    me = await currentCustomer();
+  } catch (error) {
+    console.error("[orders] Failed to resolve customer", error);
+  }
+
   if (!me) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10">
@@ -20,11 +26,13 @@ export default async function OrdersPage() {
     );
   }
 
-  // The gateway scopes this to the caller's session and answers with the row this page prints. It
-  // used to query the order table here and assemble that row itself, which is where the item count,
-  // the status badge key and the formatted total each came from.
-  const { orders } = await readMyOrders();
-  const rows = orderRows(orders);
+  let rows: OrderRowData[] = [];
+  try {
+    const { orders } = await readMyOrders();
+    rows = orderRows(orders ?? []);
+  } catch (error) {
+    console.error("[orders] Failed to read orders", error);
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10">

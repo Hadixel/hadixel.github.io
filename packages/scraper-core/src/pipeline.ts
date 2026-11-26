@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters, ScrapeFilterValue, PriceLookupReport } from "./types";
+import type { ScrapeRecord, RefinedProduct, MergeReport, ScrapeFilters, ScrapeFilterValue } from "./types";
 import type { FetchOptions } from "./http";
 import { fetchHtml } from "./http";
 import { SOURCES, categoryFor } from "./sources";
@@ -12,11 +12,6 @@ import type { SourceAdapter, SourceTaxonomy } from "./sources";
 import { extractModel, normalizeFa } from "./refine";
 import { refineAndMerge } from "./merge";
 import { downloadProductImages } from "./images";
-import {
-  DATEES_SHOP_CATALOG_URL,
-  fetchDateesShopPriceIndex,
-  matchDateesShopPrice,
-} from "./price-sources";
 import type { ApplyPriceListOptions, PriceListReport } from "./price-list";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -27,9 +22,9 @@ export type PipelineEvent =
   | { type: "listing-complete"; sourceId: string; count: number }
   | { type: "product-start"; sourceId: string; index: number; total: number; url: string }
   // The row fields a progress view needs, and no more: `ScrapeRecord` has no slug until refine, so
-  // nothing here can pretend to be the catalogue identity. `price` is the manufacturer's own price at
-  // the moment the page was read — the Datees Shop price lookup runs after this loop and rewrites the
-  // records, so a row fed from this event shows "no price yet" until the review list takes over.
+  // nothing here can pretend to be the catalogue identity. `price` is whatever the manufacturer's
+  // own page said — usually nothing, because a scrape reads what a product *is*, and a price is a
+  // later step against the shop's API for the products an operator selects (see price-fetch.ts).
   | { type: "product-complete"; sourceId: string; index: number; total: number; name: string; brand: string; price: number | null; colors: string[]; image: string | null }
   | { type: "product-error"; sourceId: string; url: string; message: string }
   | { type: "product-filtered"; sourceId: string; url: string; reason: string }
@@ -53,8 +48,6 @@ export interface PipelineOptions {
   imageMinIntervalMs?: number;
   imageMaxBytes?: number;
   filters?: ScrapeFilters;
-  /** Enrich Datees records from the official Datees Shop price API. */
-  priceLookup?: boolean;
   /** Optional user-supplied XLSX consumer-price list applied after refinement. */
   filePriceList?: Pick<ApplyPriceListOptions, "filePath" | "brand" | "unit" | "dryRun">;
   onProgress?: (event: PipelineEvent) => void;
@@ -68,7 +61,6 @@ export interface PipelineResult {
   imagesDownloaded: number;
   imagesTotal: number;
   filteredOut: number;
-  priceLookup?: PriceLookupReport;
   priceListReport?: PriceListReport;
   outDir: string;
 }
@@ -209,7 +201,6 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   const imageErrors: { url: string; message: string }[] = [];
   let imagesDownloaded = 0;
   let imagesTotal = 0;
-  let priceLookup: PriceLookupReport | undefined;
   const signal = opts.signal ?? opts.fetchOpts?.signal;
   const fetchOpts = opts.signal
     ? { ...(opts.fetchOpts ?? {}), signal: opts.signal }
@@ -306,7 +297,7 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
           name: rec.name,
           brand: rec.brand,
           price: rec.price ?? null,
-          // Copied, not referenced: the price lookup below reassigns `record.colors`.
+          // Copied, not referenced: the record stays the emitter's own value from here.
           colors: [...rec.colors],
           image: rec.imageUrls[0] ?? null,
         });
@@ -320,46 +311,6 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
   }
 
   throwIfAborted(signal);
-  const dateesRecords = allRecords.filter((record) => record.sourceId === "datees");
-  if (opts.priceLookup !== false && dateesRecords.length) {
-    const candidates = dateesRecords.filter((record) => record.price === null);
-    try {
-      const priceIndex = await fetchDateesShopPriceIndex(fetchOpts);
-      let matched = 0;
-      for (const record of candidates) {
-        const quote = matchDateesShopPrice(record, priceIndex);
-        if (!quote) continue;
-        record.price = quote.price;
-        if (quote.priceByColor) {
-          record.priceByColor = { ...quote.priceByColor };
-          record.colors = Object.keys(quote.priceByColor);
-        }
-        record.priceCurrency = quote.currency;
-        record.priceFetchedAt = quote.fetchedAt;
-        record.priceInStock = quote.inStock;
-        record.priceSourceId = quote.sourceId;
-        record.priceSourceUrl = quote.sourceUrl;
-        matched += 1;
-      }
-      priceLookup = {
-        sourceId: "dateesshop",
-        sourceUrl: DATEES_SHOP_CATALOG_URL,
-        matched,
-        unmatched: candidates.length - matched,
-      };
-      log(opts, `  ✓ Datees Shop prices: ${matched}/${candidates.length} matched`);
-    } catch (error) {
-      priceLookup = {
-        sourceId: "dateesshop",
-        sourceUrl: DATEES_SHOP_CATALOG_URL,
-        matched: 0,
-        unmatched: candidates.length,
-        error: String(error),
-      };
-      log(opts, `  ⚠ Datees Shop price lookup failed: ${String(error)}`);
-    }
-  }
-
   log(opts, `\n▶ refining & merging ${allRecords.length} records…`);
   emit(opts, { type: "refine-start", records: allRecords.length });
   const { products: mergedProducts, report: mergeReport } = refineAndMerge(allRecords);
@@ -441,14 +392,14 @@ export async function runPipeline(opts: PipelineOptions = {}): Promise<PipelineR
     );
   }
 
-  writeFileSync(reportPath, JSON.stringify({ report, outputKept: outputProducts.length, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, filters, priceLookup, priceListReport }, null, 2));
+  writeFileSync(reportPath, JSON.stringify({ report, outputKept: outputProducts.length, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, filters, priceListReport }, null, 2));
 
   log(opts, `\n  wrote:\n    ${rawPath}\n    ${refinedPath}\n    ${reportPath}`);
   if (errors.length) log(opts, `  ⚠ ${errors.length} page errors (see merge-report.json)`);
   if (imageErrors.length) log(opts, `  ⚠ ${imageErrors.length} image errors (remote fallbacks retained)`);
   if (filteredOut) log(opts, `  ℹ ${filteredOut} product page(s) excluded by scrape filters`);
 
-  return { products: outputProducts, report, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, priceLookup, priceListReport, outDir };
+  return { products: outputProducts, report, errors, imageErrors, imagesDownloaded, imagesTotal, filteredOut, priceListReport, outDir };
 }
 
 function isHttpUrl(value: string): boolean {

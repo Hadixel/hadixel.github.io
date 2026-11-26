@@ -1,5 +1,6 @@
 import type { LinkRef } from "@kmodern/contracts";
 import { Inject, Injectable } from "@nestjs/common";
+import { sortBlackVariantFirst } from "../common/variant-order.js";
 import { cardDiscount, resolveProductDiscounts } from "../discounts/product-discounts.js";
 import { DATA_CLIENT } from "../prisma/data-client.token.js";
 import type { createPrismaClient } from "../prisma/index.js";
@@ -121,26 +122,30 @@ export class ContentService {
       },
       take: opts.limit,
     });
-    const cards = products.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      brand: p.brand,
-      model: p.model,
-      category: p.category,
-      price: p.variants.length ? Math.min(...p.variants.map((v) => v.price)) : 0,
-      maxPrice: p.variants.length ? Math.max(...p.variants.map((v) => v.price)) : 0,
-      available: p.variants.length > 0,
-      image: p.variants[0]?.images?.[0] ?? null,
-      variantCount: p.variants.length,
-      dots: p.variants.map((v) => ({
-        id: v.id,
-        colorName: v.colorName,
-        colorCode: v.colorCode,
-        images: v.images,
-        price: v.price,
-      })),
-    }));
+    const cards = products.map((p) => {
+      const variants = sortBlackVariantFirst(p.variants);
+      const prices = variants.map((v) => v.price);
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        brand: p.brand,
+        model: p.model,
+        category: p.category,
+        price: prices.length ? Math.min(...prices) : 0,
+        maxPrice: prices.length ? Math.max(...prices) : 0,
+        available: variants.length > 0,
+        image: variants[0]?.images?.[0] ?? null,
+        variantCount: variants.length,
+        dots: variants.map((v) => ({
+          id: v.id,
+          colorName: v.colorName,
+          colorCode: v.colorCode,
+          images: v.images,
+          price: v.price,
+        })),
+      };
+    });
 
     // One discount query for the whole read, over the cards it just built — never one per product.
     const discounts = await resolveProductDiscounts(

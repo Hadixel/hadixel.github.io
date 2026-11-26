@@ -210,6 +210,35 @@ describe("the blog reads a post a shopper may see", () => {
     });
   });
 
+  it("picks the black variant image for a blog product mention even when another colour is cheaper", async () => {
+    const product = await makeProduct({ slug: "hood-x", name: "هود", price: 100_000 });
+    await db().variant.updateMany({
+      where: { productId: product.id },
+      data: { colorCode: "#FFFFFF", images: ["/white.jpg"] },
+    });
+    await db().variant.create({
+      data: {
+        productId: product.id,
+        colorName: "مشکی",
+        colorCode: "#1C1917",
+        sku: "sku-mention-black",
+        price: 250_000,
+        stock: 3,
+        images: ["/black.jpg"],
+      },
+    });
+    const post = await makePost({ slug: "hood-guide", title: "راهنمای هود" });
+    await db().post.update({ where: { id: post.id }, data: { body: bodyWithMention(product.id) } });
+
+    const read = await controller().post(slugParam("hood-guide"));
+    const content = (read.body as { content: Array<Record<string, unknown>> }).content;
+
+    expect(content[1]).toEqual({
+      type: "productLink",
+      attrs: { name: "هود", href: "/product/hood-x", image: "/black.jpg" },
+    });
+  });
+
   // The case worth being sure about. A product deleted after publication used to make the article
   // 500, because the card's query found nothing and the component treated that as an error. A card
   // is a picture of a product; losing the product loses the card and nothing else.

@@ -184,10 +184,8 @@ export async function POST(request: Request) {
   const source = typeof body.source === "string" ? body.source : "all";
   const cache = body.cache === undefined ? true : body.cache;
   const downloadImages = body.downloadImages === undefined ? true : body.downloadImages;
-  const priceLookup = body.priceLookup === undefined ? true : body.priceLookup;
   if (typeof cache !== "boolean") return errorResponse("invalid_cache", 400);
   if (typeof downloadImages !== "boolean") return errorResponse("invalid_download_images", 400);
-  if (typeof priceLookup !== "boolean") return errorResponse("invalid_price_lookup", 400);
   const filters = parseFilters(body.filters);
   if (!filters) return errorResponse("invalid_filters", 400);
 
@@ -201,7 +199,7 @@ export async function POST(request: Request) {
 
   let snapshot;
   try {
-    snapshot = scraperJobs.start({ source, limit, cache, downloadImages, priceLookup, filters });
+    snapshot = scraperJobs.start({ source, limit, cache, downloadImages, filters });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message === "SCRAPE_IN_PROGRESS") return errorResponse("scrape_in_progress", 409);
@@ -218,7 +216,7 @@ export async function POST(request: Request) {
       client.post("/scraper/actions", {
         action: "SCRAPER_STARTED",
         entityId: snapshot.id,
-        meta: { source, limit: limit ?? null, cache, downloadImages, priceLookup, filters },
+        meta: { source, limit: limit ?? null, cache, downloadImages, filters },
       }),
     "شروع اسکرپ ثبت شد.",
   );

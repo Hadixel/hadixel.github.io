@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { formatToman, toFaDigits } from "@kmodern/contracts";
+import { digitsOnly, formatToman, toFaDigits } from "@kmodern/contracts";
 import { Button, Input, Textarea } from "@kmodern/ui";
 import { Field, Select } from "@/components/panel-ui";
 import { COLOR_LABELS, ROOT_LABELS, SCRAPE_SUB_LABELS, SUB_LABELS, labelOptions } from "@/scraper/lib/scraper-labels";
@@ -117,7 +117,7 @@ export function ProductDetail({
             <Input value={name} onChange={(event) => setName(event.target.value)} />
           </Field>
           <Field label="قیمت (تومان)" hint="برای انتشار اجباری است؛ خالی یعنی نیازمند قیمت." className="mb-0">
-            <Input type="number" min={0} step={1} value={price} onChange={(event) => setPrice(event.target.value)} placeholder="نیازمند قیمت" />
+            <Input type="text" inputMode="numeric" dir="ltr" value={price} onChange={(event) => setPrice(digitsOnly(event.target.value))} placeholder="نیازمند قیمت" />
           </Field>
           <Field label="دسته اصلی" className="mb-0">
             <Select value={category} onChange={(event) => { setCategory(event.target.value); setSubCategory(SCRAPE_SUB_LABELS[event.target.value]?.[0] ?? "all"); }}>

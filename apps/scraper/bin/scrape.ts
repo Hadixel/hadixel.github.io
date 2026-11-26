@@ -1,13 +1,14 @@
-#!/usr/bin/env npx tsx
 // CLI entrypoint. Examples:
 //   pnpm --filter @kmodern/scraper scrape                    # all sources
 //   pnpm --filter @kmodern/scraper scrape --source datees     # one source
 //   pnpm --filter @kmodern/scraper scrape --limit 5           # smoke run
 //   pnpm --filter @kmodern/scraper scrape --images            # download product images
-//   pnpm --filter @kmodern/scraper scrape --no-prices          # skip Datees Shop prices
 //   pnpm --filter @kmodern/scraper scrape --price-list ./prices.xlsx --price-brand Datees
 //   pnpm --filter @kmodern/scraper scrape --category oven,stove --color black,steel
 //   SCRAPE_CACHE=1 pnpm … scrape                              # enable disk cache
+//
+// A scrape reads what a product *is* — name, images, specs — and carries no price. Prices come
+// afterwards, from the price step in the admin panel or from --price-list here.
 
 import {
   readFlag,
@@ -47,7 +48,6 @@ async function main() {
   const limit = Number(flag("limit")) || undefined;
   const quiet = args.includes("--quiet");
   const downloadImages = args.includes("--images");
-  const priceLookup = !args.includes("--no-prices");
   const priceListPath = flag("price-list");
   const priceListUnit = flag("price-list-unit") as "toman" | "rial" | undefined;
   if (priceListUnit && priceListUnit !== "toman" && priceListUnit !== "rial") {
@@ -71,7 +71,6 @@ async function main() {
     limit,
     quiet,
     downloadImages,
-    priceLookup,
     filePriceList: priceListPath ? {
       filePath: priceListPath,
       brand: flag("price-brand"),

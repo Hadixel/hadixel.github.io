@@ -7,6 +7,7 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { adjustStock } from "@/inventory/lib/inventory-actions";
 import { idle, type ActionResult } from "@/lib/actions/result";
+import { sanitizeSignedIntInput } from "@kmodern/contracts";
 import { Button } from "@kmodern/ui";
 
 export function AdjustStockRow({ variantId }: { variantId: string }) {
@@ -22,11 +23,15 @@ export function AdjustStockRow({ variantId }: { variantId: string }) {
     <form action={formAction} className="flex items-center gap-1.5">
       <input type="hidden" name="variantId" value={variantId} />
       <input
-        type="number"
+        type="text"
+        inputMode="numeric"
         aria-label="مقدار تغییر موجودی"
         name="delta"
         required
         placeholder="+/−"
+        onChange={(e) => {
+          e.currentTarget.value = sanitizeSignedIntInput(e.currentTarget.value);
+        }}
         className="w-16 rounded-card border border-fog px-2 py-1 text-sm"
         dir="ltr"
       />

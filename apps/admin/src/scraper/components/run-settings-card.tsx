@@ -1,5 +1,6 @@
 "use client";
 
+import { digitsOnly } from "@kmodern/contracts";
 import { Button, Card, CardContent, CardHeader, Checkbox, Input } from "@kmodern/ui";
 import { Field, Select, Spinner } from "@/components/panel-ui";
 import { MultiSelectField } from "@/scraper/components/multi-select-field";
@@ -30,8 +31,6 @@ export function RunSettingsCard({
   setCache,
   downloadImages,
   setDownloadImages,
-  priceLookup,
-  setPriceLookup,
   scrapeSearch,
   setScrapeSearch,
   scrapeManufacturer,
@@ -70,8 +69,6 @@ export function RunSettingsCard({
   setCache: (value: boolean) => void;
   downloadImages: boolean;
   setDownloadImages: (value: boolean) => void;
-  priceLookup: boolean;
-  setPriceLookup: (value: boolean) => void;
   scrapeSearch: string;
   setScrapeSearch: (value: string) => void;
   scrapeManufacturer: string[];
@@ -117,12 +114,11 @@ export function RunSettingsCard({
         </Field>
         <Field label="حداکثر محصول" hint="خالی بگذارید تا همه محصولات کشف‌شده بررسی شوند.">
           <Input
-            type="number"
-            min={1}
-            max={500}
+            type="text"
             inputMode="numeric"
+            dir="ltr"
             value={limit}
-            onChange={(event) => setLimit(event.target.value)}
+            onChange={(event) => setLimit(digitsOnly(event.target.value))}
             placeholder="همه محصولات"
             disabled={active}
           />
@@ -194,7 +190,7 @@ export function RunSettingsCard({
             </label>
             <p className="mt-1 pr-6 text-xs leading-5 text-ash">اجرای بعدی سریع‌تر است و درخواست کمتری به سایت سازنده ارسال می‌کند.</p>
           </div>
-          <div className="border-t border-plaster pt-3">
+          <div>
             <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
               <Checkbox
                 checked={downloadImages}
@@ -204,17 +200,6 @@ export function RunSettingsCard({
               دریافت و ذخیره تصاویر محصولات
             </label>
             <p className="mt-1 pr-6 text-xs leading-5 text-ash">تصاویر در پوشه out/images ذخیره می‌شوند و هنگام ورود برای فروشگاه آماده می‌مانند.</p>
-          </div>
-          <div className="border-t border-plaster pt-3">
-            <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
-              <Checkbox
-                checked={priceLookup}
-                onCheckedChange={(checked) => setPriceLookup(checked === true)}
-                disabled={active}
-              />
-              دریافت قیمت از داتیس شاپ
-            </label>
-            <p className="mt-1 pr-6 text-xs leading-5 text-ash">قیمت‌های فعلی از API رسمی داتیس شاپ با مدل محصول تطبیق داده می‌شوند.</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

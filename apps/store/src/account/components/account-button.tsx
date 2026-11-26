@@ -22,7 +22,7 @@ export default function AccountButton({ loggedIn }: { loggedIn: boolean }) {
       <Link
         href="/account"
         aria-label="حساب من"
-        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster"
+        className="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-flame-50 hover:text-flame-700"
       >
         <UserIcon />
       </Link>
@@ -33,7 +33,7 @@ export default function AccountButton({ loggedIn }: { loggedIn: boolean }) {
     <AuthModal
       onClose={() => undefined}
       triggerLabel="ورود / ثبت‌نام"
-      triggerClassName="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-plaster"
+      triggerClassName="flex size-9 items-center justify-center rounded-card text-ink transition-colors hover:bg-flame-50 hover:text-flame-700"
       trigger={<UserIcon />}
     />
   );

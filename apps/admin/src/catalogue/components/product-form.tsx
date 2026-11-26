@@ -8,7 +8,10 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveProduct } from "@/catalogue/lib/product-actions";
 import { idle, type ActionResult } from "@/lib/actions/result";
+import { DeviceUploadButton } from "@/media/components/device-upload-button";
+import { ImageUploadInput } from "@/media/components/image-upload-input";
 import { MediaPickerButton } from "@/media/components/media-picker-button";
+import { digitsOnly } from "@kmodern/contracts";
 import { Button, Card, CardContent, CardHeader, Checkbox, Input, Textarea } from "@kmodern/ui";
 import { Field, Select } from "@/components/panel-ui";
 
@@ -188,8 +191,8 @@ export function ProductForm({ product, categories }: ProductSeed) {
                   <Field label="نام رنگ"><Input value={v.colorName} onChange={(e) => setVariant(i, { colorName: e.target.value })} /></Field>
                   <Field label="کد رنگ"><Input value={v.colorCode ?? ""} dir="ltr" onChange={(e) => setVariant(i, { colorCode: e.target.value })} /></Field>
                   <Field label="SKU" required><Input value={v.sku} dir="ltr" required onChange={(e) => setVariant(i, { sku: e.target.value })} /></Field>
-                  <Field label="قیمت (تومان)" required><Input type="number" value={v.price} dir="ltr" required onChange={(e) => setVariant(i, { price: Number(e.target.value) || 0 })} /></Field>
-                  <Field label="موجودی"><Input type="number" value={v.stock} dir="ltr" onChange={(e) => setVariant(i, { stock: Number(e.target.value) || 0 })} /></Field>
+                  <Field label="قیمت (تومان)" required><Input type="text" inputMode="numeric" value={v.price} dir="ltr" required onChange={(e) => setVariant(i, { price: Number(digitsOnly(e.target.value)) || 0 })} /></Field>
+                  <Field label="موجودی"><Input type="text" inputMode="numeric" value={v.stock} dir="ltr" onChange={(e) => setVariant(i, { stock: Number(digitsOnly(e.target.value)) || 0 })} /></Field>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">
@@ -201,19 +204,30 @@ export function ProductForm({ product, categories }: ProductSeed) {
                   </button>
                 </div>
                 <Field label="تصاویر (هر URL در یک خط)">
-                  <div className="flex items-start gap-2">
-                  <Textarea
-                    value={imagesByVariant[v.uid] ?? v.images.join("\n")}
-                    onChange={(e) => setImagesByVariant({ ...imagesByVariant, [v.uid]: e.target.value })}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                    <Textarea
+                      className="flex-1 min-h-[90px]"
+                      value={imagesByVariant[v.uid] ?? v.images.join("\n")}
+                      onChange={(e) => setImagesByVariant({ ...imagesByVariant, [v.uid]: e.target.value })}
                     />
-                    <MediaPickerButton
-                      onPick={(url) =>
-                        setImagesByVariant((m) => {
-                          const cur = (m[v.uid] ?? v.images.join("\n")).split("\n").map((s) => s.trim()).filter(Boolean);
-                          return { ...m, [v.uid]: [...cur, url].join("\n") };
-                        })
-                      }
-                    />
+                    <div className="flex shrink-0 flex-row gap-2 sm:flex-col">
+                      <DeviceUploadButton
+                        onUpload={(url) =>
+                          setImagesByVariant((m) => {
+                            const cur = (m[v.uid] ?? v.images.join("\n")).split("\n").map((s) => s.trim()).filter(Boolean);
+                            return { ...m, [v.uid]: [...cur, url].join("\n") };
+                          })
+                        }
+                      />
+                      <MediaPickerButton
+                        onPick={(url) =>
+                          setImagesByVariant((m) => {
+                            const cur = (m[v.uid] ?? v.images.join("\n")).split("\n").map((s) => s.trim()).filter(Boolean);
+                            return { ...m, [v.uid]: [...cur, url].join("\n") };
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </Field>
               </div>
@@ -244,7 +258,9 @@ export function ProductForm({ product, categories }: ProductSeed) {
               <Field label="توضیح (حداکثر ۱۶۰)" hint={`${seo.description.length}/۱۶۰`}>
                 <Input value={seo.description} maxLength={160} onChange={(e) => setSeo({ ...seo, description: e.target.value })} />
               </Field>
-              <Field label="تصویر اشتراک‌گذاری (OG)"><Input value={seo.ogImage} dir="ltr" onChange={(e) => setSeo({ ...seo, ogImage: e.target.value })} /></Field>
+              <Field label="تصویر اشتراک‌گذاری (OG)">
+                <ImageUploadInput value={seo.ogImage} onChange={(url) => setSeo({ ...seo, ogImage: url })} />
+              </Field>
               <Field label="URL متعارف"><Input value={seo.canonical} dir="ltr" onChange={(e) => setSeo({ ...seo, canonical: e.target.value })} /></Field>
               <Field label="robots"><Input value={seo.robots} dir="ltr" onChange={(e) => setSeo({ ...seo, robots: e.target.value })} /></Field>
               <div className="flex items-end pb-2"><label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink"><Checkbox checked={seo.noindex} onCheckedChange={(c) => setSeo({ ...seo, noindex: c === true })} />ممنوعیت ایندکس (noindex)</label></div>

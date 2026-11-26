@@ -723,11 +723,12 @@ export function HomeHero({}: HomeHeroProps) {
     ctx.save();
     ctx.scale(dpr, dpr);
 
+    // Always fill background to prevent black margins on resize/aspect-ratio shift
+    ctx.fillStyle = isDark ? "#111111" : "#ffffff";
+    ctx.fillRect(0, 0, vw, vh);
+
     // 1. Draw Wall Pins
     if (p < 0.58) {
-      ctx.fillStyle = isDark ? "#111111" : "#ffffff";
-      ctx.fillRect(0, 0, vw, vh);
-
       const tWall = invLerp(0.0, 0.58, p);
       const tWallIn = easeOutCubic(invLerp(0.0, 0.48, p));
       const wallBaseY = lerp(vh * 0.42, -vh * 0.04, tWallIn);
@@ -771,9 +772,7 @@ export function HomeHero({}: HomeHeroProps) {
       const coverScale = Math.max(cardW / KW, cardH / KH);
       const drawW = KW * coverScale;
       const drawH = KH * coverScale;
-      const panRatio = isMobile
-        ? lerp(-0.44, -0.56, easeInOutCubic(invLerp(0.55, 0.9, p)))
-        : -0.5;
+      const panRatio = -0.5;
       const ox = cardX + cardW * 0.5 + drawW * panRatio;
       const oy = cardTop + (cardH - drawH) * 0.5;
 
@@ -915,15 +914,22 @@ export function HomeHero({}: HomeHeroProps) {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    let resizeTimer = 0;
-    const onResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => {
+    let resizeRaf = 0;
+    const handleResize = () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
         initSprites();
         renderFrame(currentPRef.current, performance.now(), true);
-      }, 120);
+      });
     };
-    window.addEventListener("resize", onResize, { passive: true });
+
+    window.addEventListener("resize", handleResize, { passive: true });
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && stageRef.current) {
+      ro = new ResizeObserver(handleResize);
+      ro.observe(stageRef.current);
+    }
 
     let io: IntersectionObserver | null = null;
     if ("IntersectionObserver" in window && heroRef.current) {
@@ -944,9 +950,10 @@ export function HomeHero({}: HomeHeroProps) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = 0;
       }
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleResize);
+      if (ro) ro.disconnect();
       if (io) io.disconnect();
     };
   }, []);
@@ -973,24 +980,27 @@ export function HomeHero({}: HomeHeroProps) {
           {/* Ambient showroom lighting scrim */}
           <div ref={brandScrimRef} className="brand-reveal-scrim" />
 
-          {/* Box 1 (center): خانه مدرن with mask & blur-to-sharp reveal */}
-          <div className="brand-reveal-center">
-            <Link href="/products" className="brand-reveal-title-link">
-              <div className="brand-title-mask">
-                <h2 ref={brandTitleRef} className="brand-reveal-title">
-                  خانه مدرن
-                </h2>
-              </div>
-            </Link>
-          </div>
+          {/* Coordinated Brand Content: Never overlaps across any zoom/viewport */}
+          <div className="brand-reveal-content">
+            {/* Box 1 (center): خانه مدرن with mask & blur-to-sharp reveal */}
+            <div className="brand-reveal-center">
+              <Link href="/products" className="brand-reveal-title-link">
+                <div className="brand-title-mask">
+                  <h2 ref={brandTitleRef} className="brand-reveal-title">
+                    خانه مدرن
+                  </h2>
+                </div>
+              </Link>
+            </div>
 
-          {/* Box 2 (bottom): هود · سینک · شیرآلات · فر · اجاق with frosted badge */}
-          <div className="brand-reveal-bottom">
-            <Link href="/products" className="brand-reveal-sub-link">
-              <div ref={brandSubRef} className="brand-sub-badge">
-                <p className="brand-reveal-subtitle">هود · سینک · شیرآلات · فر · اجاق</p>
-              </div>
-            </Link>
+            {/* Box 2 (bottom): هود · سینک · شیرآلات · فر · اجاق with frosted badge */}
+            <div className="brand-reveal-bottom">
+              <Link href="/products" className="brand-reveal-sub-link">
+                <div ref={brandSubRef} className="brand-sub-badge">
+                  <p className="brand-reveal-subtitle">هود · سینک · شیرآلات · فر توکار · اجاق گاز</p>
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

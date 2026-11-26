@@ -27,6 +27,7 @@ const DEFAULTS: Record<string, unknown> = {
   [settingKeys.paymentC2cCardNumber]: "",
   [settingKeys.paymentC2cCardHolder]: "",
   [settingKeys.paymentC2cBankName]: "",
+  [settingKeys.paymentC2cIban]: "",
   [columnKeyFor(LOW_STOCK_FIELD)]: 3,
   [settingKeys.checkoutOnlineReserveMinutes]: 30,
   [settingKeys.checkoutC2cReserveHours]: 48,

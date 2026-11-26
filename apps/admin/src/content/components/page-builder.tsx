@@ -7,11 +7,12 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ComponentType } from "@kmodern/contracts";
+import { sanitizeDecimalInput, type ComponentType } from "@kmodern/contracts";
 import { savePage } from "@/content/lib/page-actions";
 import { type ActionResult } from "@/lib/actions/result";
 import { Button, Card, CardContent, CardHeader, Checkbox, Input, Textarea } from "@kmodern/ui";
 import { Field, Select } from "@/components/panel-ui";
+import { ImageUploadInput } from "@/media/components/image-upload-input";
 import { MediaPickerButton } from "@/media/components/media-picker-button";
 
 const BLOCK_TYPES: ComponentType[] = [
@@ -371,18 +372,15 @@ function BlockCard({
               <Field key={f.key} label={f.label} className={f.kind === "json" || f.kind === "textarea" ? "col-span-2" : undefined}>
                 {f.kind === "text" && <Input value={(props[f.key] as string) ?? ""} dir="auto" onChange={(e) => setField(f.key, e.target.value)} />}
                 {f.kind === "media" && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={((props[f.key] as { src?: string } | undefined)?.src) ?? ""}
-                      dir="ltr"
-                      onChange={(e) => setField(f.key, { ...(props[f.key] as object), src: e.target.value })}
-                    />
-                    <MediaPickerButton
-                      onPick={(url) => setField(f.key, { ...(props[f.key] as object), src: url })}
-                    />
-                  </div>
+                  <ImageUploadInput
+                    value={((props[f.key] as { src?: string } | undefined)?.src) ?? (typeof props[f.key] === "string" ? (props[f.key] as string) : "")}
+                    onChange={(url) => {
+                      const prev = typeof props[f.key] === "object" && props[f.key] !== null ? (props[f.key] as object) : {};
+                      setField(f.key, { ...prev, src: url });
+                    }}
+                  />
                 )}
-                {f.kind === "number" && <Input type="number" value={(props[f.key] as number) ?? 0} dir="ltr" onChange={(e) => setField(f.key, Number(e.target.value) || 0)} />}
+                {f.kind === "number" && <Input type="text" inputMode="decimal" value={(props[f.key] as number) ?? 0} dir="ltr" onChange={(e) => setField(f.key, Number(sanitizeDecimalInput(e.target.value)) || 0)} />}
                 {f.kind === "textarea" && <Textarea value={(props[f.key] as string) ?? ""} onChange={(e) => setField(f.key, e.target.value)} />}
                 {f.kind === "checkbox" && (
                   <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink">

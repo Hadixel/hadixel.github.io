@@ -75,17 +75,12 @@ export function RunStatusCard({
               <Metric label="ادغام‌شده" value={job.merged ?? 0} />
               <Metric label="خطای صفحه" value={job.errors ?? 0} danger={(job.errors ?? 0) > 0} />
               <Metric label="فیلترشده" value={job.filteredOut ?? 0} />
-              <Metric label="قیمت داتیس‌شاپ" value={job.priceMatched ?? 0} />
-               <Metric label="قیمت پیدا نشد" value={job.priceUnmatched ?? 0} danger={(job.priceUnmatched ?? 0) > 0} />
-               <Metric label="تصویر دریافتی" value={job.imagesDownloaded ?? 0} />
+              <Metric label="تصویر دریافتی" value={job.imagesDownloaded ?? 0} />
               <Metric label="خطای تصویر" value={job.imageErrors ?? 0} danger={(job.imageErrors ?? 0) > 0} />
             </dl>
 
             {job.error ? (
               <p role="alert" className="notice-error-strong">{job.error}</p>
-            ) : null}
-            {job.priceError ? (
-              <p className="mt-2 notice-warning">دریافت قیمت داتیس شاپ کامل نشد: {job.priceError}</p>
             ) : null}
 
             <div>

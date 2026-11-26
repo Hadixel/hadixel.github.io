@@ -1,11 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { getSettingOrDefault } from "@/lib/settings";
 import { settingKeys } from "@kmodern/contracts/setting-keys";
 import { CartProvider } from "@/cart/components/cart-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const storeName = await getSettingOrDefault<string>(settingKeys.storeName, "خانه مدرن");
@@ -30,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
         */}
         <Providers>
+          <ScrollToTop />
           <CartProvider>
             <SiteHeader />
             <main className="flex-1">{children}</main>

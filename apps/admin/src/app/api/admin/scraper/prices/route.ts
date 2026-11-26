@@ -28,7 +28,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = new Set([".xlsx", ".xls", ".csv"]);
+const ALLOWED_EXTENSIONS = new Set([".xlsx", ".xls", ".csv", ".pdf"]);
 
 function errorResponse(message: string, status: number): NextResponse {
   return NextResponse.json({ error: message }, { status });

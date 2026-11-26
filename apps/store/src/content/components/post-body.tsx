@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ShimmerImage } from "@/components/shimmer-image";
 
 /*
  * A post's body, as the gateway hands it over.
@@ -61,7 +62,7 @@ function NodeRenderer({ node }: { node: Node }) {
       if (name === "") return null;
       return (
         <Link href={href} className="my-8 flex items-center gap-4 rounded-card bg-plaster/70 p-4 transition-colors hover:bg-plaster">
-          {image && <div className="relative size-16 shrink-0 overflow-hidden rounded-card bg-canvas"><Image src={image} alt={name} fill sizes="64px" className="object-contain p-1 mix-blend-multiply" /></div>}
+          {image && <div className="relative size-16 shrink-0 overflow-hidden rounded-card bg-canvas"><ShimmerImage src={image} alt={name} fill sizes="64px" className="object-contain p-1 mix-blend-multiply" /></div>}
           <div className="min-w-0"><div className="font-bold text-ink">{name}</div><div className="mt-1 text-sm text-flame-800">مشاهده محصول</div></div>
         </Link>
       );

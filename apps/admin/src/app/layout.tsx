@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "کمدرن | پنل مدیریت",
-  description: "پنل مدیریت فروشگاه کمدرن",
+  title: "خانه مدرن | پنل مدیریت",
+  description: "پنل مدیریت فروشگاه خانه مدرن",
 };
 
 export default function RootLayout({

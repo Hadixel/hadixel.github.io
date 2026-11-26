@@ -7,6 +7,7 @@ import { fetchHtml, type FetchOptions } from "./http";
 import { normalizeFa } from "./refine";
 import type { RawSpec, ScrapeRecord } from "./types";
 import type { SourceAdapter, SourceTaxonomy } from "./source-types";
+import { collectImageUrls } from "./product-images";
 
 const SCHUFFEL_ORIGIN = "https://schuffel.net";
 const STORE_PRODUCTS_URL = `${SCHUFFEL_ORIGIN}/wp-json/wc/store/v1/products`;
@@ -226,12 +227,15 @@ function makeHtmlRecord(url: string, html: string): ScrapeRecord {
   const description = mergeUnique(longParts, shortParts).join("\n");
   const specs = shortData.specs.length ? shortData.specs : longData.specs;
   const features = mergeUnique(longData.features, shortData.features);
-  const images: string[] = [];
-  $(".woocommerce-product-gallery__image img, .woocommerce-product-gallery img").each((_i, element) => {
-    const node = $(element);
-    const raw = node.attr("data-large_image") ?? node.attr("data-src") ?? node.attr("src");
-    const image = productUrl(raw);
-    if (image && !/woocommerce-placeholder/i.test(image) && !images.includes(image)) images.push(image);
+  // Every image in the WooCommerce gallery, and nothing from the related-products rail that
+  // shares the page. WooCommerce shows a scaled `src` and keeps the full-size file in
+  // `data-large_image`, so that attribute is read first — one file per slide, not two.
+  const images = collectImageUrls($, {
+    origin: SCHUFFEL_ORIGIN,
+    pathPrefix: "/wp-content/uploads/",
+    selector: ".woocommerce-product-gallery__image img, .woocommerce-product-gallery img",
+    urlAttributes: ["data-large_image", "data-src", "data-image", "src", "srcset"],
+    reject: (url) => /woocommerce-placeholder/i.test(url),
   });
   const priceText = $(".summary .price .woocommerce-Price-amount, .summary .price .amount").first().text();
   const colors = colorTokens(name, description, ...features, ...specs.map((spec) => spec.value));

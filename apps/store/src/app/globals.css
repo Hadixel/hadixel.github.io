@@ -8,17 +8,31 @@
 
 @layer base {
   :root {
-    --store-header-offset: 9.5rem;
+    --store-header-offset: 141px;
   }
 
   @media (max-width: 1023px) {
     :root {
-      --store-header-offset: 6.25rem;
+      --store-header-offset: 97px;
     }
   }
 
   html {
+    overflow-x: clip;
     scrollbar-gutter: stable;
+    font-size: 17px;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    html {
+      font-size: 18.5px;
+    }
   }
 
   body {
@@ -59,6 +73,30 @@
   }
 }
 
+/* Image holder shimmer sweep */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.shimmer-placeholder {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--color-plaster, #ecedee);
+  pointer-events: none;
+}
+
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-sweep {
+    animation: none;
+  }
+}
+
 /* ============ Built-in Kitchens Hero Showcase ============ */
 :root {
   --hero-bg: #ffffff;
@@ -90,19 +128,35 @@
 
 .home-hero {
   position: relative;
-  height: calc(100svh - var(--store-header-offset, 9.5rem) + 15svh);
+  width: 100%;
+  /* Zoom-adaptive height: scales with rem for natural browser zoom magnification */
+  min-height: 32rem;
+  height: clamp(32rem, calc(100svh - var(--store-header-offset, 141px)), 48rem);
+  max-height: 50rem;
   background: var(--hero-bg);
   color: var(--hero-ink);
   font-family: "Figtree", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: clip;
 }
 
+@media (max-width: 1023px) {
+  .home-hero {
+    min-height: 26rem;
+    height: clamp(26rem, 62svh, 36rem);
+  }
+}
+
+@media (max-width: 639px) {
+  .home-hero {
+    min-height: 19rem;
+    height: clamp(19rem, 42svh, 21.25rem);
+  }
+}
+
 .home-hero .stage {
-  position: sticky;
-  top: var(--store-header-offset, 9.5rem);
+  position: relative;
   width: 100%;
-  height: calc(100vh - var(--store-header-offset, 9.5rem));
-  height: calc(100svh - var(--store-header-offset, 9.5rem));
+  height: 100%;
   overflow: hidden;
   background: var(--hero-bg);
   contain: strict;
@@ -143,19 +197,31 @@
   will-change: opacity;
 }
 
+/* Coordinated brand content column: guarantees zero collision across any zoom / viewport */
+.home-hero .brand-reveal-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(12px, 2.5vh, 28px) clamp(16px, 3vw, 36px);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* Center box: خانه مدرن */
 .home-hero .brand-reveal-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
   text-align: center;
   pointer-events: none;
-  z-index: 2;
+  /* Centered right in the visual focal zone (aligning with user's Box 1) */
+  transform: translateY(6%);
 }
 
 .home-hero .brand-reveal-title-link {
@@ -175,24 +241,27 @@
 /* Mask container hides title before baseline entrance */
 .home-hero .brand-title-mask {
   overflow: hidden;
-  padding: 14px 30px;
+  padding: clamp(6px, 1.2vh, 12px) clamp(12px, 2.5vw, 28px);
   display: inline-block;
+  max-width: 96vw;
 }
 
 .home-hero .brand-reveal-title {
   margin: 0;
   font-family: "Farhang", "Yekan Bakh", var(--font-display), system-ui, sans-serif;
-  font-size: clamp(5rem, 16vw, 12.5rem);
+  /* Majestic, bold scale filling the center red box */
+  font-size: clamp(3.8rem, 7.5vw + 1rem, 8.5rem);
   font-weight: 900;
   line-height: 1.05;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: #ffffff;
-  /* NO harsh black shadow! Just soft luminous ambient depth */
-  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.35);
+  /* Soft luminous ambient depth — crisp legibility without harsh black shadow */
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.25);
   white-space: nowrap;
   display: inline-block;
   position: relative;
   will-change: transform, opacity, filter;
+  text-align: center;
 }
 
 /* Subtle luxury shimmer sweep */
@@ -221,19 +290,14 @@
 
 /* Bottom box: هود · سینک · شیرآلات · فر · اجاق */
 .home-hero .brand-reveal-bottom {
-  position: absolute;
-  top: 86.5%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
   text-align: center;
   pointer-events: none;
-  z-index: 2;
-  overflow: hidden;
-  padding: 8px 30px;
+  margin-bottom: clamp(1.2rem, 3.5vh, 2.4rem);
 }
 
 .home-hero .brand-reveal-sub-link {
@@ -255,44 +319,59 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 26px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  padding: clamp(0.5rem, 1vh, 0.75rem) clamp(1.2rem, 2vw, 2rem);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
   will-change: transform, opacity;
+  max-width: 92vw;
 }
 
 .home-hero .brand-reveal-subtitle {
   margin: 0;
   font-family: "Yekan Bakh", var(--font-sans), system-ui, sans-serif;
-  font-size: clamp(1.15rem, 3.4vw, 2.3rem);
+  font-size: clamp(1rem, 1.2vw + 0.4rem, 1.4rem);
   font-weight: 800;
   line-height: 1.3;
   color: #ffffff;
-  letter-spacing: 0.05em;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.03em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   white-space: nowrap;
 }
 
-@media (max-width: 819px) {
-  .home-hero .brand-reveal-center {
-    top: 50%;
-  }
+@media (max-width: 1023px) {
   .home-hero .brand-reveal-title {
-    font-size: clamp(3.2rem, 15.5vw, 6rem);
-  }
-  .home-hero .brand-reveal-bottom {
-    top: 86.5%;
-  }
-  .home-hero .brand-sub-badge {
-    padding: 6px 18px;
+    font-size: clamp(2.8rem, 8vw, 4.8rem);
   }
   .home-hero .brand-reveal-subtitle {
-    font-size: clamp(0.95rem, 4vw, 1.4rem);
-    letter-spacing: 0.02em;
+    font-size: clamp(0.9rem, 1.5vw + 0.3rem, 1.2rem);
+    letter-spacing: 0.01em;
+  }
+  .home-hero .brand-sub-badge {
+    padding: 0.55rem 1.4rem;
+  }
+  .home-hero .brand-reveal-bottom {
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .home-hero .brand-reveal-title {
+    font-size: clamp(2.1rem, 9.5vw, 3.2rem);
+  }
+  .home-hero .brand-reveal-subtitle {
+    font-size: clamp(0.75rem, 3.1vw, 0.92rem);
+    letter-spacing: 0;
+  }
+  .home-hero .brand-sub-badge {
+    padding: 0.4rem 0.95rem;
+    gap: 8px;
+  }
+  .home-hero .brand-reveal-bottom {
+    margin-bottom: 0.5rem;
   }
 }
 
@@ -310,7 +389,10 @@
     display: flex;
     gap: 0.75rem;
     overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x pan-y;
     overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     padding-block-end: 0.25rem;
@@ -334,13 +416,11 @@
     scroll-snap-align: start;
   }
 
-  /* Product-like cards: roughly two per viewport with a clear peek at the
-     edge, which is what makes the rail read as "there is more" rather than
-     as a card that happens to be cut off. 50% (not less) is what keeps a
-     narrow card's proportion near its desktop stance — halve the width
-     without widening the card and the text block makes it tower. */
+  /* Product-like cards: ~58% of the mobile viewport gives each card room for
+     two-line titles and full Persian prices while showing a clear peek of
+     the next card on the edge and keeping 4:3 image stages balanced. */
   .section-rail-item {
-    width: min(44%, 21rem);
+    width: min(58%, 21rem);
   }
 
   /* Small plates — badges, stats — where a wider card wastes the row. Their
@@ -350,10 +430,10 @@
     width: min(56%, 13rem);
   }
 
-  /* Deal cards: same logic as `.section-rail-item` — half the panel so the
-     card keeps its desktop proportion instead of growing tall. */
+  /* Deal cards: same breathing room as `.section-rail-item` inside the
+     padded ink event panel so titles and prices stay unclipped. */
   .section-rail-item-deal {
-    width: min(48%, 21rem);
+    width: min(60%, 21rem);
   }
 
   /* Category tiles: a square plate plus a one-word label, so a wider card
@@ -363,9 +443,9 @@
   }
 
   /* Wide snap cards: editorial panels and quote cards — nearly the full
-     width. */
+     width with a clear peek of the next card. */
   .section-rail-item-wide {
-    width: min(88%, 30rem);
+    width: min(85%, 30rem);
   }
 
   /* A lone banner card has nothing to peek at, so it fills the rail instead
@@ -716,5 +796,27 @@
 @media (max-width: 1023px) {
   body:has(.product-mobile-bar) {
     padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Lightbox entrance and image crossfade */
+@keyframes lightboxFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lightbox-animate-in {
+  animation: lightboxFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-animate-in {
+    animation: none;
   }
 }

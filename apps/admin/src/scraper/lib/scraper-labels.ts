@@ -37,6 +37,9 @@ export const ROOT_LABELS: Record<string, string> = {
   oven: "فر",
   stove: "اجاق گاز",
   "air-fryer": "سرخ‌کن",
+  vacuum: "جاروبرقی",
+  microwave: "مایکروویو",
+  kettle: "کتری و سماور",
 };
 
 export const SUB_LABELS: Record<string, string> = {
@@ -46,18 +49,23 @@ export const SUB_LABELS: Record<string, string> = {
   concealed: "مخفی",
   wall: "دیواری",
   steel: "استیل",
-  granite: "گرانیتی",
+  granite: "گرانیت",
   glass: "شیشه‌ای",
   freestanding: "رومیزی",
   "dual-basket": "دوسبد",
+  corded: "سیمی",
+  electric: "برقی",
 };
 
 export const SCRAPE_SUB_LABELS: Record<string, string[]> = {
   sink: ["steel", "granite"],
   hood: ["chimney", "concealed", "wall", "glass"],
-  oven: ["built-in", "steel", "glass"],
+  oven: ["built-in", "freestanding"],
   stove: ["built-in", "freestanding"],
   "air-fryer": ["dual-basket"],
+  vacuum: ["corded"],
+  microwave: ["built-in"],
+  kettle: ["electric"],
 };
 
 export const COLOR_LABELS: Record<string, string> = {

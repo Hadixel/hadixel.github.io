@@ -244,6 +244,33 @@ describe("a shopper reads the product list", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ available: false, price: 0, maxPrice: 0, variantCount: 0 });
   });
+
+  it("puts the black variant first in card dots and image even when another colour is cheaper", async () => {
+    const product = await makeProduct({ name: "هود", price: 100_000 });
+    await db().variant.updateMany({
+      where: { productId: product.id },
+      data: { colorCode: "#FFFFFF", images: ["/white.jpg"] },
+    });
+    await db().variant.create({
+      data: {
+        productId: product.id,
+        colorName: "مشکی",
+        colorCode: "#1C1917",
+        sku: "sku-hood-black",
+        price: 250_000,
+        stock: 3,
+        images: ["/black.jpg"],
+      },
+    });
+
+    const row = (await controller().products(productQuery({ search: "هود" })))[0];
+
+    expect(row?.image).toBe("/black.jpg");
+    expect(row?.dots.map((d) => d.colorName)).toEqual(["مشکی", "سفید"]);
+    // Price remains the cheapest sellable variant's price.
+    expect(row?.price).toBe(100_000);
+    expect(row?.maxPrice).toBe(250_000);
+  });
 });
 
 describe("a shopper reads one product", () => {
@@ -305,6 +332,47 @@ describe("a shopper reads one product", () => {
     const error = await refusalOf(controller().product(slugParam(draft.slug)));
 
     expect(error).toBeInstanceOf(CatalogueNotFoundException);
+  });
+
+  it("puts the black variant first in product detail variants, preferring an available black one", async () => {
+    const product = await makeProduct({ name: "سینک", price: 100_000 });
+    await db().variant.updateMany({
+      where: { productId: product.id },
+      data: { colorName: "استیل", colorCode: "#A8AEB7", images: ["/steel.jpg"] },
+    });
+    await db().variant.create({
+      data: {
+        productId: product.id,
+        colorName: "مشکی",
+        colorCode: "#1C1917",
+        sku: "sku-sink-black-oos",
+        price: 150_000,
+        stock: 0,
+        images: ["/black-oos.jpg"],
+      },
+    });
+    await db().variant.create({
+      data: {
+        productId: product.id,
+        colorName: "مشکی مات",
+        colorCode: "#111111",
+        sku: "sku-sink-black-ok",
+        price: 200_000,
+        stock: 2,
+        images: ["/black-ok.jpg"],
+      },
+    });
+
+    const detail = await controller().product(slugParam(product.slug));
+
+    expect(detail.variants.map((v) => v.sku)).toEqual([
+      "sku-sink-black-ok",
+      "sku-sink-black-oos",
+      detail.variants[2]?.sku,
+    ]);
+    expect(detail.variants[0]).toMatchObject({ colorName: "مشکی مات", available: true });
+    expect(detail.variants[1]).toMatchObject({ colorName: "مشکی", available: false });
+    expect(detail.variants[2]).toMatchObject({ colorName: "استیل", available: true });
   });
 });
 

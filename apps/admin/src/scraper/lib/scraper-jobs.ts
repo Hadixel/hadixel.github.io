@@ -1,10 +1,15 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import {
   applyPriceList as applyPriceListFile,
   type ApplyPriceListOptions,
+  type DateesPriceFetchReport,
+  type FetchOptions,
   type PriceListReport,
+  type UniversalScrapeResult,
+  fetchDateesShopPrices,
+  extractFromUrl,
   runPipeline,
   SOURCES,
   extractModelForSource,
@@ -83,6 +88,11 @@ export function scraperOutputDir(): string {
   return join(scraperPackageDir(), "out");
 }
 
+/** The scrape's HTML cache, shared with the price step so a second fetch does not re-ask the shop. */
+export function scraperCacheDir(): string {
+  return join(scraperPackageDir(), ".scrape-cache");
+}
+
 function emptySnapshot(): ScraperJobSnapshot {
   return {
     id: "",
@@ -92,10 +102,6 @@ function emptySnapshot(): ScraperJobSnapshot {
     limit: null,
     cache: true,
     downloadImages: true,
-    priceLookup: true,
-    priceMatched: 0,
-    priceUnmatched: 0,
-    priceError: null,
     filters: {},
     startedAt: null,
     finishedAt: null,
@@ -139,10 +145,6 @@ class ScraperJobManager {
       ...emptySnapshot(),
       ...this.current.snapshot,
       filters: this.current.snapshot.filters ?? {},
-      priceLookup: this.current.snapshot.priceLookup ?? true,
-      priceMatched: this.current.snapshot.priceMatched ?? 0,
-      priceUnmatched: this.current.snapshot.priceUnmatched ?? 0,
-      priceError: this.current.snapshot.priceError ?? null,
       activity: [...(this.current.snapshot.activity ?? [])],
     };
   }
@@ -190,7 +192,6 @@ class ScraperJobManager {
     }
 
     const downloadImages = options.downloadImages ?? true;
-    const priceLookup = options.priceLookup ?? true;
     const filters: ScrapeFilters = options.filters ?? {};
     const job: InternalJob = {
       controller: new AbortController(),
@@ -206,7 +207,6 @@ class ScraperJobManager {
         limit: options.limit ?? null,
         cache: options.cache,
         downloadImages,
-        priceLookup,
         filters,
         startedAt: new Date().toISOString(),
         activity: [
@@ -217,6 +217,9 @@ class ScraperJobManager {
     };
     this.current = job;
 
+    // Content only, by construction: no price option reaches the pipeline, so a run cannot
+    // quietly fetch a price from a second site while it reads manufacturer pages. Prices are the
+    // operator's second step — `fetchDateesPrices` below, for the products they selected.
     void runPipeline({
       sources: options.source === "all" ? undefined : [options.source],
       limit: options.limit,
@@ -225,10 +228,9 @@ class ScraperJobManager {
       outDir: join(scraperPackageDir(), "out"),
       downloadImages,
       imageDir: join(scraperPackageDir(), "out", "images"),
-      priceLookup,
       filters,
       fetchOpts: {
-        cacheDir: options.cache ? join(scraperPackageDir(), ".scrape-cache") : undefined,
+        cacheDir: options.cache ? scraperCacheDir() : undefined,
       },
       onProgress: (event) => this.onProgress(job, event),
     })
@@ -300,6 +302,90 @@ class ScraperJobManager {
         expectedRevision: revision,
         outDir: options.outDir ?? scraperOutputDir(),
       });
+    } finally {
+      this.endImport();
+    }
+  }
+
+  /**
+   * The second step: fetch current Datees Shop prices for the products an operator selected.
+   *
+   * It shares the price list's guards because it shares its writing surface — the snapshot file is
+   * the same one an import and a price list both read, so it takes the same in-progress lock and
+   * the same revision check. The revision is passed through as the caller computed it: the panel
+   * asked for it, the route verified it against the file it read, and the fetch refuses a
+   * snapshot that changed in between rather than repricing a catalogue nobody reviewed.
+   */
+  async fetchDateesPrices(
+    options: { slugs: string[]; expectedRevision?: string } & Pick<FetchOptions, "cacheDir">,
+  ): Promise<DateesPriceFetchReport> {
+    if (!this.beginImport()) throw new Error("IMPORT_IN_PROGRESS");
+    try {
+      return await fetchDateesShopPrices({
+        outDir: scraperOutputDir(),
+        slugs: options.slugs,
+        expectedRevision: options.expectedRevision,
+        fetchOpts: { cacheDir: options.cacheDir ?? scraperCacheDir() },
+      });
+    } finally {
+      this.endImport();
+    }
+  }
+
+  async runUniversalScrape(
+    url: string,
+    options: { brand?: string; limit?: number; cacheDir?: string } = {},
+  ): Promise<UniversalScrapeResult> {
+    if (!this.beginImport()) throw new Error("IMPORT_IN_PROGRESS");
+    try {
+      const result = await extractFromUrl(url, {
+        brand: options.brand,
+        limit: options.limit,
+        fetchOpts: { cacheDir: options.cacheDir ?? scraperCacheDir() },
+      });
+
+      if (result.products.length > 0) {
+        const outDir = scraperOutputDir();
+        await mkdir(outDir, { recursive: true });
+        const catalogPath = join(outDir, "catalog.fragment.json");
+
+        let existing: any[] = [];
+        try {
+          const currentContent = await readFile(catalogPath, "utf8");
+          const parsed = JSON.parse(currentContent);
+          if (Array.isArray(parsed)) existing = parsed;
+        } catch {
+          existing = [];
+        }
+
+        const bySlug = new Map<string, any>();
+        for (const item of existing) {
+          if (item?.slug) bySlug.set(item.slug, item);
+        }
+
+        for (const p of result.products) {
+          const item = {
+            slug: p.slug,
+            name: p.name,
+            brand: p.brand,
+            category: p.categorySlug,
+            subCategory: p.subCategorySlug,
+            colors: p.colors,
+            price: p.price,
+            image: p.imageUrls,
+            sourceImages: p.imageUrls,
+            description: p.description,
+            features: p.features,
+            specs: p.specs,
+          };
+          bySlug.set(p.slug, item);
+        }
+
+        const merged = Array.from(bySlug.values());
+        await writeFile(catalogPath, JSON.stringify(merged, null, 2), "utf8");
+      }
+
+      return result;
     } finally {
       this.endImport();
     }
@@ -475,16 +561,13 @@ class ScraperJobManager {
     job.snapshot.conflicts = result.report.conflicts.length;
     job.snapshot.errors = result.errors.length;
     job.snapshot.filteredOut = result.filteredOut;
-    job.snapshot.priceMatched = result.priceLookup?.matched ?? 0;
-    job.snapshot.priceUnmatched = result.priceLookup?.unmatched ?? 0;
-    job.snapshot.priceError = result.priceLookup?.error ?? null;
     job.snapshot.imageErrors = result.imageErrors.length;
     job.snapshot.imagesDownloaded = result.imagesDownloaded;
     job.snapshot.imagesTotal = result.imagesTotal;
     job.snapshot.outputDir = result.outDir;
     this.addActivity(
       job.snapshot,
-      `Completed with ${result.errors.length} page error(s), ${result.filteredOut} filtered record(s), ${result.priceLookup?.matched ?? 0} Datees Shop price match(es), ${result.priceListReport?.matchedCatalog ?? 0} file price match(es), and ${result.imageErrors.length} image error(s).`,
+      `Completed with ${result.errors.length} page error(s), ${result.filteredOut} filtered record(s), ${result.priceListReport?.matchedCatalog ?? 0} file price match(es), and ${result.imageErrors.length} image error(s).`,
     );
   }
 
@@ -542,6 +625,7 @@ export const scraperJobs =
   typeof existingJobs.getLive === "function" &&
   typeof existingJobs.getCatalogSnapshot === "function" &&
   typeof existingJobs.applyPriceList === "function" &&
+  typeof existingJobs.fetchDateesPrices === "function" &&
   typeof existingJobs.beginImport === "function" &&
   typeof existingJobs.endImport === "function"
     ? existingJobs

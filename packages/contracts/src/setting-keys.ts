@@ -15,6 +15,8 @@ export const settingKeys = {
   paymentC2cCardNumber: "payment.c2cCardNumber",
   paymentC2cCardHolder: "payment.c2cCardHolder",
   paymentC2cBankName: "payment.c2cBankName",
+  paymentC2cIban: "payment.c2cIban",
+  paymentC2cSheba: "payment.c2cSheba",
   inventoryLowStockThreshold: "inventory.lowStockThreshold",
   checkoutOnlineReserveMinutes: "checkout.onlineReserveMinutes",
   checkoutC2cReserveHours: "checkout.c2cReserveHours",

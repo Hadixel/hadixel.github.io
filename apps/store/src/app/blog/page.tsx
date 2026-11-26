@@ -4,6 +4,7 @@ import { formatJalali } from "@kmodern/contracts";
 import { getPublishedPosts } from "@/lib/queries";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { ShimmerImage, AppliancePlaceholder } from "@/components/shimmer-image";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,12 @@ export default async function BlogPage() {
 
       <Link href={`/blog/${featured.slug}`} className="group grid overflow-hidden rounded-card bg-plaster transition-colors hover:bg-fog/60 lg:grid-cols-[1.15fr_.85fr]">
         <div className="relative min-h-72 overflow-hidden bg-canvas lg:min-h-[420px]">
-          {featured.coverImage && <Image src={featured.coverImage} alt={featured.title} fill sizes="(max-width:1024px) 100vw, 58vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transform-none" />}
-          {!featured.coverImage && <div className="flex h-full items-center justify-center text-sm text-slate-line">بدون تصویر</div>}
+          {featured.coverImage && <ShimmerImage src={featured.coverImage} alt={featured.title} fill priority sizes="(max-width:1024px) 100vw, 58vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.02] motion-reduce:transform-none" />}
+          {!featured.coverImage && (
+            <div className="flex h-full w-full items-center justify-center">
+              <AppliancePlaceholder className="size-16 text-ash/40" />
+            </div>
+          )}
         </div>
         <div className="flex flex-col justify-center p-7 sm:p-10">
           <div className="text-xs text-ash">{featured.publishAt ? formatJalali(new Date(featured.publishAt)) : "مقاله تازه"}</div>
@@ -40,7 +45,7 @@ export default async function BlogPage() {
           {rest.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group flex h-full flex-col overflow-hidden rounded-card bg-plaster/70 transition-colors hover:bg-plaster">
               <div className="relative aspect-[16/10] overflow-hidden bg-canvas">
-                {post.coverImage && <Image src={post.coverImage} alt={post.title} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transform-none" />}
+                {post.coverImage && <ShimmerImage src={post.coverImage} alt={post.title} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transform-none" />}
               </div>
               <div className="flex flex-1 flex-col p-5">
                 <div className="text-xs text-ash">{post.publishAt ? formatJalali(new Date(post.publishAt)) : ""}</div>

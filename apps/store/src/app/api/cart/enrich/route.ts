@@ -16,6 +16,7 @@ export interface EnrichedLine {
   variantId: string;
   productId: string;
   slug: string;
+  productSlug?: string;
   productName: string;
   colorName: string | null;
   sku: string | null;
@@ -25,6 +26,9 @@ export interface EnrichedLine {
   image: string | null;
   available: boolean;
   maxAddable: number;
+  allowBackorder?: boolean;
+  stock?: number;
+  reserved?: number;
 }
 
 export interface EnrichedCart {
@@ -35,12 +39,39 @@ export interface EnrichedCart {
 }
 
 export async function POST(req: NextRequest) {
-  let items: { variantId: string; qty: number }[];
+  let rawBody: unknown;
   try {
-    items = (await req.json()) as { variantId: string; qty: number }[];
-    if (!Array.isArray(items)) throw new Error("not an array");
+    rawBody = await req.json();
   } catch {
     return NextResponse.json({ error: "سبد خرید نامعتبر است" }, { status: 400 });
+  }
+
+  const rawList = Array.isArray(rawBody)
+    ? rawBody
+    : (rawBody && typeof rawBody === "object" && Array.isArray((rawBody as { items?: unknown }).items))
+      ? (rawBody as { items: unknown[] }).items
+      : null;
+
+  if (!rawList) {
+    return NextResponse.json({ error: "سبد خرید نامعتبر است" }, { status: 400 });
+  }
+
+  const items: { variantId: string; qty: number }[] = rawList
+    .filter(
+      (item): item is { variantId: string; qty?: unknown } =>
+        Boolean(item && typeof item === "object" && typeof (item as { variantId?: unknown }).variantId === "string" && (item as { variantId: string }).variantId.trim().length > 0)
+    )
+    .map((item) => ({
+      variantId: item.variantId.trim(),
+      qty: typeof item.qty === "number" && Number.isFinite(item.qty) && item.qty >= 1 ? Math.min(99, Math.floor(item.qty)) : 1,
+    }));
+
+  if (items.length === 0) {
+    return NextResponse.json({
+      lines: [],
+      subtotal: 0,
+      rejectedVariantIds: [],
+    });
   }
 
   try {

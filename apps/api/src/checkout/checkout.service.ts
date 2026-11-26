@@ -301,22 +301,27 @@ export class CheckoutService {
       // Capped at what can actually be added, so a cart holding ten of a line with three free cannot
       // be drawn as though ten were orderable.
       const maxAddable = variant.allowBackorder ? 99 : Math.min(free, 99);
-      const lineTotal = variant.price * item.qty;
+      const cleanQty = Number.isFinite(item.qty) && item.qty >= 1 ? Math.min(99, Math.floor(item.qty)) : 1;
+      const lineTotal = variant.price * cleanQty;
       subtotal += lineTotal;
-      totalCount += item.qty;
+      totalCount += cleanQty;
       lines.push({
         variantId: variant.id,
         productId: variant.product.id,
         slug: variant.product.slug,
+        productSlug: variant.product.slug,
         productName: variant.product.name,
         colorName: variant.colorName,
         sku: variant.sku,
         price: variant.price,
-        qty: item.qty,
+        qty: cleanQty,
         lineTotal,
         image: variant.images[0] ?? null,
         available,
         maxAddable,
+        allowBackorder: variant.allowBackorder,
+        stock: variant.stock,
+        reserved: variant.reserved,
       });
     }
 

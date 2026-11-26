@@ -7,6 +7,7 @@ import { Badge } from "@heroui/react";
 import { formatToman } from "@kmodern/contracts/format";
 import { Badge as FlameBadge, ColorDotSwatches, Price, cn } from "@kmodern/ui";
 import type { DotVariant } from "@kmodern/ui";
+import { ShimmerImage, AppliancePlaceholder } from "@/components/shimmer-image";
 
 const badgeProps = {
   flame: { color: "accent", variant: "primary" },
@@ -25,13 +26,15 @@ export function ShowcaseCard({
   badge,
   discount,
   className,
+  priority = false,
+  quality = 65,
   /* Safe upper bound, deliberately not tuned: the layouts that know their own
      mobile card width pass `imageSizes` explicitly. What falls through to this
      default includes `catalogue/components/product-grid.tsx:148`, whose
      `!mobileViews` branch is `grid-cols-1` — one full-width card per row on a
      phone. A tighter default would under-fetch there and blur the related
      products row, which is worse than the overfetch a rail would take. */
-  imageSizes = "(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw",
+  imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
 }: {
   href: string;
   name: string;
@@ -45,23 +48,34 @@ export function ShowcaseCard({
       amount) and `discountedPrice` is this card's lead price with the saving taken off. */
   discount?: { label: string; discountedPrice: number; endsAt: string | null } | null;
   className?: string;
+  priority?: boolean;
+  quality?: number;
   /* Grids that change the mobile card width (the two-up listing) pass their own
      `sizes` so the browser stops downloading a full-viewport image per card. */
   imageSizes?: string;
 }) {
-  const [selected, setSelected] = useState<DotVariant | null>(null);
-  const activeImages = selected?.images?.length ? selected.images : (variants[0]?.images ?? []);
-  const imgA = activeImages[0];
-  const imgB = activeImages[1] ?? activeImages[0];
+  const [isHovered, setIsHovered] = useState(false);
+
+  const rawImages = variants[0]?.images ?? [];
+  const imgA = rawImages[0];
+  const imgB = rawImages[1] ?? rawImages[0];
   const hasB = Boolean(imgB && imgB !== imgA);
   /* One name for "this card is on sale": the plate wash and the price lead
      are the same decision, so they must not drift apart. */
   const onSale = available && Boolean(discount);
+  const hasRange = Boolean(maxPrice && maxPrice !== price);
+  const hasColorDots = new Set(variants.map((v) => v.colorName)).size > 1;
+  const priceClassName = hasRange
+    ? "text-xs font-semibold sm:text-sm lg:text-base"
+    : "text-sm font-semibold sm:text-base lg:text-lg";
 
   return (
     <div
+      onMouseEnter={() => {
+        if (hasB && !isHovered) setIsHovered(true);
+      }}
       className={cn(
-        "group card-lift flex h-full flex-col rounded-card bg-plaster ring-1 ring-transparent transition-[box-shadow,ring-color] hover:ring-fog",
+        "group card-lift flex h-full flex-col rounded-card bg-plaster ring-1 ring-flame-100/70 transition-[box-shadow,ring-color,background-color] hover:bg-flame-50/35 hover:ring-flame-300 hover:shadow-md hover:shadow-flame-900/5",
         className,
       )}
     >
@@ -71,14 +85,14 @@ export function ShowcaseCard({
             left the text block a third of the card and the whole card read
             as a tall sliver next to the desktop card's wide stance. The
             `sm:` switch is what keeps the desktop card byte-identical. */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-plaster sm:aspect-square">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-card bg-transparent sm:aspect-square">
           {/* The plate behind the cut-out: canvas normally, a pale flame wash
               when the gateway's price cut is live. That is the card's one
               chromatic moment — value, not decoration (GLOSSARY.md). */}
           <div
             aria-hidden
             className={cn(
-              "absolute inset-2 rounded-card ring-1 ring-fog/40 sm:inset-3",
+              "absolute inset-2 rounded-card ring-1 ring-fog/40 transition-colors group-hover:ring-flame-200 sm:inset-3",
               onSale ? "bg-flame-50" : "bg-canvas",
             )}
           />
@@ -104,82 +118,82 @@ export function ShowcaseCard({
           </span>
           {imgA ? (
             <>
-              <Image
+              <ShimmerImage
+                key={imgA}
                 src={imgA}
                 alt={name}
                 fill
+                priority={priority}
+                quality={quality}
                 sizes={imageSizes}
                 className={cn(
                   "object-contain p-2 mix-blend-multiply transition duration-300 sm:p-4",
                   hasB
-                    ? "group-hover:opacity-0"
+                    ? "sm:group-hover:opacity-0"
                     : "group-hover:scale-[1.04] motion-reduce:transform-none",
                 )}
               />
-              {hasB && (
+              {hasB && isHovered && (
                 <Image
                   src={imgB}
                   alt=""
                   fill
                   sizes={imageSizes}
-                  className="scale-[1.04] object-contain p-2 opacity-0 mix-blend-multiply transition duration-300 group-hover:opacity-100 sm:p-4"
+                  loading="lazy"
+                  fetchPriority="low"
+                  className="hidden sm:block scale-[1.04] object-contain p-2 opacity-0 mix-blend-multiply transition duration-300 sm:group-hover:opacity-100 sm:p-4"
                 />
               )}
             </>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-slate-line">
-              بدون تصویر
+            <div className="flex h-full w-full items-center justify-center">
+              <AppliancePlaceholder className="size-12 text-ash/40" />
             </div>
           )}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col p-2.5 pb-1 sm:p-5 sm:pb-2">
-          <div className="min-h-8 sm:min-h-10">
-            <div className="line-clamp-2 text-[13px] font-bold leading-snug text-ink sm:text-[15px]">
+        <div className="flex min-w-0 flex-1 flex-col p-3 pb-2 sm:p-5 sm:pb-2.5">
+          <div className="min-h-9 sm:min-h-11">
+            <div className="line-clamp-2 text-sm font-bold leading-snug text-ink transition-colors group-hover:text-flame-800 sm:text-base">
               {name}
             </div>
           </div>
-          <div className="min-h-5">
-            {model && (
-              <div className="text-code mt-0.5 text-[11px] text-ash sm:mt-1 sm:text-xs">
-                {model}
-              </div>
-            )}
-          </div>
-          {/* Price rule: the discounted price leads only while the lead card's own price is on show
-              (`no swatch selected`, or the selected swatch priced the same) — the gateway already
-              took the saving off, so the original `price` is struck beside it. A differently priced
-              variant shows that variant's price as it did before; the till still applies the
-              discount at checkout even when the pill is hidden. */}
-          {/* Price block: the struck original above, the discounted price below, so the
-              pair never wraps apart inside a narrow rail card. The discount pill itself
-              lives on the image (see above). */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:mt-2">
-            {(!selected || selected.price === price) && discount ? (
-              <span className="flex min-w-0 flex-col items-start">
-                <s className="text-[11px] tabular-nums text-slate-line sm:text-xs">
+          {model && (
+            <div className="text-code mt-0.5 text-xs text-ash sm:mt-1">
+              {model}
+            </div>
+          )}
+          {/* Price block: anchored to the bottom of the body with mt-auto so
+              cards without color dots or with single-line prices don't leave
+              empty plaster space at the bottom when aligned beside taller
+              cards. */}
+          <div className="mt-auto flex w-full min-w-0 max-w-full flex-wrap items-start gap-2 pt-1.5 sm:pt-2">
+            {discount ? (
+              <span className="flex min-w-0 max-w-full flex-col items-start">
+                <s className="text-xs tabular-nums text-slate-line sm:text-sm">
                   {formatToman(price)}
                 </s>
                 <Price
                   amount={discount.discountedPrice}
                   tone="flame"
-                  className="text-base sm:text-sm"
+                  className={priceClassName}
                 />
               </span>
             ) : (
               <Price
-                amount={selected?.price ?? price}
-                maxAmount={selected ? undefined : maxPrice}
-                className="text-base sm:text-sm"
+                amount={price}
+                maxAmount={maxPrice}
+                className={priceClassName}
               />
             )}
           </div>
         </div>
-      </Link>
-      {variants.length > 1 && (
-        <div className="px-2.5 pb-2 pt-1 sm:px-5 sm:pb-4">
-          <ColorDotSwatches variants={variants} onSwap={(variant) => setSelected(variant)} />
+        <div
+          className="flex min-h-7.5 items-center px-3 pb-3 pt-1 sm:min-h-9 sm:px-5 sm:pb-4"
+          aria-hidden={!hasColorDots || undefined}
+        >
+          {hasColorDots ? <ColorDotSwatches variants={variants} /> : null}
         </div>
-      )}
+      </Link>
     </div>
   );
 }
